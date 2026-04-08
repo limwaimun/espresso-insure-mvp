@@ -7,11 +7,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder'
 });
 
 // Price IDs from Stripe dashboard
-// Replace these with your actual Stripe price IDs
+// These must be set as environment variables in Vercel
 const PRICE_IDS = {
-  solo: process.env.STRIPE_PRICE_SOLO || 'price_solo_id_from_stripe',
-  pro: process.env.STRIPE_PRICE_PRO || 'price_pro_id_from_stripe',
-  team: process.env.STRIPE_PRICE_TEAM || 'price_team_id_from_stripe',
+  solo: process.env.STRIPE_PRICE_SOLO!,
+  pro: process.env.STRIPE_PRICE_PRO!,
+  team: process.env.STRIPE_PRICE_TEAM!,
 };
 
 export async function POST(req: Request) {
