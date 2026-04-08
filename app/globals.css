@@ -1,0 +1,463 @@
+/* 
+ESPRE$$O DESIGN SYSTEM - GLOBALS.CSS
+Chairman-approved design tokens only.
+No deviations. No interpretations.
+*/
+
+/* ==========================================================================
+   GOOGLE FONTS - THREE FONTS ONLY
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+/* ==========================================================================
+   DESIGN TOKENS - EXACT HEX VALUES ONLY
+   ========================================================================== */
+:root {
+  /* BRAND COLOURS - DARK ESPRESSO PALETTE */
+  --espresso: #1C0F0A;      /* Primary background */
+  --dark: #120A06;          /* Secondary background */
+  --cream: #F5ECD7;         /* Primary text */
+  --cream-dim: #C9B99A;     /* Secondary text */
+  --amber: #C8813A;         /* Primary accent / CTAs */
+  --amber-light: #E8A55A;   /* Accent hover */
+  --warm-mid: #3D2215;      /* Card surface */
+  --warm-border: #2E1A0E;   /* Borders */
+  
+  /* STATUS COLOURS */
+  --ok: #5AB87A;            /* Success / Active */
+  --danger: #D06060;        /* Urgent / Danger */
+  --warning: #D4A030;       /* Warning / Pending */
+  --info: #5A8AD4;          /* Info / Blue */
+  --teal: #20A0A0;          /* Medical / Teal */
+  
+  /* TYPOGRAPHY - THREE FONTS ONLY */
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  
+  /* LAYOUT */
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --bottombar-height: 60px;
+}
+
+/* ==========================================================================
+   BASE STYLES - NO WHITE BACKGROUNDS ANYWHERE
+   ========================================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--espresso);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY - CORRECT USAGE ONLY
+   ========================================================================== */
+
+/* CORMORANT GARAMOND - HEADINGS ONLY */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-size: clamp(52px, 7vw, 96px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.display em {
+  font-style: italic;
+  color: var(--amber-light);
+}
+
+/* DM SANS - BODY COPY ONLY */
+p, li, span, label, button, input, textarea, select {
+  font-family: var(--font-body);
+}
+
+/* DM MONO - TECHNICAL DATA ONLY */
+code, pre, kbd, samp, .mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   COMPONENTS - EXACT STYLES ONLY
+   ========================================================================== */
+
+/* BUTTONS - PILL SHAPE ONLY */
+.btn-primary {
+  background: var(--amber);
+  color: var(--dark);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.btn-primary:hover {
+  background: var(--amber-light);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--cream-dim);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: 1px solid var(--warm-border);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.btn-secondary:hover {
+  border-color: var(--amber);
+  color: var(--cream);
+}
+
+/* CARDS - WARM-MID WITH TOP ACCENT LINE */
+.card {
+  background: var(--warm-mid);
+  border: 1px solid var(--warm-border);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.card-amber::before { background: var(--amber); }
+.card-ok::before { background: var(--ok); }
+.card-danger::before { background: var(--danger); }
+.card-warning::before { background: var(--warning); }
+.card-info::before { background: var(--info); }
+.card-teal::before { background: var(--teal); }
+
+.card:hover {
+  border-color: rgba(200, 129, 58, 0.3);
+}
+
+/* INPUTS - DARK BACKGROUNDS ONLY */
+.input {
+  background: var(--warm-mid);
+  border: 1px solid var(--warm-border);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.input::placeholder {
+  color: var(--cream-dim);
+  opacity: 0.5;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(200, 129, 58, 0.1);
+}
+
+/* STATUS PILLS - EXACT COLOUR SYSTEM */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+
+.pill-ok {
+  background: rgba(90, 184, 122, 0.15);
+  color: var(--ok);
+}
+
+.pill-amber {
+  background: rgba(200, 129, 58, 0.15);
+  color: var(--amber-light);
+}
+
+.pill-danger {
+  background: rgba(208, 96, 96, 0.15);
+  color: var(--danger);
+}
+
+.pill-info {
+  background: rgba(90, 138, 212, 0.15);
+  color: var(--info);
+}
+
+.pill-teal {
+  background: rgba(32, 160, 160, 0.15);
+  color: var(--teal);
+}
+
+/* SIDEBAR - 240PX FIXED */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--espresso);
+  border-right: 1px solid var(--warm-border);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  color: var(--cream-dim);
+  font-size: 13.5px;
+  transition: all 0.15s;
+  user-select: none;
+  font-family: var(--font-body);
+}
+
+.nav-item:hover {
+  background: rgba(200, 129, 58, 0.06);
+  color: var(--cream);
+}
+
+.nav-item.active {
+  background: rgba(200, 129, 58, 0.1);
+  border-left-color: var(--amber);
+  color: var(--cream);
+}
+
+.nav-badge {
+  margin-left: auto;
+  background: var(--amber);
+  color: var(--dark);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 100px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.nav-badge.urgent {
+  background: var(--danger);
+  color: white;
+}
+
+/* TABLES - AMBER HEADERS, CREAM-DIM ROWS */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  font-family: var(--font-body);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--amber);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--warm-border);
+  text-align: left;
+  font-weight: 500;
+}
+
+.table td {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--cream-dim);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--warm-border);
+}
+
+.table tr:hover {
+  background: rgba(200, 129, 58, 0.04);
+}
+
+.table .mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* MOBILE BOTTOM NAVIGATION */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottombar-height);
+  background: var(--espresso);
+  border-top: 1px solid var(--warm-border);
+  z-index: 100;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s;
+  min-width: 52px;
+  position: relative;
+}
+
+.bottom-nav-item.active {
+  background: rgba(200, 129, 58, 0.12);
+}
+
+.bottom-nav-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--cream-dim);
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  color: var(--amber);
+}
+
+.bottom-nav-label {
+  font-size: 10px;
+  color: var(--cream-dim);
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: var(--amber);
+}
+
+/* ==========================================================================
+   UTILITIES
+   ========================================================================== */
+.text-display { font-family: var(--font-display); }
+.text-body { font-family: var(--font-body); }
+.text-mono { font-family: var(--font-mono); }
+
+.bg-espresso { background: var(--espresso); }
+.bg-dark { background: var(--dark); }
+.bg-warm-mid { background: var(--warm-mid); }
+
+.text-cream { color: var(--cream); }
+.text-cream-dim { color: var(--cream-dim); }
+.text-amber { color: var(--amber); }
+.text-amber-light { color: var(--amber-light); }
+.text-ok { color: var(--ok); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+.text-teal { color: var(--teal); }
+
+.border-warm { border-color: var(--warm-border); }
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.8s ease both;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease infinite;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  .bottom-nav {
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none;
+  }
+}
