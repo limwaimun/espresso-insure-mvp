@@ -19,9 +19,9 @@ export default function DashboardHome() {
 
   const aiAgents = [
     { name: 'Maya', role: 'Client Intake', status: 'active', icon: '💬', color: 'amber' },
-    { name: 'Jordan', role: 'Advisory', status: 'active', icon: '🤖', color: 'info' },
-    { name: 'Sam', role: 'Policy Management', status: 'active', icon: '📄', color: 'ok' },
-    { name: 'Morgan', role: 'Compliance', status: 'active', icon: '📊', color: 'warning' },
+    { name: 'Advisory AI', role: 'Policy Advisory', status: 'active', icon: '🤖', color: 'info' },
+    { name: 'Policy Manager', role: 'Policy Management', status: 'active', icon: '📄', color: 'ok' },
+    { name: 'Compliance Check', role: 'Regulatory Compliance', status: 'active', icon: '📊', color: 'warning' },
   ];
 
   return (
