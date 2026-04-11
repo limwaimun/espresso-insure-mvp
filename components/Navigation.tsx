@@ -1,49 +1,80 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const Navigation = () => {
+  const pathname = usePathname();
+  
+  const authRoutes = ['/trial', '/login', '/confirmed', '/dashboard'];
+  const isAuthRoute = authRoutes.some(route => 
+    pathname?.startsWith(route)
+  );
+  
+  if (isAuthRoute) return null;
+  
   return (
-    <nav className="fixed top-0 left-0 right-0 z-100 px-12 py-5 flex items-center justify-between bg-gradient-to-b from-color-espresso/95 to-transparent">
-      <Link href="/" className="nav-logo font-display text-22 font-500 tracking-wider uppercase text-color-cream no-underline">
-        Espresso<span className="text-color-amber">.</span>
+    <nav style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 100,
+      padding: '20px 48px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      background: 'linear-gradient(to bottom, rgba(28,15,10,0.95), transparent)',
+    }}>
+      <Link href="/" style={{
+        fontFamily: 'Cormorant Garamond, serif',
+        fontSize: '22px',
+        fontWeight: 500,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        color: '#F5ECD7',
+        textDecoration: 'none',
+      }}>
+        Espresso<span style={{ color: '#C8813A' }}>.</span>
       </Link>
-      
-      <ul className="nav-links flex items-center gap-9 list-none">
-        <li>
-          <Link href="#problem" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            Problem
-          </Link>
-        </li>
-        <li>
-          <Link href="#how-it-works" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            How it works
-          </Link>
-        </li>
-        <li>
-          <Link href="#features" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            Features
-          </Link>
-        </li>
-        <li>
-          <Link href="#pricing" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            Pricing
-          </Link>
-        </li>
-        <li>
-          <Link href="#setup" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            Setup
-          </Link>
-        </li>
-        <li>
-          <Link href="#faq" className="text-color-cream-dim text-14 tracking-wide no-underline transition-colors duration-200 hover:text-color-cream">
-            FAQ
-          </Link>
-        </li>
+
+      <ul style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '36px',
+        listStyle: 'none',
+        margin: 0,
+        padding: 0,
+      }}>
+        {['Problem', 'How it works', 'Features', 'Pricing', 'Setup', 'FAQ'].map((item) => (
+          <li key={item}>
+            <Link
+              href={`#${item.toLowerCase().replace(/ /g, '-')}`}
+              style={{
+                color: '#C9B99A',
+                fontSize: '14px',
+                letterSpacing: '0.05em',
+                textDecoration: 'none',
+              }}
+            >
+              {item}
+            </Link>
+          </li>
+        ))}
       </ul>
-      
-      <Link 
-        href="/dashboard" 
-        className="nav-cta bg-color-amber text-color-dark font-500 text-14 px-6 py-2.5 rounded-full no-underline transition-all duration-200 hover:bg-color-amber-light hover:translate-y--1"
+
+      <Link
+        href="/dashboard"
+        style={{
+          background: '#C8813A',
+          color: '#120A06',
+          fontWeight: 500,
+          fontSize: '14px',
+          padding: '10px 24px',
+          borderRadius: '100px',
+          textDecoration: 'none',
+        }}
       >
         Launch Dashboard
       </Link>

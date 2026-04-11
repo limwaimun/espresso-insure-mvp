@@ -1,67 +1,197 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const DashboardSidebar = () => {
+  const pathname = usePathname();
+  
   const navItems = [
-    { id: 'home', label: 'Home', icon: '🏠', active: true, badge: null },
-    { id: 'maya', label: 'Conversations', icon: '💬', active: false, badge: '3' },
-    { id: 'alerts', label: 'Alert Center', icon: '🔔', active: false, badge: '1' },
-    { id: 'clients', label: 'All Clients', icon: '👥', active: false, badge: null },
-    { id: 'client-record', label: 'Client Records', icon: '📁', active: false, badge: null },
-    { id: 'renewals', label: 'Renewal Calendar', icon: '📅', active: false, badge: '2' },
-    { id: 'claims', label: 'Claims Details', icon: '📄', active: false, badge: null },
-    { id: 'medical', label: 'Medical Assistance', icon: '🏥', active: false, badge: null },
-    { id: 'settings', label: 'Settings', icon: '⚙️', active: false, badge: null },
+    { id: 'home', label: 'Home', icon: '🏠', active: pathname === '/dashboard', badge: null },
+    { id: 'conversations', label: 'Conversations', icon: '💬', active: pathname?.includes('conversations'), badge: '3' },
+    { id: 'alerts', label: 'Alerts', icon: '🔔', active: pathname?.includes('alerts'), badge: '2', badgeUrgent: true },
+    { id: 'clients', label: 'All clients', icon: '👥', active: pathname?.includes('clients'), badge: null },
+    { id: 'renewals', label: 'Renewals', icon: '📅', active: pathname?.includes('renewals'), badge: '8' },
+    { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: '1', badgeUrgent: true },
+    { id: 'analytics', label: 'Analytics', icon: '📊', active: pathname?.includes('analytics'), badge: null },
+    { id: 'reports', label: 'Reports', icon: '📈', active: pathname?.includes('reports'), badge: null },
+    { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
+  ];
+
+  const sectionLabels = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'clients', label: 'Clients' },
+    { id: 'performance', label: 'Performance' },
+    { id: 'account', label: 'Account' },
   ];
 
   return (
-    <div className="sb w-60 bg-color-espresso border-r border-color-warm-border flex flex-col h-screen fixed left-0 top-0 z-200 transition-transform duration-300">
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      background: '#120A06',
+    }}>
       {/* Logo */}
-      <div className="sbl px-5 py-5 border-b border-color-warm-border flex items-center justify-between">
-        <Link href="/dashboard" className="lt font-display text-20 font-500 tracking-wider uppercase text-color-cream no-underline">
-          Espresso<span className="text-color-amber">.</span>
+      <div style={{
+        padding: '20px 24px',
+        borderBottom: '1px solid #2E1A0E',
+      }}>
+        <Link href="/dashboard" style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: '22px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+          letterSpacing: '0.02em',
+          textDecoration: 'none',
+        }}>
+          espresso<span style={{ color: '#C8813A' }}>.</span>
         </Link>
-        <button className="sbc bg-transparent border-none text-color-cream-dim text-20 cursor-pointer p-1 leading-none hidden" id="sidebar-close">
-          ×
-        </button>
       </div>
-      
+
       {/* Navigation */}
-      <div className="sbn flex-1 py-2.5 overflow-y-auto">
-        <div className="nsl text-10 tracking-wider uppercase text-color-amber px-5 py-2.5 opacity-60">
-          Navigation
+      <div style={{
+        flex: 1,
+        padding: '16px 0',
+        overflowY: 'auto',
+      }}>
+        {/* Section Labels */}
+        <div style={{
+          padding: '0 24px 8px 24px',
+        }}>
+          {sectionLabels.map((section) => (
+            <div key={section.id} style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '10px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#C8813A',
+              opacity: 0.6,
+              marginBottom: '8px',
+            }}>
+              {section.label}
+            </div>
+          ))}
         </div>
-        
-        {navItems.map((item) => (
-          <Link
-            key={item.id}
-            href={`/dashboard/${item.id === 'home' ? '' : item.id}`}
-            className={`ni flex items-center gap-2.5 px-5 py-2.5 cursor-pointer border-l-2 border-transparent text-color-cream-dim text-13.5 transition-all duration-150 user-select-none hover:bg-amber/6 hover:text-color-cream ${
-              item.active ? 'active bg-amber/10 border-l-color-amber text-color-cream' : ''
-            }`}
-          >
-            <span className="ni-icon w-4 h-4 flex-shrink-0 opacity-70">{item.icon}</span>
-            <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <span className={`nb bg-color-amber text-color-dark text-10 font-500 px-1.75 py-0.5 rounded-full min-w-4.5 text-center ${
-                item.badge === '1' ? 'r bg-color-danger text-white' : ''
-              }`}>
-                {item.badge}
+
+        {/* Navigation Items */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
+        }}>
+          {navItems.map((item) => (
+            <Link
+              key={item.id}
+              href={`/dashboard${item.id === 'home' ? '' : `/${item.id}`}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 24px',
+                textDecoration: 'none',
+                borderLeft: item.active ? '2px solid #C8813A' : '2px solid transparent',
+                background: item.active ? 'rgba(200, 129, 58, 0.1)' : 'transparent',
+                color: item.active ? '#F5ECD7' : '#C9B99A',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                fontWeight: item.active ? 500 : 400,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{
+                fontSize: '16px',
+                opacity: 0.8,
+                width: '20px',
+                textAlign: 'center',
+              }}>
+                {item.icon}
               </span>
-            )}
-          </Link>
-        ))}
+              <span style={{ flex: 1 }}>
+                {item.label}
+              </span>
+              {item.badge && (
+                <span style={{
+                  background: item.badgeUrgent ? '#E53E3E' : '#C8813A',
+                  color: item.badgeUrgent ? '#FFFFFF' : '#120A06',
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  padding: '2px 6px',
+                  borderRadius: '100px',
+                  minWidth: '18px',
+                  textAlign: 'center',
+                }}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
       </div>
-      
-      {/* IFA Profile */}
-      <div className="sbf px-5 py-3.5 border-t border-color-warm-border">
-        <div className="ifap flex items-center gap-2.5">
-          <div className="ifaav w-8 h-8 bg-gradient-to-br from-color-amber to-[#8B4513] rounded-full flex items-center justify-center font-display text-14 font-500 text-white flex-shrink-0">
-            IF
+
+      {/* IFA Profile Card */}
+      <div style={{
+        padding: '20px 24px',
+        borderTop: '1px solid #2E1A0E',
+        background: 'rgba(28, 15, 10, 0.5)',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}>
+          {/* Avatar */}
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: '#C8813A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#120A06',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '16px',
+            fontWeight: 600,
+          }}>
+            DT
           </div>
-          <div>
-            <div className="ifan text-13 text-color-cream font-400">Independent Financial Advisor</div>
-            <div className="ifapl text-11 text-color-amber">Active • Singapore</div>
+          
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#F5ECD7',
+              marginBottom: '2px',
+            }}>
+              David Tan
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <span style={{
+                background: '#C8813A',
+                color: '#120A06',
+                fontSize: '10px',
+                fontWeight: 500,
+                padding: '2px 8px',
+                borderRadius: '100px',
+              }}>
+                Pro
+              </span>
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                color: '#C9B99A',
+              }}>
+                IFA
+              </span>
+            </div>
           </div>
         </div>
       </div>

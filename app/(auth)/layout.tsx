@@ -12,6 +12,9 @@ export default function AuthLayout({
       alignItems: 'center',
       justifyContent: 'center',
       padding: '16px',
+      position: 'relative',
+      zIndex: 1,
+      isolation: 'isolate',
     }}>
       {children}
     </div>

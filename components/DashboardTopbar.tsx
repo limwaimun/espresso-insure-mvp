@@ -1,32 +1,152 @@
+'use client';
+
 import React from 'react';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const DashboardTopbar = () => {
+  const isMobile = useIsMobile();
+  
   return (
-    <div className="tb bg-color-espresso border-b border-color-warm-border px-6 h-14 flex items-center justify-between flex-shrink-0">
-      {/* Left side */}
-      <div className="tbl flex items-center gap-3">
-        <button className="hb hidden bg-transparent border border-color-warm-border text-color-cream-dim w-8 h-8 rounded-md cursor-pointer items-center justify-center flex-col gap-1" id="hamburger">
-          <span className="block w-3.5 h-0.5 bg-current rounded-sm" />
-          <span className="block w-3.5 h-0.5 bg-current rounded-sm" />
-          <span className="block w-3.5 h-0.5 bg-current rounded-sm" />
-        </button>
-        <div className="tbt font-display text-20 font-400 text-color-cream">Dashboard</div>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+    }}>
+      {/* Left side - Hamburger menu on mobile, greeting on desktop */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? '12px' : '0',
+      }}>
+        {isMobile && (
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#F5ECD7',
+            fontSize: '20px',
+            cursor: 'pointer',
+            padding: '4px',
+          }}>
+            ☰
+          </button>
+        )}
+        
+        {isMobile ? (
+          <div style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '18px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+          }}>
+            espresso<span style={{ color: '#C8813A' }}>.</span>
+          </div>
+        ) : (
+          <h1 style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '20px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>
+            Good morning, David
+          </h1>
+        )}
       </div>
-      
-      {/* Right side */}
-      <div className="tbr flex items-center gap-3">
-        <div className="mast flex items-center gap-1.5 text-12 text-color-cream-dim">
-          <div className="sl w-1.75 h-1.75 bg-color-ok rounded-full animate-pulse" />
-          <span>Maya is active</span>
-        </div>
-        
-        <button className="btn bg-transparent border border-color-warm-border text-color-cream-dim px-3.5 py-1.75 rounded-full text-12 cursor-pointer font-body transition-all duration-200 hover:border-color-amber hover:text-color-cream">
-          Help
+
+      {/* Right side - Actions and status */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? '8px' : '16px',
+      }}>
+        {/* Maya status - hidden on mobile */}
+        {!isMobile && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px',
+            color: '#C9B99A',
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: '#38A169',
+              animation: 'pulse 2s infinite',
+            }} />
+            <span>Maya active</span>
+          </div>
+        )}
+
+        {/* Secondary button - hidden on mobile */}
+        {!isMobile && (
+          <button style={{
+            background: 'transparent',
+            border: '1px solid #2E1A0E',
+            color: '#C9B99A',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px',
+            fontWeight: 400,
+            padding: '8px 16px',
+            borderRadius: '100px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}>
+            + Client
+          </button>
+        )}
+
+        {/* Primary button - smaller on mobile */}
+        <button style={{
+          background: '#C8813A',
+          color: '#120A06',
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: isMobile ? '12px' : '13px',
+          fontWeight: 500,
+          padding: isMobile ? '6px 12px' : '8px 20px',
+          borderRadius: '100px',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          whiteSpace: 'nowrap',
+        }}>
+          {isMobile ? 'Chat' : 'View conversations'}
         </button>
         
-        <button className="btn p bg-color-amber text-color-dark border-color-amber px-3.5 py-1.75 rounded-full text-12 cursor-pointer font-body font-500 transition-all duration-200 hover:bg-color-amber-light">
-          + New Client
-        </button>
+        {/* Notification bell on mobile */}
+        {isMobile && (
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#F5ECD7',
+            fontSize: '18px',
+            cursor: 'pointer',
+            padding: '4px',
+            position: 'relative',
+          }}>
+            🔔
+            <span style={{
+              position: 'absolute',
+              top: '0',
+              right: '0',
+              background: '#E53E3E',
+              color: 'white',
+              fontSize: '9px',
+              fontWeight: 500,
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              2
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

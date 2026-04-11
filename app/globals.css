@@ -440,11 +440,91 @@ code, pre, kbd, samp, .mono {
 }
 
 /* ==========================================================================
-   RESPONSIVE
+   RESPONSIVE LAYOUTS - MOBILE FIRST
    ========================================================================== */
+
+/* METRIC GRID - RESPONSIVE */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* DASHBOARD MAIN LAYOUT - DEPRECATED (now inline styles in layout.tsx) */
+/* .dashboard-main {
+  margin-left: var(--sidebar-width);
+  padding: 24px;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+    padding: 14px;
+    padding-bottom: 80px;
+  }
+} */
+
+/* PANEL ROW - SIDE BY SIDE ON DESKTOP, STACK ON MOBILE */
+.panel-row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .panel-row {
+    flex-direction: column;
+  }
+}
+
+/* TABLE MOBILE SCROLL */
+.table-mobile-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* SHOW/HIDE ON MOBILE */
+.hide-mobile {
+  display: none;
+}
+
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+  .show-mobile {
+    display: block;
+  }
+}
+
+/* SIDEBAR MOBILE BEHAVIOR */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    transition: transform 0.3s ease;
   }
   
   .sidebar.active {
@@ -459,5 +539,17 @@ code, pre, kbd, samp, .mono {
 @media (min-width: 769px) {
   .bottom-nav {
     display: none;
+  }
+}
+
+/* SMALL MOBILE ADJUSTMENTS */
+@media (max-width: 390px) {
+  .dashboard-main {
+    padding: 10px;
+    padding-bottom: 80px;
+  }
+  
+  .metric-grid {
+    gap: 12px;
   }
 }

@@ -180,7 +180,7 @@ export default function TrialPage() {
               name="whatsapp"
               value={formData.whatsapp}
               onChange={handleChange}
-              placeholder="+65 XXXX XXXX"
+              placeholder="+65 / +60 / +63 / +62 / +66 / +84"
               required
               className="input"
             />
@@ -218,6 +218,7 @@ export default function TrialPage() {
               <option value="Philippines">Philippines</option>
               <option value="Indonesia">Indonesia</option>
               <option value="Thailand">Thailand</option>
+              <option value="Vietnam">Vietnam</option>
             </select>
           </div>
 

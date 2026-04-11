@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, DM_Sans, DM_Mono } from 'next/font/google';
 import './globals.css';
-import Navigation from '@/components/Navigation';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -33,8 +32,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${dmSans.variable} ${dmMono.variable}`}>
-      <body className="min-h-screen bg-color-dark text-color-cream font-body font-weight-300">
-        <Navigation />
+      <body style={{
+        minHeight: '100vh',
+        background: '#1C0F0A',
+        color: '#F5ECD7',
+        fontFamily: 'DM Sans, sans-serif',
+        fontWeight: 300,
+        overflowX: 'hidden',
+        margin: 0,
+        padding: 0,
+      }}>
         <main>{children}</main>
       </body>
     </html>
