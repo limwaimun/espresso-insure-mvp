@@ -144,25 +144,46 @@ export default function ClientsPage() {
 </colgroup>
               <thead className="bg-cream-dim/10" style={{ position: "sticky", top: 0, zIndex: 10, background: "#1C0F0A" }}>
                 <tr>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', minWidth: '200px' }}
+                  >
                     CLIENT
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '80px' }}
+                  >
                     TYPE
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '80px' }}
+                  >
                     POLICIES
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '120px' }}
+                  >
                     RENEWAL
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '110px' }}
+                  >
                     PREMIUM
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '130px' }}
+                  >
                     STATUS
                   </th>
-                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '60px' }}
+                  >
                     ACTIONS
                   </th>
                 </tr>
@@ -170,7 +191,7 @@ export default function ClientsPage() {
               <tbody className="divide-y divide-cream-dim/20">
                 {/* Row 1 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td  style={{ textAlign: 'left' }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -188,13 +209,13 @@ export default function ClientsPage() {
                       TAK Technologies
                     </div>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -203,13 +224,13 @@ export default function ClientsPage() {
                       13 Apr
                     </span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,140/yr</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className="pill pill-danger">Claim open</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -223,7 +244,7 @@ export default function ClientsPage() {
 
                 {/* Row 2 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td  style={{ textAlign: 'left' }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -241,13 +262,13 @@ export default function ClientsPage() {
                       Café Latte
                     </div>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -256,13 +277,13 @@ export default function ClientsPage() {
                       New
                     </span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -276,7 +297,7 @@ export default function ClientsPage() {
 
                 {/* Row 3 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td  style={{ textAlign: 'left' }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -294,13 +315,13 @@ export default function ClientsPage() {
                       SME
                     </div>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -309,13 +330,13 @@ export default function ClientsPage() {
                       28 Apr
                     </span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$11,340/yr</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -329,7 +350,7 @@ export default function ClientsPage() {
 
                 {/* Row 4 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td  style={{ textAlign: 'left' }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -347,13 +368,13 @@ export default function ClientsPage() {
                       Individual
                     </div>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -362,13 +383,13 @@ export default function ClientsPage() {
                       18 Apr
                     </span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,240/yr</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -382,7 +403,7 @@ export default function ClientsPage() {
 
                 {/* Row 5 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td  style={{ textAlign: 'left' }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -400,22 +421,1079 @@ export default function ClientsPage() {
                       Individual
                     </div>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>15 May</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,780/yr</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+                {/* Row 6 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Tan Wei Ming
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Tech Solutions
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      20 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,500/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 7 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Chen Li Na
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Global Traders
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      25 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$3,800/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Renewal urgent</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 8 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Raj Kumar
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Medical Group
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      30 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$5,200/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Gap detected</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 9 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Siti Aishah
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Consulting Partners
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      5 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$4,100/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 10 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      David Wong
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Retail Chain
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>5</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      10 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,900/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Claim open</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+                {/* Row 11 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Priya Sharma
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Manufacturing Inc
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      15 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$8,300/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Intake active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 12 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Mohamed Ali
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Logistics Co
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      20 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$1,800/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 13 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Jessica Tan
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Finance Corp
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      25 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$9,500/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Renewal urgent</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 14 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Kumar Suresh
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Real Estate Ltd
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      30 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,200/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Gap detected</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 15 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Anita Lim
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Hospitality Group
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#5A8AD4',
+                    }}>
+                      New
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Intake active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+                {/* Row 16 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Robert Chen
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Education Center
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#C9B99A',
+                    }}>
+                      20 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,500/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 17 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Nurul Huda
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Healthcare Pte
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      25 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$3,800/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Renewal urgent</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 18 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Samuel Lee
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Construction Ltd
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      30 Apr
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$5,200/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Gap detected</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 19 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Mei Ling
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Food Services
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      5 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$4,100/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 20 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Vikram Patel
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Transportation
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>5</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      10 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,900/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Claim open</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 21 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Sophia Ng
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Energy Solutions
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      15 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$8,300/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Intake active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 22 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Arjun Singh
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Media Group
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      20 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$1,800/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-ok">Active</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 23 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Clara Koh
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Pharmaceuticals
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      25 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$9,500/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-danger">Renewal urgent</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 24 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Benjamin Teo
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Agriculture Co
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      30 May
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,200/yr</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Gap detected</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Row 25 */}
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td  style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Fatimah Binte
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Telecom Ltd
+                    </div>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#5A8AD4',
+                    }}>
+                      New
+                    </span>
+                  </td>
+                  <td >
+                    <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
+                  </td>
+                  <td >
+                    <span className="pill pill-amber">Intake active</span>
+                  </td>
+                  <td >
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
