@@ -127,13 +127,13 @@ export default function ClientsPage() {
 
         {/* Table - Desktop */}
         <div className="hidden md:block">
-          <div className="overflow-x-auto rounded-lg border border-cream-dim">
+          <div className="overflow-x-auto rounded-lg border border-cream-dim" style={{ overflowY: "auto", maxHeight: "calc(100vh - 280px)" }}>
             <table style={{
               width: '100%',
               tableLayout: 'fixed',
               borderCollapse: 'collapse',
             }}>
-              <thead className="bg-cream-dim/10">
+              <thead className="bg-cream-dim/10" style={{ position: "sticky", top: 0, zIndex: 10, background: "#1C0F0A" }}>
                 <tr>
                   <th
                     className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
