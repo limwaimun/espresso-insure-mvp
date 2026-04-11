@@ -19,32 +19,50 @@ export default function ClientsPage() {
   const tabs = ['All', 'Platinum', 'Gold', 'Silver', 'Bronze', 'At risk'];
 
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Top Bar */}
-      <div className="border-b border-cream-dim px-8 py-6 flex items-center justify-between">
-        <h1 className={`${cormorant.className} text-3xl text-amber`}>All clients</h1>
-        <div className="flex items-center gap-4">
-          <button className="bg-amber text-cream px-6 py-2.5 rounded-lg font-medium hover:bg-amber/90 transition">
-            + Add client
-          </button>
-          <button className="border border-amber text-amber px-6 py-2.5 rounded-lg font-medium hover:bg-amber/5 transition">
-            Import
-          </button>
-          <button className="border border-amber text-amber px-6 py-2.5 rounded-lg font-medium hover:bg-amber/5 transition">
-            Export
-          </button>
-        </div>
-      </div>
-
+    <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      padding: '0',
+      minHeight: '100vh',
+    }}>
       <div className="px-8 py-6">
-        {/* Search Bar */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search clients..."
-            className="w-full px-4 py-3 bg-cream border border-cream-dim rounded-lg focus:outline-none focus:ring-2 focus:ring-amber/20 focus:border-amber"
-          />
+        {/* Title and Actions Row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}>
+          <h1 style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '28px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>All clients</h1>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-primary" style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+            }}>+ Add client</button>
+            <button className="btn-secondary" style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+            }}>Import</button>
+            <button className="btn-secondary" style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+            }}>Export</button>
+          </div>
         </div>
+
+        {/* Search Bar */}
+        <input 
+          className="input"
+          style={{ width: '100%', marginBottom: '12px' }}
+          placeholder="Search clients..."
+        />
 
         {/* Stats Bar */}
         <div className="mb-6 bg-amber/5 rounded-lg px-6 py-4">
@@ -57,43 +75,129 @@ export default function ClientsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="mb-8 border-b border-cream-dim">
-          <div className="flex gap-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-3 text-sm font-medium transition ${activeTab === tab ? 'text-amber border-b-2 border-amber' : 'text-cream-dim hover:text-amber'}`}
-              >
-                {tab}
-              </button>
-            ))}
+        <div className="mb-8">
+          <div className="flex gap-2">
+            {tabs.map((tab) => {
+              // Define colors for each tab
+              let color = '#C9B99A';
+              let borderColor = '#C9B99A';
+              
+              if (tab === 'All') {
+                color = '#C8813A';
+                borderColor = '#C8813A';
+              } else if (tab === 'Platinum') {
+                color = '#E8E8F0';
+                borderColor = '#E8E8F0';
+              } else if (tab === 'Gold') {
+                color = '#C8813A';
+                borderColor = '#C8813A';
+              } else if (tab === 'Silver') {
+                color = '#A0A8B0';
+                borderColor = '#A0A8B0';
+              } else if (tab === 'Bronze') {
+                color = '#CD7F32';
+                borderColor = '#CD7F32';
+              } else if (tab === 'At risk') {
+                color = '#D06060';
+                borderColor = '#D06060';
+              }
+              
+              return (
+                <span
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    display: 'inline-flex',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    border: `1px solid ${borderColor}`,
+                    color: activeTab === tab ? '#120A06' : color,
+                    backgroundColor: activeTab === tab ? '#C8813A' : 'transparent',
+                    fontFamily: 'DM Sans, sans-serif',
+                  }}
+                >
+                  {tab}
+                </span>
+              );
+            })}
           </div>
         </div>
 
         {/* Table - Desktop */}
         <div className="hidden md:block">
           <div className="overflow-x-auto rounded-lg border border-cream-dim">
-            <table className="w-full">
+            <table style={{
+              width: '100%',
+              tableLayout: 'fixed',
+              borderCollapse: 'collapse',
+            }}>
               <thead className="bg-cream-dim/10">
                 <tr>
-                  {['CLIENT', 'TYPE', 'POLICIES', 'NEXT RENEWAL', 'PREMIUM', 'STATUS', 'ACTIONS'].map((header) => (
-                    <th
-                      key={header}
-                      className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4 text-left`}
-                    >
-                      {header}
-                    </th>
-                  ))}
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', minWidth: '200px' }}
+                  >
+                    CLIENT
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '80px' }}
+                  >
+                    TYPE
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '80px' }}
+                  >
+                    POLICIES
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '120px' }}
+                  >
+                    RENEWAL
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '110px' }}
+                  >
+                    PREMIUM
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '130px' }}
+                  >
+                    STATUS
+                  </th>
+                  <th
+                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
+                    style={{ textAlign: 'left', width: '60px' }}
+                  >
+                    ACTIONS
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cream-dim/20">
                 {/* Row 1 */}
-                <tr className="hover:bg-cream-dim/5">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium">Tan Ah Kow</div>
-                      <div className="text-sm text-cream-dim">TAK Technologies</div>
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Tan Ah Kow
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      TAK Technologies
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -103,31 +207,50 @@ export default function ClientsPage() {
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`${dmSans.className} text-sm text-red`}>13 Apr</span>
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      13 Apr
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,140/yr</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red/10 text-red">
-                      Claim open
-                    </span>
+                    <span className="pill pill-danger">Claim open</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-cream-dim hover:text-amber">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
                   </td>
                 </tr>
 
                 {/* Row 2 */}
-                <tr className="hover:bg-cream-dim/5">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium">Sarah Lim</div>
-                      <div className="text-sm text-cream-dim">Café Latte</div>
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Sarah Lim
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Café Latte
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -137,31 +260,50 @@ export default function ClientsPage() {
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`${dmSans.className} text-sm text-amber`}>New</span>
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#5A8AD4',
+                    }}>
+                      New
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber/10 text-amber">
-                      Intake active
-                    </span>
+                    <span className="pill pill-amber">Intake active</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-cream-dim hover:text-amber">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
                   </td>
                 </tr>
 
                 {/* Row 3 */}
-                <tr className="hover:bg-cream-dim/5">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium">Kwek Industries Pte Ltd</div>
-                      <div className="text-sm text-cream-dim">SME</div>
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Kwek Industries Pte Ltd
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      SME
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -171,31 +313,50 @@ export default function ClientsPage() {
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`${dmSans.className} text-sm text-amber`}>28 Apr</span>
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D4A030',
+                    }}>
+                      28 Apr
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$11,340/yr</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber/10 text-amber">
-                      Gap detected
-                    </span>
+                    <span className="pill pill-amber">Gap detected</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-cream-dim hover:text-amber">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
                   </td>
                 </tr>
 
                 {/* Row 4 */}
-                <tr className="hover:bg-cream-dim/5">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium">Angela Foo</div>
-                      <div className="text-sm text-cream-dim">Individual</div>
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      Angela Foo
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Individual
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -205,31 +366,50 @@ export default function ClientsPage() {
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`${dmSans.className} text-sm text-red`}>18 Apr</span>
+                    <span style={{
+                      fontFamily: 'DM Mono, monospace',
+                      fontSize: '12px',
+                      color: '#D06060',
+                    }}>
+                      18 Apr
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,240/yr</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red/10 text-red">
-                      Renewal urgent
-                    </span>
+                    <span className="pill pill-danger">Renewal urgent</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-cream-dim hover:text-amber">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
                   </td>
                 </tr>
 
                 {/* Row 5 */}
-                <tr className="hover:bg-cream-dim/5">
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium">James Ong</div>
-                      <div className="text-sm text-cream-dim">Individual</div>
+                <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
+                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      color: '#F5ECD7',
+                    }}>
+                      James Ong
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      marginTop: '2px',
+                    }}>
+                      Individual
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -245,16 +425,17 @@ export default function ClientsPage() {
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,780/yr</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green/10 text-green">
-                      Active
-                    </span>
+                    <span className="pill pill-ok">Active</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="text-cream-dim hover:text-amber">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <span style={{
+                      color: '#C9B99A',
+                      fontSize: '18px',
+                      cursor: 'pointer',
+                      letterSpacing: '3px',
+                    }}>
+                      ···
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -262,35 +443,97 @@ export default function ClientsPage() {
           </div>
 
           {/* Pagination */}
-          <div className="mt-8 flex items-center justify-between">
-            <div className={`${dmSans.className} text-sm text-cream-dim`}>
-              Showing 1-5 of 247
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-2 text-cream-dim hover:text-amber disabled:opacity-50 disabled:cursor-not-allowed">
-                ← Previous
-              </button>
-              {[1, 2, 3].map((num) => (
-                <button
-                  key={num}
-                  className={`w-8 h-8 rounded ${num === 1 ? 'bg-amber text-cream' : 'text-cream-dim hover:text-amber'}`}
-                >
-                  {num}
-                </button>
-              ))}
-              <span className="text-cream-dim">...</span>
-              <button className="w-8 h-8 rounded text-cream-dim hover:text-amber">
-                50
-              </button>
-              <button className="px-3 py-2 text-cream-dim hover:text-amber">
-                Next →
-              </button>
-            </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid #2E1A0E',
+            flexWrap: 'wrap',
+          }}>
+            <span style={{
+              padding: '6px 14px',
+              border: '1px solid #2E1A0E',
+              borderRadius: '100px',
+              color: '#C9B99A',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif',
+            }}>← Prev</span>
+
+            <span style={{
+              width: '32px', height: '32px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              background: '#C8813A',
+              color: '#120A06',
+              fontSize: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              cursor: 'pointer',
+            }}>1</span>
+
+            <span style={{
+              width: '32px', height: '32px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              border: '1px solid #2E1A0E',
+              color: '#C9B99A',
+              fontSize: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              cursor: 'pointer',
+            }}>2</span>
+
+            <span style={{
+              width: '32px', height: '32px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              border: '1px solid #2E1A0E',
+              color: '#C9B99A',
+              fontSize: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              cursor: 'pointer',
+            }}>3</span>
+
+            <span style={{
+              color: '#C9B99A',
+              fontSize: '14px',
+              padding: '0 2px',
+            }}>···</span>
+
+            <span style={{
+              width: '32px', height: '32px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              border: '1px solid #2E1A0E',
+              color: '#C9B99A',
+              fontSize: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              cursor: 'pointer',
+            }}>50</span>
+
+            <span style={{
+              padding: '6px 14px',
+              border: '1px solid #2E1A0E',
+              borderRadius: '100px',
+              color: '#C9B99A',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif',
+            }}>Next →</span>
           </div>
         </div>
 
         {/* Mobile Cards */}
-        <div className="md:hidden space-y-4">
+        <div className="show-mobile space-y-4" style={{ display: 'none' }}>
           {/* Card 1 */}
           <div className="bg-cream border border-cream-dim rounded-lg p-4">
             <div className="flex items-start justify-between">
@@ -298,12 +541,10 @@ export default function ClientsPage() {
                 <div className="font-medium">Tan Ah Kow</div>
                 <div className="text-sm text-cream-dim">TAK Technologies · SME</div>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red/10 text-red">
-                Claim open
-              </span>
+              <span className="pill pill-danger">Claim open</span>
             </div>
             <div className="mt-3 text-sm text-cream-dim">
-              <div>3 policies · Next renewal: <span className="text-red">13 Apr</span></div>
+              <div>3 policies · Next renewal: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', color: '#D06060' }}>13 Apr</span></div>
               <div>Premium: $7,140/yr</div>
             </div>
           </div>
@@ -315,9 +556,7 @@ export default function ClientsPage() {
                 <div className="font-medium">Sarah Lim</div>
                 <div className="text-sm text-cream-dim">Café Latte · SME</div>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber/10 text-amber">
-                Intake active
-              </span>
+              <span className="pill pill-amber">Intake active</span>
             </div>
             <div className="mt-3 text-sm text-cream-dim">
               <div>New client · No policies yet</div>
@@ -331,13 +570,11 @@ export default function ClientsPage() {
                 <div className="font-medium">Kwek Industries Pte Ltd</div>
                 <div className="text-sm text-cream-dim">SME</div>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber/10 text-amber">
-                Gap detected
-              </span>
+              <span className="pill pill-amber">Gap detected</span>
             </div>
             <div className="mt-3 text-sm text-cream-dim">
 
-              <div>4 policies · Next renewal: <span className="text-amber">28 Apr</span></div>
+              <div>4 policies · Next renewal: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', color: '#D4A030' }}>28 Apr</span></div>
               <div>Premium: $11,340/yr</div>
             </div>
           </div>
@@ -349,12 +586,10 @@ export default function ClientsPage() {
                 <div className="font-medium">Angela Foo</div>
                 <div className="text-sm text-cream-dim">Individual</div>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red/10 text-red">
-                Renewal urgent
-              </span>
+              <span className="pill pill-danger">Renewal urgent</span>
             </div>
             <div className="mt-3 text-sm text-cream-dim">
-              <div>2 policies · Next renewal: <span className="text-red">18 Apr</span></div>
+              <div>2 policies · Next renewal: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', color: '#D06060' }}>18 Apr</span></div>
               <div>Premium: $2,240/yr</div>
             </div>
           </div>
@@ -366,9 +601,7 @@ export default function ClientsPage() {
                 <div className="font-medium">James Ong</div>
                 <div className="text-sm text-cream-dim">Individual</div>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green/10 text-green">
-                Active
-              </span>
+              <span className="pill pill-ok">Active</span>
             </div>
             <div className="mt-3 text-sm text-cream-dim">
               <div>3 policies · Next renewal: 15 May</div>

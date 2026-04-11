@@ -230,9 +230,11 @@ export default function ConversationsPage() {
   return (
     <div style={{
       display: 'flex',
-      height: isMobile ? '100vh' : 'calc(100vh - 120px)',
+      height: isMobile ? '100vh' : 'calc(100vh - 48px)',
       flexDirection: isMobile ? 'column' : 'row',
       gap: isMobile ? '0' : '0',
+      margin: '-24px',
+      overflow: 'hidden',
     }}>
       {/* LEFT PANEL - 280px on desktop, hidden on mobile when chat is open */}
       {!isMobile && (

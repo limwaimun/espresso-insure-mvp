@@ -53,17 +53,15 @@ export default function DashboardHome() {
     }}>
       {/* SECTION 2: Six Metric Cards */}
       <div className="metric-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '16px',
         width: '100%',
+        marginBottom: '16px',
       }}>
         {metricCards.map((card) => (
           <div key={card.id} className="card" style={{
             backgroundColor: '#1C0F0A',
             border: '1px solid #2E1A0E',
             borderRadius: '8px',
-            padding: '16px',
+            padding: '20px',
             borderTop: `3px solid ${
               card.color === 'amber' ? '#C8813A' :
               card.color === 'danger' ? '#E53E3E' :
@@ -105,207 +103,200 @@ export default function DashboardHome() {
         ))}
       </div>
 
-      {/* SECTION 3: Two Panels Side by Side */}
-      <div style={{
-        display: 'flex',
-        gap: '24px',
+      {/* SECTION 3: Recent Conversations Panel (Full Width) */}
+      <div className="panel" style={{
         width: '100%',
+        marginBottom: '16px',
+        backgroundColor: '#1C0F0A',
+        border: '1px solid #2E1A0E',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {/* Left Panel - Recent Conversations (60%) */}
-        <div style={{ flex: '0 0 60%' }}>
-          <div className="panel" style={{
-            backgroundColor: '#1C0F0A',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            overflow: 'hidden',
+        <div className="panel-header" style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid #2E1A0E',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <h2 className="panel-title" style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '18px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
           }}>
-            <div className="panel-header" style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #2E1A0E',
+            Recent conversations
+          </h2>
+          <span style={{
+            fontSize: '12px',
+            color: '#C8813A',
+            cursor: 'pointer',
+            fontFamily: 'DM Sans, sans-serif',
+          }}>
+            View all →
+          </span>
+        </div>
+        <div className="panel-body" style={{ padding: 0 }}>
+          {conversations.map((conv) => (
+            <div key={conv.id} style={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
+              gap: '12px',
+              padding: '12px 20px',
+              borderBottom: '1px solid #2E1A0E',
             }}>
-              <h2 className="panel-title" style={{
-                fontFamily: 'Cormorant Garamond, serif',
-                fontSize: '18px',
-                fontWeight: 400,
-                color: '#F5ECD7',
-                margin: 0,
-              }}>
-                Recent conversations
-              </h2>
-              <span style={{
-                fontSize: '12px',
-                color: '#C8813A',
-                cursor: 'pointer',
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: conv.status === 'active' ? '#C8813A' : '#2E1A0E',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: conv.status === 'active' ? '#120A06' : '#C9B99A',
                 fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
               }}>
-                View all →
-              </span>
-            </div>
-            <div className="panel-body" style={{ padding: '0 20px' }}>
-              {conversations.map((conv) => (
-                <div key={conv.id} style={{
+                {conv.client.charAt(0)}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 0',
-                  borderBottom: '1px solid #2E1A0E',
+                  marginBottom: '4px',
                 }}>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: conv.status === 'active' ? '#C8813A' : '#2E1A0E',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: conv.status === 'active' ? '#120A06' : '#C9B99A',
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '14px',
                     fontWeight: 500,
+                    color: '#F5ECD7',
                   }}>
-                    {conv.client.charAt(0)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '4px',
-                    }}>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        color: '#F5ECD7',
-                      }}>
-                        {conv.client}
-                      </div>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        color: '#C9B99A',
-                      }}>
-                        {conv.time}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '12px',
-                      color: '#C9B99A',
-                    }}>
-                      {conv.message}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Panel - Alerts (40%) */}
-        <div style={{ flex: 1 }}>
-          <div className="panel" style={{
-            backgroundColor: '#1C0F0A',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            overflow: 'hidden',
-          }}>
-            <div className="panel-header" style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #2E1A0E',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <h2 className="panel-title" style={{
-                fontFamily: 'Cormorant Garamond, serif',
-                fontSize: '18px',
-                fontWeight: 400,
-                color: '#F5ECD7',
-                margin: 0,
-              }}>
-                Alerts
-              </h2>
-              <span style={{
-                fontSize: '12px',
-                color: '#C8813A',
-                cursor: 'pointer',
-                fontFamily: 'DM Sans, sans-serif',
-              }}>
-                View all →
-              </span>
-            </div>
-            <div className="panel-body" style={{ padding: '0 20px' }}>
-              {alerts.map((alert) => (
-                <div key={alert.id} style={{
-                  padding: '12px 0',
-                  borderBottom: '1px solid #2E1A0E',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px',
-                  }}>
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: alert.priority === 'high' ? '#E53E3E' : '#C8813A',
-                    }} />
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#F5ECD7',
-                    }}>
-                      {alert.title}
-                    </div>
+                    {conv.client}
                   </div>
                   <div style={{
                     fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     color: '#C9B99A',
-                    marginBottom: '4px',
                   }}>
-                    {alert.client} • {alert.policy}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontWeight: 500,
-                      backgroundColor: alert.priority === 'high' ? '#E53E3E20' : '#C8813A20',
-                      color: alert.priority === 'high' ? '#E53E3E' : '#C8813A',
-                    }}>
-                      {alert.priority} priority
-                    </span>
-                    <span style={{
-                      fontSize: '12px',
-                      color: '#C8813A',
-                      cursor: 'pointer',
-                      fontFamily: 'DM Sans, sans-serif',
-                    }}>
-                      Resolve →
-                    </span>
+                    {conv.time}
                   </div>
                 </div>
-              ))}
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '12px',
+                  color: '#C9B99A',
+                }}>
+                  {conv.message}
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* SECTION 4: Upcoming Renewals Table */}
+      {/* SECTION 4: Alerts Panel (Full Width) */}
+      <div className="panel" style={{
+        width: '100%',
+        marginBottom: '24px',
+        backgroundColor: '#1C0F0A',
+        border: '1px solid #2E1A0E',
+        borderRadius: '8px',
+        overflow: 'hidden',
+      }}>
+        <div className="panel-header" style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid #2E1A0E',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <h2 className="panel-title" style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '18px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>
+            Alerts
+          </h2>
+          <span style={{
+            fontSize: '12px',
+            color: '#C8813A',
+            cursor: 'pointer',
+            fontFamily: 'DM Sans, sans-serif',
+          }}>
+            View all →
+          </span>
+        </div>
+        <div className="panel-body" style={{ padding: '0 20px' }}>
+          {alerts.map((alert) => (
+            <div key={alert.id} style={{
+              padding: '12px 0',
+              borderBottom: '1px solid #2E1A0E',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '8px',
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: alert.priority === 'high' ? '#E53E3E' : '#C8813A',
+                }} />
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: '#F5ECD7',
+                }}>
+                  {alert.title}
+                </div>
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#C9B99A',
+                marginBottom: '4px',
+              }}>
+                {alert.client} • {alert.policy}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <span style={{
+                  fontSize: '11px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontWeight: 500,
+                  backgroundColor: alert.priority === 'high' ? '#E53E3E20' : '#C8813A20',
+                  color: alert.priority === 'high' ? '#E53E3E' : '#C8813A',
+                }}>
+                  {alert.priority} priority
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  color: '#C8813A',
+                  cursor: 'pointer',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  Resolve →
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION 5: Upcoming Renewals Table */}
       <div className="panel" style={{
         backgroundColor: '#1C0F0A',
         border: '1px solid #2E1A0E',
@@ -438,9 +429,19 @@ export default function DashboardHome() {
                     fontWeight: 500,
                     padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    color: renewal.status === 'urgent' ? '#E53E3E' : 
-                           renewal.status === 'due' ? '#C8813A' : '#C9B99A',
-                  }}>{renewal.status}</td>
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      backgroundColor: renewal.status === 'urgent' ? '#E53E3E20' : 
+                                     renewal.status === 'due' ? '#C8813A20' : '#38A16920',
+                      color: renewal.status === 'urgent' ? '#E53E3E' : 
+                             renewal.status === 'due' ? '#C8813A' : '#38A169',
+                    }}>
+                      {renewal.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -448,7 +449,7 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* SECTION 5: Three Analytics Preview Cards */}
+      {/* SECTION 6: Three Analytics Preview Cards */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -460,6 +461,11 @@ export default function DashboardHome() {
             border: '1px solid #2E1A0E',
             borderRadius: '8px',
             padding: '16px',
+            borderTop: `3px solid ${
+              item.color === 'amber' ? '#C8813A' :
+              item.color === 'ok' ? '#38A169' :
+              '#4299E1'
+            }`,
           }}>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
