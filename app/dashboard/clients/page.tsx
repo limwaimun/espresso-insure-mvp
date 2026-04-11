@@ -133,48 +133,36 @@ export default function ClientsPage() {
               tableLayout: 'fixed',
               borderCollapse: 'collapse',
             }}>
-              <thead className="bg-cream-dim/10" style={{ position: "sticky", top: 0, zIndex: 10, background: "#1C0F0A" }}>
+              <colgroup>
+ <col style={{ width: '180px' }} />
+ <col style={{ width: '80px' }} />
+ <col style={{ width: '70px' }} />
+ <col style={{ width: '90px' }} />
+ <col style={{ width: '100px' }} />
+ <col style={{ width: '130px' }} />
+ <col style={{ width: '50px' }} />
+</colgroup>
+              <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                 <tr>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', minWidth: '200px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     CLIENT
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '80px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     TYPE
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '80px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     POLICIES
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '120px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     RENEWAL
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '110px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     PREMIUM
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '130px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     STATUS
                   </th>
-                  <th
-                    className={`${dmSans.className} text-xs font-medium uppercase text-amber px-6 py-4`}
-                    style={{ textAlign: 'left', width: '60px' }}
-                  >
+                  <th style={{ fontFamily: "DM Sans, sans-serif", fontSize: "11px", fontWeight: 500, color: "#C8813A", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 12px", textAlign: "left", borderBottom: "1px solid #2E1A0E", whiteSpace: "nowrap" }}>
                     ACTIONS
                   </th>
                 </tr>
@@ -182,7 +170,7 @@ export default function ClientsPage() {
               <tbody className="divide-y divide-cream-dim/20">
                 {/* Row 1 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -200,13 +188,13 @@ export default function ClientsPage() {
                       TAK Technologies
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -215,13 +203,13 @@ export default function ClientsPage() {
                       13 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,140/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Claim open</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -235,7 +223,7 @@ export default function ClientsPage() {
 
                 {/* Row 2 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -253,13 +241,13 @@ export default function ClientsPage() {
                       Café Latte
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -268,13 +256,13 @@ export default function ClientsPage() {
                       New
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -288,7 +276,7 @@ export default function ClientsPage() {
 
                 {/* Row 3 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -306,13 +294,13 @@ export default function ClientsPage() {
                       SME
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -321,13 +309,13 @@ export default function ClientsPage() {
                       28 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$11,340/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -341,7 +329,7 @@ export default function ClientsPage() {
 
                 {/* Row 4 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -359,13 +347,13 @@ export default function ClientsPage() {
                       Individual
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -374,13 +362,13 @@ export default function ClientsPage() {
                       18 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,240/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -394,7 +382,7 @@ export default function ClientsPage() {
 
                 {/* Row 5 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -412,22 +400,22 @@ export default function ClientsPage() {
                       Individual
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>15 May</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,780/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -440,7 +428,7 @@ export default function ClientsPage() {
                 </tr>
                 {/* Row 6 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -458,13 +446,13 @@ export default function ClientsPage() {
                       Tech Solutions
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -473,13 +461,13 @@ export default function ClientsPage() {
                       20 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,500/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -493,7 +481,7 @@ export default function ClientsPage() {
 
                 {/* Row 7 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -511,13 +499,13 @@ export default function ClientsPage() {
                       Global Traders
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -526,13 +514,13 @@ export default function ClientsPage() {
                       25 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$3,800/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -546,7 +534,7 @@ export default function ClientsPage() {
 
                 {/* Row 8 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -564,13 +552,13 @@ export default function ClientsPage() {
                       Medical Group
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -579,13 +567,13 @@ export default function ClientsPage() {
                       30 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$5,200/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -599,7 +587,7 @@ export default function ClientsPage() {
 
                 {/* Row 9 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -617,13 +605,13 @@ export default function ClientsPage() {
                       Consulting Partners
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -632,13 +620,13 @@ export default function ClientsPage() {
                       5 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$4,100/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -652,7 +640,7 @@ export default function ClientsPage() {
 
                 {/* Row 10 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -670,13 +658,13 @@ export default function ClientsPage() {
                       Retail Chain
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>5</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -685,13 +673,13 @@ export default function ClientsPage() {
                       10 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,900/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Claim open</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -704,7 +692,7 @@ export default function ClientsPage() {
                 </tr>
                 {/* Row 11 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -722,13 +710,13 @@ export default function ClientsPage() {
                       Manufacturing Inc
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -737,13 +725,13 @@ export default function ClientsPage() {
                       15 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$8,300/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -757,7 +745,7 @@ export default function ClientsPage() {
 
                 {/* Row 12 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -775,13 +763,13 @@ export default function ClientsPage() {
                       Logistics Co
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -790,13 +778,13 @@ export default function ClientsPage() {
                       20 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$1,800/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -810,7 +798,7 @@ export default function ClientsPage() {
 
                 {/* Row 13 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -828,13 +816,13 @@ export default function ClientsPage() {
                       Finance Corp
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -843,13 +831,13 @@ export default function ClientsPage() {
                       25 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$9,500/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -863,7 +851,7 @@ export default function ClientsPage() {
 
                 {/* Row 14 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -881,13 +869,13 @@ export default function ClientsPage() {
                       Real Estate Ltd
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -896,13 +884,13 @@ export default function ClientsPage() {
                       30 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,200/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -916,7 +904,7 @@ export default function ClientsPage() {
 
                 {/* Row 15 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -934,13 +922,13 @@ export default function ClientsPage() {
                       Hospitality Group
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -949,13 +937,13 @@ export default function ClientsPage() {
                       New
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -968,7 +956,7 @@ export default function ClientsPage() {
                 </tr>
                 {/* Row 16 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -986,13 +974,13 @@ export default function ClientsPage() {
                       Education Center
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1001,13 +989,13 @@ export default function ClientsPage() {
                       20 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$2,500/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1021,7 +1009,7 @@ export default function ClientsPage() {
 
                 {/* Row 17 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1039,13 +1027,13 @@ export default function ClientsPage() {
                       Healthcare Pte
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1054,13 +1042,13 @@ export default function ClientsPage() {
                       25 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$3,800/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1074,7 +1062,7 @@ export default function ClientsPage() {
 
                 {/* Row 18 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1092,13 +1080,13 @@ export default function ClientsPage() {
                       Construction Ltd
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1107,13 +1095,13 @@ export default function ClientsPage() {
                       30 Apr
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$5,200/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1127,7 +1115,7 @@ export default function ClientsPage() {
 
                 {/* Row 19 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1145,13 +1133,13 @@ export default function ClientsPage() {
                       Food Services
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>4</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1160,13 +1148,13 @@ export default function ClientsPage() {
                       5 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$4,100/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1180,7 +1168,7 @@ export default function ClientsPage() {
 
                 {/* Row 20 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1198,13 +1186,13 @@ export default function ClientsPage() {
                       Transportation
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>5</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1213,13 +1201,13 @@ export default function ClientsPage() {
                       10 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$6,900/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Claim open</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1233,7 +1221,7 @@ export default function ClientsPage() {
 
                 {/* Row 21 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1251,13 +1239,13 @@ export default function ClientsPage() {
                       Energy Solutions
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Individual</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1266,13 +1254,13 @@ export default function ClientsPage() {
                       15 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$8,300/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1286,7 +1274,7 @@ export default function ClientsPage() {
 
                 {/* Row 22 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1304,13 +1292,13 @@ export default function ClientsPage() {
                       Media Group
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>1</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1319,13 +1307,13 @@ export default function ClientsPage() {
                       20 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$1,800/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-ok">Active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1339,7 +1327,7 @@ export default function ClientsPage() {
 
                 {/* Row 23 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1357,13 +1345,13 @@ export default function ClientsPage() {
                       Pharmaceuticals
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>2</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1372,13 +1360,13 @@ export default function ClientsPage() {
                       25 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$9,500/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-danger">Renewal urgent</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1392,7 +1380,7 @@ export default function ClientsPage() {
 
                 {/* Row 24 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1410,13 +1398,13 @@ export default function ClientsPage() {
                       Agriculture Co
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>Corporate</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>3</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1425,13 +1413,13 @@ export default function ClientsPage() {
                       30 May
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>$7,200/yr</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Gap detected</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
@@ -1445,7 +1433,7 @@ export default function ClientsPage() {
 
                 {/* Row 25 */}
                 <tr className="hover:bg-cream-dim/5" style={{ height: '56px' }}>
-                  <td className="px-6 py-4" style={{ textAlign: 'left' }}>
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '16px',
@@ -1463,13 +1451,13 @@ export default function ClientsPage() {
                       Telecom Ltd
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>SME</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       fontFamily: 'DM Mono, monospace',
                       fontSize: '12px',
@@ -1478,13 +1466,13 @@ export default function ClientsPage() {
                       New
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className={`${dmSans.className} text-sm text-cream-dim`}>—</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span className="pill pill-amber">Intake active</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{ fontFamily: "DM Sans, sans-serif", fontSize: "13px", color: "#C9B99A", padding: "10px 12px", verticalAlign: "middle", borderBottom: "1px solid #2E1A0E" }}>
                     <span style={{
                       color: '#C9B99A',
                       fontSize: '18px',
