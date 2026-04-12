@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
+    console.log('IMPORT REQUEST BODY:', JSON.stringify(await request.clone().json()).substring(0, 500));
+    
     console.log("Import API called");
     const body = await request.json();
     console.log("Request body received:", JSON.stringify(body, null, 2).substring(0, 1000));
