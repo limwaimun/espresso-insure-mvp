@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
  try {
  const { name, email, password, whatsapp } = await request.json();
 
- if (!email || !name || !password) {
- return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
+ if (!email || !name || !password || !whatsapp) {
+ return NextResponse.json({ error: "Name, email, password, and WhatsApp number are required" }, { status: 400 });
  }
  if (password.length < 8) {
  return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
