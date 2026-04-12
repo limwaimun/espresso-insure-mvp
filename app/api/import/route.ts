@@ -70,12 +70,18 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('POLICIES RECEIVED:', policies?.length);
+    console.log('FIRST POLICY:', JSON.stringify(policies?.[0]));
+
     // Build name-to-id map from inserted clients
     const clientIdMap = new Map();
     insertedClients.forEach((client) => {
       const key = client.name.toLowerCase().trim();
       clientIdMap.set(key, client.id);
     });
+    
+    console.log('CLIENT ID MAP SIZE:', clientIdMap.size);
+    console.log('CLIENT ID MAP KEYS:', Array.from(clientIdMap.keys()));
 
     // Prepare policies with client_id
     const policiesWithClientIds = policies.map((policy: any) => {
@@ -102,6 +108,9 @@ export async function POST(request: Request) {
         client_id: clientId,
       };
     });
+    
+    console.log('POLICY ROWS TO INSERT:', policiesWithClientIds?.length);
+    if (policiesWithClientIds?.length > 0) console.log('FIRST POLICY ROW:', JSON.stringify(policiesWithClientIds[0]));
 
     // Insert policies (non-fatal)
     let policiesImported = 0;
@@ -112,13 +121,13 @@ export async function POST(request: Request) {
         .select("id");
 
       if (policyError) {
-        console.error("Error inserting policies:", policyError);
+        console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
         // Continue — clients were already inserted
       } else {
         policiesImported = insertedPolicies.length;
       }
     } catch (policyError) {
-      console.error('Policy insert failed:', policyError);
+      console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
       // continue — clients were already inserted
     }
 
