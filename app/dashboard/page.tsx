@@ -4,12 +4,24 @@ export default async function DashboardHome() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
+  if (!user) {
+    // This shouldn't happen because layout redirects, but handle it
+    return <div>Please log in</div>;
+  }
+  
   // Fetch user profile for greeting
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name')
-    .eq('id', user?.id)
-    .single();
+  let profile: { name: string } | null = null;
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  } catch (error) {
+    // Profile might not exist yet
+    console.error('Profile fetch error:', error);
+  }
   
   // Calculate date 30 days from now for renewals
   const thirtyDaysFromNow = new Date();

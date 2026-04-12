@@ -15,11 +15,18 @@ export default async function DashboardLayout({
   }
   
   // Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, plan')
-    .eq('id', user.id)
-    .single();
+  let profile: { name: string; plan: string } | null = null;
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('name, plan')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  } catch (error) {
+    // Profile might not exist yet
+    console.error('Profile fetch error:', error);
+  }
 
   return (
     <div style={{
