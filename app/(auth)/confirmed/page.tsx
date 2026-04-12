@@ -77,7 +77,7 @@ export default function ConfirmedPage() {
             </div>
           </div>
           
-          <p style={{ textAlign: 'center', width: '100%', margin: '0 auto' }}>Maya will message you on WhatsApp within 5 minutes to help you get started.</p>
+          <p style={{ textAlign: 'center', width: '100%', margin: '24px auto 0 auto' }}>Maya will message you on WhatsApp within 5 minutes to help you get started.</p>
         </div>
 
         {/* Buttons */}
