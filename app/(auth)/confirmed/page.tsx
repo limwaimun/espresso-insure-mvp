@@ -65,7 +65,7 @@ export default function ConfirmedPage() {
               fontWeight: 500,
               marginBottom: '8px',
             }}>
-              Check your email
+              Account ready!
             </div>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
@@ -73,7 +73,7 @@ export default function ConfirmedPage() {
               color: '#C9B99A',
               lineHeight: 1.5,
             }}>
-              Welcome to Espresso! Check your email to confirm your account, then log in with your password.
+              Your account is ready! Log in with your email and password.
             </div>
           </div>
           
