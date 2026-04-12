@@ -93,17 +93,15 @@ export default function AlertsPage() {
   const getPriorityPillStyle = (priority: string) => {
     switch (priority) {
       case 'high':
-        return {
-          background: '#E53E3E',
-          color: '#120A06',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '11px',
-          fontWeight: 500,
-          padding: '4px 8px',
-          borderRadius: '100px',
-          textTransform: 'uppercase' as const,
-          letterSpacing: '0.05em',
-        };
+        return 'pill pill-danger';
+      case 'medium':
+        return 'pill pill-amber';
+      case 'info':
+        return 'pill pill-ok';
+      default:
+        return 'pill pill-ok';
+    }
+  };
       case 'medium':
         return {
           background: '#C8813A',
@@ -150,6 +148,7 @@ export default function AlertsPage() {
       case 'info': return 'info';
       default: return 'info';
     }
+  }
   };
 
   const getDotColor = (color: string) => {
@@ -196,12 +195,11 @@ export default function AlertsPage() {
         </button>
       </div>
 
-      {/* FILTER TABS */}
+            {/* FILTER TABS */}
       <div style={{
         display: 'flex',
         gap: '8px',
-        borderBottom: '1px solid #2E1A0E',
-        paddingBottom: '16px',
+        marginBottom: '24px',
       }}>
         {filters.map((filter) => (
           <button
@@ -211,9 +209,9 @@ export default function AlertsPage() {
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '13px',
               fontWeight: activeFilter === filter.toLowerCase() ? 500 : 400,
-              color: activeFilter === filter.toLowerCase() ? '#C8813A' : '#C9B99A',
-              background: 'transparent',
-              border: 'none',
+              color: activeFilter === filter.toLowerCase() ? '#120A06' : '#C8813A',
+              background: activeFilter === filter.toLowerCase() ? '#C8813A' : 'transparent',
+              border: '1px solid #2E1A0E',
               padding: '8px 16px',
               borderRadius: '100px',
               cursor: 'pointer',
@@ -235,7 +233,7 @@ export default function AlertsPage() {
           <div 
             key={alert.id}
             style={{
-              padding: '16px',
+              padding: '16px 0',
               borderBottom: '1px solid #2E1A0E',
               display: 'flex',
               alignItems: 'flex-start',
@@ -295,9 +293,9 @@ export default function AlertsPage() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <div style={getPriorityPillStyle(alert.priority)}>
+                <span className={getPriorityPillStyle(alert.priority)}>
                   {getPriorityLabel(alert.priority)}
-                </div>
+                </span>
                 <button style={{
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: '13px',
