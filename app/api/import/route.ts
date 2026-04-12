@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     // Read body ONCE
     const body = await request.json();
     console.log('IMPORT BODY KEYS:', Object.keys(body));
+    console.log('DEBUG POLICIES:', JSON.stringify({ policiesLength: body.policies?.length, firstPolicy: body.policies?.[0], policiesType: typeof body.policies }));
     console.log('userId:', body.userId);
     console.log('clients count:', body.clients?.length);
     console.log('policies count:', body.policies?.length);
@@ -22,7 +23,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No client data' }, { status: 400 });
     }
     
-    console.log(`Processing ${clients.length} clients and ${policies.length} policies for user ${userId}`);
+    if (!policies || policies.length === 0) {
+      console.log('SKIPPING POLICIES: empty or missing');
+      // Continue with client import only
+    }
+    
+    console.log(`Processing ${clients.length} clients and ${policies?.length || 0} policies for user ${userId}`);
 
     // Create admin client with service role key
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
