@@ -107,10 +107,12 @@ export async function POST(request: Request) {
       }
 
       return {
+        ifa_id: userId,
         insurer: policy.insurer,
         type: policy.type,
         premium: policy.premium,
         renewal_date: policy.renewal_date,
+        status: 'active',
         client_id: clientId,
       };
     });
@@ -128,14 +130,14 @@ export async function POST(request: Request) {
         .select("id");
 
       if (policyError) {
-        policyInsertError = String(policyError);
+        policyInsertError = JSON.stringify(policyError);
         console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
         // Continue — clients were already inserted
       } else {
         policiesImported = insertedPolicies.length;
       }
     } catch (policyError) {
-      policyInsertError = String(policyError);
+      policyInsertError = JSON.stringify(policyError);
       console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
       // continue — clients were already inserted
     }
