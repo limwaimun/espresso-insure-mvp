@@ -76,6 +76,18 @@ export default function ConfirmedPage() {
               Welcome to Espresso! Check your email to confirm your account, then log in with your password.
             </div>
           </div>
+          
+          <p style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            color: '#C9B99A',
+            lineHeight: 1.6,
+            maxWidth: '320px',
+            marginTop: '24px',
+            textAlign: 'center',
+          }}>
+            Maya will message you on WhatsApp within 5 minutes to help you get started.
+          </p>
         </div>
 
         {/* Buttons */}
