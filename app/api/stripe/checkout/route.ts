@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         plan,
       },
       subscription_data: {
+        trial_period_days: 14,
         metadata: {
           customer_name: name,
           customer_email: email,
