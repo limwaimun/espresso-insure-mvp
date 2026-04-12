@@ -1,14 +1,20 @@
 'use client';
 
 import React from 'react';
+<div style={{
+      maxWidth: '640px',
+    }}>
 
 export default function SettingsPage() {
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '32px',
+      maxWidth: '640px',
     }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '32px',
+      }}>
       {/* Page Header */}
       <div>
         <h1 style={{
@@ -324,6 +330,8 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+      </div>
     </div>
   );
 }
+    </div>
