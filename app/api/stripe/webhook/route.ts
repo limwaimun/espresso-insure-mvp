@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
+  apiVersion: '2026-03-25.dahlia',
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const supabase = createClient()
+        const supabase = await createClient()
 
         // Create or update user in Supabase
         const { error: userError } = await supabase
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { error } = await supabase
           .from('users')
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
-        const supabase = createClient()
+        const supabase = await createClient()
 
         const { error } = await supabase
           .from('users')
