@@ -1,31 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { checkTrialStatus } from '@/lib/trial-status'
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { checkIFAStatus } from "@/lib/trial-status";
 
-export async function GET(request: NextRequest) {
-  try {
-    const { status, daysLeft, trialEndsAt, subscriptionStatus } = await checkTrialStatus()
-    
-    return NextResponse.json({
-      status,
-      daysLeft,
-      trialEndsAt,
-      subscriptionStatus,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    console.error('Trial status check error:', error)
-    
-    // If user is not authenticated, return 401
-    if (error instanceof Error && error.message === 'No user authenticated') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to check trial status' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+ try {
+ const supabase = await createClient();
+ const { data: { user } } = await supabase.auth.getUser();
+ if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+ const result = await checkIFAStatus(user.id);
+ return NextResponse.json(result);
+ } catch (error: any) {
+ return NextResponse.json({ error: "Failed to check trial status" }, { status: 500 });
+ }
 }

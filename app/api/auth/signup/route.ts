@@ -53,12 +53,12 @@ export async function POST(request: NextRequest) {
     const { error: profileError } = await supabase
       .from('users')
       .insert({
+        id: authData.user?.id,
         email,
         name,
-        whatsapp,
-        subscription_status: 'trial',
-        plan: 'trial',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+        phone: whatsapp || null,
+        plan: 'solo',
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
       })
 
     if (profileError) {
