@@ -20,12 +20,7 @@ const DashboardSidebar = () => {
     { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
   ];
 
-  const sectionLabels = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'clients', label: 'Clients' },
-    { id: 'performance', label: 'Performance' },
-    { id: 'account', label: 'Account' },
-  ];
+
 
   return (
     <div style={{
@@ -57,25 +52,7 @@ const DashboardSidebar = () => {
         padding: '16px 0',
         overflowY: 'auto',
       }}>
-        {/* Section Labels */}
-        <div style={{
-          padding: '0 24px 8px 24px',
-        }}>
-          {sectionLabels.map((section) => (
-            <div key={section.id} style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '10px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#C8813A',
-              opacity: 0.6,
-              marginBottom: '8px',
-            }}>
-              {section.label}
-            </div>
-          ))}
-        </div>
+
 
         {/* Navigation Items */}
         <div style={{
