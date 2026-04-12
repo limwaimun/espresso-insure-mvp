@@ -65,9 +65,6 @@ export default async function ImportPage() {
               padding: '48px 32px',
               cursor: 'pointer',
               transition: 'border-color 0.2s',
-              ':hover': {
-                borderColor: '#C8813A',
-              },
             }}>
               <div style={{
                 fontSize: '48px',
