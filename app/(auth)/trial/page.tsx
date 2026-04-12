@@ -8,20 +8,13 @@ export default function TrialPage() {
     name: '',
     email: '',
     whatsapp: '',
-    country: 'Singapore',
-    plan: 'solo'
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setError(null);
-  };
-
-  const handlePlanSelect = (plan: string) => {
-    setFormData(prev => ({ ...prev, plan }));
     setError(null);
   };
 
@@ -31,42 +24,32 @@ export default function TrialPage() {
     setError(null);
     
     try {
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan: formData.plan,
-          email: formData.email,
           name: formData.name,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
         }),
       });
       
       const data = await res.json();
       
       if (!res.ok) {
-        setError(data.error || 'Failed to start checkout');
+        setError(data.error || 'Failed to create account');
         setIsLoading(false);
         return;
       }
       
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError('No checkout URL returned');
-        setIsLoading(false);
-      }
+      // Redirect to confirmed page on success
+      window.location.href = '/confirmed';
     } catch (error) {
-      console.error('Checkout error:', error);
-      setError('Unable to start checkout. Please try again.');
+      console.error('Signup error:', error);
+      setError('Unable to create account. Please try again.');
       setIsLoading(false);
     }
   };
-
-  const plans = [
-    { id: 'solo', name: 'Solo', price: 'SGD $29/month', clients: 'Up to 100 clients', popular: true },
-    { id: 'pro', name: 'Pro', price: 'SGD $79/month', clients: 'Unlimited clients' },
-    { id: 'team', name: 'Team', price: 'SGD $199/month', clients: '5 advisors, unlimited clients' }
-  ];
 
   return (
     <>
@@ -129,7 +112,7 @@ export default function TrialPage() {
             maxWidth: '380px',
             margin: '0 auto',
           }}>
-            Set up in 5 minutes. Maya will message you on WhatsApp within minutes of signing up.
+            No credit card required. Get 14 days free to try Espresso with your clients.
           </p>
         </div>
 
@@ -233,163 +216,6 @@ export default function TrialPage() {
             </p>
           </div>
 
-          {/* Country */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              Country
-            </label>
-            <select
-              name="country"
-              value={formData.country}
-              onChange={handleChange}
-              className="input"
-              required
-              disabled={isLoading}
-            >
-              <option value="Singapore">Singapore</option>
-              <option value="Malaysia">Malaysia</option>
-              <option value="Philippines">Philippines</option>
-              <option value="Indonesia">Indonesia</option>
-              <option value="Thailand">Thailand</option>
-              <option value="Vietnam">Vietnam</option>
-            </select>
-          </div>
-
-          {/* Plan Selector */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '12px',
-            }}>
-              Choose your plan
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '12px',
-              paddingTop: '16px',
-            }}>
-              {plans.map((plan) => (
-                <div
-                  key={plan.id}
-                  onClick={() => handlePlanSelect(plan.id)}
-                  style={{
-                    position: 'relative',
-                    background: '#3D2215',
-                    border: formData.plan === plan.id 
-                      ? '1px solid #C8813A' 
-                      : '1px solid #2E1A0E',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.2s',
-                  }}
-                >
-                  {/* Top accent line when selected */}
-                  {formData.plan === plan.id && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: '2px',
-                      background: '#C8813A',
-                      borderRadius: '12px 12px 0 0',
-                    }} />
-                  )}
-
-                  {/* Most popular badge */}
-                  {plan.popular && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-12px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      background: '#C8813A',
-                      color: '#120A06',
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      padding: '2px 10px',
-                      borderRadius: '100px',
-                      whiteSpace: 'nowrap',
-                      fontFamily: 'DM Sans, sans-serif',
-                    }}>
-                      Most popular
-                    </div>
-                  )}
-
-                  <div style={{
-                    fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: '18px',
-                    fontWeight: 400,
-                    color: '#F5ECD7',
-                    marginBottom: '4px',
-                    marginTop: plan.popular ? '8px' : '0',
-                  }}>
-                    {plan.name}
-                  </div>
-
-                  <div style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#C8813A',
-                    marginBottom: '8px',
-                  }}>
-                    {plan.price}
-                  </div>
-
-                  <div style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
-                    color: '#C9B99A',
-                  }}>
-                    {plan.clients}
-                  </div>
-
-                  {/* Selection indicator */}
-                  <div style={{
-                    marginTop: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%',
-                      border: formData.plan === plan.id 
-                        ? '2px solid #C8813A' 
-                        : '2px solid #2E1A0E',
-                      background: formData.plan === plan.id ? '#C8813A' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      {formData.plan === plan.id && (
-                        <div style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: '#120A06',
-                        }} />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* CTA Button */}
           <button
             type="submit"
@@ -399,7 +225,7 @@ export default function TrialPage() {
             }}
             disabled={isLoading}
           >
-            {isLoading ? 'Starting trial...' : 'Start my 14-day free trial →'}
+            {isLoading ? 'Creating account...' : 'Start My 14-Day Trial'}
           </button>
 
           {/* Terms */}
@@ -416,7 +242,7 @@ export default function TrialPage() {
               color: '#C9B99A',
               lineHeight: 1.5,
             }}>
-              14-day free trial. No credit card charged until your trial ends. Cancel anytime.
+              14-day free trial. No credit card required. Cancel anytime.
             </p>
             <p style={{
               fontFamily: 'DM Sans, sans-serif',
