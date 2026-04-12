@@ -9,18 +9,25 @@ export async function POST(request: Request) {
     
     console.log("Import API called");
     const body = await request.json();
-    console.log("Request body received:", JSON.stringify(body, null, 2).substring(0, 1000));
+    console.log('IMPORT KEYS:', Object.keys(body), 'userId:', body.userId, 'clients:', body.clients?.length, 'policies:', body.policies?.length);
     
     const { clients, policies, userId } = body;
 
-    if (!clients || !policies || !userId) {
+    if (!userId) {
+      console.error("Missing userId: Not authenticated");
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 400 }
+      );
+    }
+
+    if (!clients || !policies) {
       console.error("Missing required data:", { 
         hasClients: !!clients, 
-        hasPolicies: !!policies, 
-        hasUserId: !!userId 
+        hasPolicies: !!policies
       });
       return NextResponse.json(
-        { error: "Missing required data (clients, policies, or userId)" },
+        { error: "Missing required data (clients or policies)" },
         { status: 400 }
       );
     }
