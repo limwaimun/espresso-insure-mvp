@@ -120,6 +120,7 @@ export async function POST(request: Request) {
 
     // Insert policies (non-fatal)
     let policiesImported = 0;
+    let policyInsertError = null;
     try {
       const { data: insertedPolicies, error: policyError } = await supabaseAdmin
         .from("policies")
@@ -127,12 +128,14 @@ export async function POST(request: Request) {
         .select("id");
 
       if (policyError) {
+        policyInsertError = String(policyError);
         console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
         // Continue — clients were already inserted
       } else {
         policiesImported = insertedPolicies.length;
       }
     } catch (policyError) {
+      policyInsertError = String(policyError);
       console.error('POLICY INSERT ERROR:', JSON.stringify(policyError));
       // continue — clients were already inserted
     }
@@ -141,6 +144,15 @@ export async function POST(request: Request) {
       success: true,
       clientsImported: insertedClients.length,
       policiesImported,
+      debug: {
+        policiesReceived: policies?.length || 0,
+        policiesType: typeof policies,
+        firstPolicy: policies?.[0] || null,
+        clientIdMapSize: clientIdMap?.size || 0,
+        policyRowsBuilt: policiesWithClientIds?.length || 0,
+        firstPolicyRow: policiesWithClientIds?.[0] || null,
+        policyError: policyInsertError,
+      },
       message: `Successfully imported ${insertedClients.length} clients and ${policiesImported} policies`,
     });
   } catch (error: any) {
