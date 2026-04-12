@@ -5,7 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/app/(auth)/login/actions';
 
-const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+  profile?: {
+    name: string;
+    plan: string;
+  };
+}
+
+const DashboardSidebar = ({ profile }: DashboardSidebarProps) => {
   const pathname = usePathname();
   
   const navItems = [
@@ -146,7 +153,7 @@ const DashboardSidebar = () => {
               color: '#F5ECD7',
               marginBottom: '2px',
             }}>
-              David Tan
+              {profile?.name || 'User'}
             </div>
             <div style={{
               display: 'flex',
@@ -161,7 +168,7 @@ const DashboardSidebar = () => {
                 padding: '2px 8px',
                 borderRadius: '100px',
               }}>
-                Pro
+                {profile?.plan === 'solo' ? 'Solo' : profile?.plan === 'pro' ? 'Pro' : profile?.plan === 'team' ? 'Team' : 'Trial'}
               </span>
               <span style={{
                 fontFamily: 'DM Sans, sans-serif',

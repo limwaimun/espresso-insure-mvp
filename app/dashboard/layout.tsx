@@ -1,9 +1,26 @@
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardTopbar from '@/components/DashboardTopbar';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    redirect('/login');
+  }
+  
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, plan')
+    .eq('id', user.id)
+    .single();
+
   return (
     <div style={{
       display: 'flex',
@@ -22,7 +39,7 @@ export default function DashboardLayout({
         zIndex: 200,
         overflowY: 'auto',
       }}>
-        <DashboardSidebar />
+        <DashboardSidebar profile={profile} />
       </aside>
 
       {/* Main content — starts exactly where sidebar ends */}
