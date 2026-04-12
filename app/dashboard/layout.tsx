@@ -27,6 +27,14 @@ export default async function DashboardLayout({
     // Profile might not exist yet
     console.error('Profile fetch error:', error);
   }
+  
+  // Fetch real counts for sidebar badges
+  const [conversationsCount, alertsCount, renewalsCount, claimsCount] = await Promise.all([
+    supabase.from('conversations').select('*', { count: 'exact', head: true }),
+    supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('resolved', false),
+    supabase.from('policies').select('*', { count: 'exact', head: true }),
+    supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('type', 'claim'),
+  ]);
 
   return (
     <div style={{
@@ -46,7 +54,15 @@ export default async function DashboardLayout({
         zIndex: 200,
         overflowY: 'auto',
       }}>
-        <DashboardSidebar profile={profile || undefined} />
+        <DashboardSidebar 
+          profile={profile || undefined} 
+          counts={{
+            conversations: conversationsCount.count || 0,
+            alerts: alertsCount.count || 0,
+            renewals: renewalsCount.count || 0,
+            claims: claimsCount.count || 0,
+          }}
+        />
       </aside>
 
       {/* Main content — starts exactly where sidebar ends */}

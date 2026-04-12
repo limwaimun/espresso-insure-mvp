@@ -32,26 +32,14 @@ const DashboardTopbar = () => {
           </button>
         )}
         
-        {isMobile ? (
-          <div style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '18px',
-            fontWeight: 400,
-            color: '#F5ECD7',
-          }}>
-            espresso<span style={{ color: '#C8813A' }}>.</span>
-          </div>
-        ) : (
-          <h1 style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '20px',
-            fontWeight: 400,
-            color: '#F5ECD7',
-            margin: 0,
-          }}>
-            Good morning, David
-          </h1>
-        )}
+        <div style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+        }}>
+          espresso<span style={{ color: '#C8813A' }}>.</span>
+        </div>
       </div>
 
       {/* Right side - Actions and status */}
@@ -74,47 +62,12 @@ const DashboardTopbar = () => {
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              background: '#38A169',
+              background: '#C8813A',
               animation: 'pulse 2s infinite',
             }} />
-            <span>Maya active</span>
+            <span>Maya setting up</span>
           </div>
         )}
-
-        {/* Secondary button - hidden on mobile */}
-        {!isMobile && (
-          <button style={{
-            background: 'transparent',
-            border: '1px solid #2E1A0E',
-            color: '#C9B99A',
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            fontWeight: 400,
-            padding: '8px 16px',
-            borderRadius: '100px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}>
-            + Client
-          </button>
-        )}
-
-        {/* Primary button - smaller on mobile */}
-        <button style={{
-          background: '#C8813A',
-          color: '#120A06',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: isMobile ? '12px' : '13px',
-          fontWeight: 500,
-          padding: isMobile ? '6px 12px' : '8px 20px',
-          borderRadius: '100px',
-          border: 'none',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          whiteSpace: 'nowrap',
-        }}>
-          {isMobile ? 'Chat' : 'View conversations'}
-        </button>
         
         {/* Notification bell on mobile */}
         {isMobile && (

@@ -10,18 +10,24 @@ interface DashboardSidebarProps {
     name: string;
     plan: string;
   };
+  counts?: {
+    conversations: number;
+    alerts: number;
+    renewals: number;
+    claims: number;
+  };
 }
 
-const DashboardSidebar = ({ profile }: DashboardSidebarProps) => {
+const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
   const pathname = usePathname();
   
   const navItems = [
     { id: 'home', label: 'Home', icon: '🏠', active: pathname === '/dashboard', badge: null },
-    { id: 'conversations', label: 'Conversations', icon: '💬', active: pathname?.includes('conversations'), badge: '3' },
-    { id: 'alerts', label: 'Alerts', icon: '🔔', active: pathname?.includes('alerts'), badge: '2', badgeUrgent: true },
+    { id: 'conversations', label: 'Conversations', icon: '💬', active: pathname?.includes('conversations'), badge: counts?.conversations || 0 },
+    { id: 'alerts', label: 'Alerts', icon: '🔔', active: pathname?.includes('alerts'), badge: counts?.alerts || 0, badgeUrgent: (counts?.alerts || 0) > 0 },
     { id: 'clients', label: 'All clients', icon: '👥', active: pathname?.includes('clients'), badge: null },
-    { id: 'renewals', label: 'Renewals', icon: '📅', active: pathname?.includes('renewals'), badge: '8' },
-    { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: '1', badgeUrgent: true },
+    { id: 'renewals', label: 'Renewals', icon: '📅', active: pathname?.includes('renewals'), badge: counts?.renewals || 0 },
+    { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: counts?.claims || 0, badgeUrgent: (counts?.claims || 0) > 0 },
     { id: 'analytics', label: 'Analytics', icon: '📊', active: pathname?.includes('analytics'), badge: null },
     { id: 'reports', label: 'Reports', icon: '📈', active: pathname?.includes('reports'), badge: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
@@ -97,7 +103,7 @@ const DashboardSidebar = ({ profile }: DashboardSidebarProps) => {
               <span style={{ flex: 1 }}>
                 {item.label}
               </span>
-              {item.badge && (
+              {item.badge && item.badge > 0 && (
                 <span style={{
                   background: item.badgeUrgent ? '#E53E3E' : '#C8813A',
                   color: item.badgeUrgent ? '#FFFFFF' : '#120A06',
@@ -142,7 +148,7 @@ const DashboardSidebar = ({ profile }: DashboardSidebarProps) => {
             fontSize: '16px',
             fontWeight: 600,
           }}>
-            DT
+            {profile?.name ? getInitials(profile.name) : 'U'}
           </div>
           
           <div style={{ flex: 1 }}>
@@ -220,5 +226,14 @@ const DashboardSidebar = ({ profile }: DashboardSidebarProps) => {
     </div>
   );
 };
+
+// Helper function to get initials from name
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
 export default DashboardSidebar;

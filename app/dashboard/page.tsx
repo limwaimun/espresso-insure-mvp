@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
 export default async function DashboardHome() {
   const supabase = await createClient();
@@ -23,9 +24,170 @@ export default async function DashboardHome() {
     console.error('Profile fetch error:', error);
   }
   
+  // Check if user has any clients
+  const { count: clientCount } = await supabase
+    .from('clients')
+    .select('*', { count: 'exact', head: true });
+  
+  // If no clients, show onboarding screen
+  if (clientCount === 0) {
+    return (
+      <div style={{ width: '100%' }}>
+        {/* Greeting */}
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '32px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: '0 0 8px 0',
+          }}>
+            Welcome to Espresso, {profile?.name || 'User'}!
+          </h1>
+          <p style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '16px',
+            color: '#C9B99A',
+            lineHeight: 1.5,
+          }}>
+            Import your client list so Maya can start helping you manage renewals, conversations, and alerts.
+          </p>
+        </div>
+        
+        {/* Onboarding Card */}
+        <div className="panel" style={{
+          maxWidth: '640px',
+          margin: '0 auto',
+          textAlign: 'center',
+        }}>
+          <div className="panel-body" style={{ padding: '40px' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '24px',
+            }}>
+              {/* Primary button */}
+              <Link href="/dashboard/import" style={{ textDecoration: 'none', width: '100%' }}>
+                <button className="btn-primary" style={{
+                  fontSize: '16px',
+                  padding: '16px 32px',
+                  width: '100%',
+                  maxWidth: '400px',
+                }}>
+                  Import clients from Excel / CSV
+                </button>
+              </Link>
+              
+              {/* Secondary link */}
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#C9B99A',
+              }}>
+                or{' '}
+                <Link href="/dashboard/clients/new" style={{
+                  color: '#C8813A',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                }}>
+                  Add a client manually
+                </Link>
+              </div>
+              
+              {/* Divider */}
+              <div style={{
+                width: '100%',
+                height: '1px',
+                background: '#2E1A0E',
+                margin: '24px 0',
+              }} />
+              
+              {/* Bullet points */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                textAlign: 'left',
+                width: '100%',
+                maxWidth: '400px',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}>
+                  <div style={{
+                    color: '#38A169',
+                    fontSize: '18px',
+                    flexShrink: 0,
+                  }}>
+                    ✓
+                  </div>
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '14px',
+                    color: '#C9B99A',
+                    lineHeight: 1.5,
+                  }}>
+                    Your dashboard populates with real data
+                  </div>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}>
+                  <div style={{
+                    color: '#38A169',
+                    fontSize: '18px',
+                    flexShrink: 0,
+                  }}>
+                    ✓
+                  </div>
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '14px',
+                    color: '#C9B99A',
+                    lineHeight: 1.5,
+                  }}>
+                    Maya tracks renewals and sends you alerts
+                  </div>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                }}>
+                  <div style={{
+                    color: '#38A169',
+                    fontSize: '18px',
+                    flexShrink: 0,
+                  }}>
+                    ✓
+                  </div>
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '14px',
+                    color: '#C9B99A',
+                    lineHeight: 1.5,
+                  }}>
+                    Clients can reach you via WhatsApp through Maya
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // If user has clients, show normal dashboard
   // Note: Real queries commented out until tables exist in Supabase
   // For now, show zeros and empty states
-  const clientCount = 0;
   const policyCount = 0;
   const conversationCount = 0;
   const renewalCount = 0;
@@ -49,91 +211,71 @@ export default async function DashboardHome() {
   const formattedConversations = recentConversations?.map((conv: any) => ({
     id: conv.id,
     client: conv.clients?.name || 'Client',
-    time: conv.last_message_at ? formatTimeAgo(conv.last_message_at) : 'No messages',
     message: conv.last_message || 'No message',
-    status: conv.status,
+    time: conv.last_message_at ? formatTimeAgo(conv.last_message_at) : 'No time',
+    status: conv.status || 'unknown',
   })) || [];
   
   // Format alerts for display
   const formattedAlerts = alerts?.map((alert: any) => ({
     id: alert.id,
-    type: alert.type,
-    title: alert.title,
-    client: alert.client_name || 'Client',
-    policy: alert.policy_name || 'Policy',
-    priority: alert.priority,
+    title: alert.title || 'Alert',
+    client: alert.clients?.name || 'Client',
+    time: alert.created_at ? formatTimeAgo(alert.created_at) : 'No time',
+    priority: alert.priority || 'low',
   })) || [];
 
   return (
-    <>
-      {/* SECTION 1: Welcome & Date */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '32px',
-      }}>
-        <div>
-          <h1 style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '32px',
-            fontWeight: 400,
-            color: '#F5ECD7',
-            margin: '0 0 8px 0',
-          }}>
-            Good morning, {profile?.name || 'User'}
-          </h1>
-          <p style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            color: '#C9B99A',
-            margin: 0,
-          }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
+    <div style={{ width: '100%' }}>
+      {/* Greeting */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: '32px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+          margin: '0 0 8px 0',
+        }}>
+          Good morning, {profile?.name || 'User'}
+        </h1>
+        <p style={{
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: '16px',
+          color: '#C9B99A',
+          lineHeight: 1.5,
+        }}>
+          Here's what's happening with your clients today.
+        </p>
       </div>
 
-      {/* SECTION 2: Metric Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: '16px',
-        marginBottom: '32px',
-      }}>
+      {/* Metric Grid */}
+      <div className="metric-grid" style={{ marginBottom: '32px' }}>
         {metricCards.map((card) => (
-          <div key={card.id} style={{
-            background: '#120A06',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-          }}>
+          <div key={card.id} className={`card card-${card.color}`}>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '11px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
+              color: '#C9B99A',
               textTransform: 'uppercase',
-              color: '#C8813A',
+              letterSpacing: '0.06em',
               marginBottom: '8px',
             }}>
               {card.title}
             </div>
             <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '28px',
-              fontWeight: 600,
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: '34px',
+              fontWeight: 300,
               color: '#F5ECD7',
-              marginBottom: '8px',
+              lineHeight: 1.1,
+              marginBottom: '6px',
             }}>
               {card.value}
             </div>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
-              color: '#C9B99A',
+              color: card.color === 'danger' ? '#E53E3E' : '#5AB87A',
             }}>
               {card.change}
             </div>
@@ -141,59 +283,34 @@ export default async function DashboardHome() {
         ))}
       </div>
 
-      {/* SECTION 3: Conversations & Alerts */}
+      {/* Two Column Layout */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: '24px',
       }}>
-        {/* Left Panel: Recent Conversations */}
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}>
-            <h2 style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#F5ECD7',
-              margin: 0,
-            }}>
-              Recent conversations
-            </h2>
-            <a href="/dashboard/conversations" style={{
+        {/* Recent Conversations */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">Recent conversations</span>
+            <Link href="/dashboard/conversations" style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
               color: '#C8813A',
               textDecoration: 'none',
             }}>
               View all →
-            </a>
+            </Link>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}>
+          <div className="panel-body">
             {formattedConversations.length > 0 ? (
               formattedConversations.map((conv) => (
                 <div key={conv.id} style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  padding: '12px',
-                  background: 'rgba(28, 15, 10, 0.5)',
-                  borderRadius: '6px',
-                  border: '1px solid #2E1A0E',
+                  padding: '12px 0',
+                  borderBottom: '1px solid #2E1A0E',
                 }}>
                   <div style={{
                     width: '32px',
@@ -207,40 +324,39 @@ export default async function DashboardHome() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '14px',
                     fontWeight: 600,
+                    flexShrink: 0,
                   }}>
                     {conv.client.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '4px',
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#F5ECD7',
+                      marginBottom: '2px',
                     }}>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: '#F5ECD7',
-                      }}>
-                        {conv.client}
-                      </div>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        color: '#C9B99A',
-                      }}>
-                        {conv.time}
-                      </div>
+                      {conv.client}
                     </div>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '12px',
                       color: '#C9B99A',
                       lineHeight: 1.4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}>
                       {conv.message}
                     </div>
+                  </div>
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    color: '#C9B99A',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {conv.time}
                   </div>
                 </div>
               ))
@@ -258,84 +374,62 @@ export default async function DashboardHome() {
           </div>
         </div>
 
-        {/* Right Panel: Alerts */}
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}>
-            <h2 style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#F5ECD7',
-              margin: 0,
-            }}>
-              Alerts
-            </h2>
-            <a href="/dashboard/alerts" style={{
+        {/* Recent Alerts */}
+        <div className="panel">
+          <div className="panel-header">
+            <span className="panel-title">Recent alerts</span>
+            <Link href="/dashboard/alerts" style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
               color: '#C8813A',
               textDecoration: 'none',
             }}>
               View all →
-            </a>
+            </Link>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}>
+          <div className="panel-body">
             {formattedAlerts.length > 0 ? (
               formattedAlerts.map((alert) => (
                 <div key={alert.id} style={{
-                  padding: '12px',
-                  background: 'rgba(28, 15, 10, 0.5)',
-                  borderRadius: '6px',
-                  border: '1px solid #2E1A0E',
-                  borderLeft: `3px solid ${alert.priority === 'high' ? '#E53E3E' : alert.priority === 'medium' ? '#C8813A' : '#38A169'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 0',
+                  borderBottom: '1px solid #2E1A0E',
                 }}>
                   <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '8px',
-                  }}>
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: alert.priority === 'high' ? '#E53E3E' : 
+                               alert.priority === 'medium' ? '#C8813A' : '#38A169',
+                    flexShrink: 0,
+                  }} />
+                  <div style={{ flex: 1 }}>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: '13px',
                       fontWeight: 500,
                       color: '#F5ECD7',
+                      marginBottom: '2px',
                     }}>
                       {alert.title}
                     </div>
-                    <span style={{
-                      background: alert.priority === 'high' ? '#E53E3E' : alert.priority === 'medium' ? '#C8813A' : '#38A169',
-                      color: alert.priority === 'high' ? '#FFFFFF' : '#120A06',
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      padding: '2px 8px',
-                      borderRadius: '100px',
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '12px',
+                      color: '#C9B99A',
                     }}>
-                      {alert.priority}
-                    </span>
+                      {alert.client}
+                    </div>
                   </div>
                   <div style={{
                     fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     color: '#C9B99A',
-                    lineHeight: 1.4,
+                    whiteSpace: 'nowrap',
                   }}>
-                    {alert.client} • {alert.policy}
+                    {alert.time}
                   </div>
                 </div>
               ))
@@ -347,13 +441,13 @@ export default async function DashboardHome() {
                 fontSize: '13px',
                 color: '#C9B99A',
               }}>
-                No alerts
+                No alerts yet
               </div>
             )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -367,9 +461,9 @@ function formatTimeAgo(dateString: string): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
   if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
   
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
