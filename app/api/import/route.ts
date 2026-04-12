@@ -5,31 +5,21 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
-    console.log('IMPORT REQUEST BODY:', JSON.stringify(await request.clone().json()).substring(0, 500));
-    
-    console.log("Import API called");
+    // Read body ONCE
     const body = await request.json();
-    console.log('IMPORT KEYS:', Object.keys(body), 'userId:', body.userId, 'clients:', body.clients?.length, 'policies:', body.policies?.length);
-    
+    console.log('IMPORT BODY KEYS:', Object.keys(body));
+    console.log('userId:', body.userId);
+    console.log('clients count:', body.clients?.length);
+    console.log('policies count:', body.policies?.length);
+
     const { clients, policies, userId } = body;
 
     if (!userId) {
-      console.error("Missing userId: Not authenticated");
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 400 });
     }
-
-    if (!clients || !policies) {
-      console.error("Missing required data:", { 
-        hasClients: !!clients, 
-        hasPolicies: !!policies
-      });
-      return NextResponse.json(
-        { error: "Missing required data (clients or policies)" },
-        { status: 400 }
-      );
+    
+    if (!clients || clients.length === 0) {
+      return NextResponse.json({ error: 'No client data' }, { status: 400 });
     }
     
     console.log(`Processing ${clients.length} clients and ${policies.length} policies for user ${userId}`);
@@ -113,25 +103,30 @@ export async function POST(request: Request) {
       };
     });
 
-    // Insert policies
-    const { data: insertedPolicies, error: policyError } = await supabaseAdmin
-      .from("policies")
-      .insert(policiesWithClientIds)
-      .select("id");
+    // Insert policies (non-fatal)
+    let policiesImported = 0;
+    try {
+      const { data: insertedPolicies, error: policyError } = await supabaseAdmin
+        .from("policies")
+        .insert(policiesWithClientIds)
+        .select("id");
 
-    if (policyError) {
-      console.error("Error inserting policies:", policyError);
-      return NextResponse.json(
-        { error: `Failed to insert policies: ${policyError.message}` },
-        { status: 500 }
-      );
+      if (policyError) {
+        console.error("Error inserting policies:", policyError);
+        // Continue — clients were already inserted
+      } else {
+        policiesImported = insertedPolicies.length;
+      }
+    } catch (policyError) {
+      console.error('Policy insert failed:', policyError);
+      // continue — clients were already inserted
     }
 
     return NextResponse.json({
       success: true,
       clientsImported: insertedClients.length,
-      policiesImported: insertedPolicies.length,
-      message: `Successfully imported ${insertedClients.length} clients and ${insertedPolicies.length} policies`,
+      policiesImported,
+      message: `Successfully imported ${insertedClients.length} clients and ${policiesImported} policies`,
     });
   } catch (error: any) {
     console.error("Import error:", error);
