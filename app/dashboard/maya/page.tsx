@@ -1,22 +1,13 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
 
-import React, { useState } from 'react';
-
-export default function MayaPage() {
-  const [activeTab, setActiveTab] = useState('active');
+export default async function MayaPage() {
+  const supabase = await createClient();
   
-  const conversations = [
-    { id: 1, client: 'Maria Santos', time: '2 min ago', message: 'Looking for health insurance for family', status: 'active', unread: true },
-    { id: 2, client: 'Robert Chen', time: '15 min ago', message: 'Asked about car insurance renewal', status: 'completed', unread: false },
-    { id: 3, client: 'Sarah Lim', time: '1 hour ago', message: 'Inquired about travel insurance', status: 'active', unread: false },
-    { id: 4, client: 'James Wong', time: '2 hours ago', message: 'Follow-up on life insurance quote', status: 'pending', unread: true },
-    { id: 5, client: 'Lisa Tan', time: '1 day ago', message: 'Medical claim assistance needed', status: 'completed', unread: false },
-    { id: 6, client: 'Michael Lee', time: '2 days ago', message: 'Investment plan consultation', status: 'active', unread: false },
-  ];
-
-  const filteredConversations = activeTab === 'all' 
-    ? conversations 
-    : conversations.filter(conv => conv.status === activeTab);
+  // Fetch real conversations with client names
+  const { data: conversations } = await supabase
+    .from('conversations')
+    .select('*, clients(name)')
+    .order('last_message_at', { ascending: false });
 
   return (
     <div style={{
@@ -50,17 +41,22 @@ export default function MayaPage() {
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '16px',
       }}>
-        <div className="card">
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+        }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '11px',
             fontWeight: 500,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#C9B99A',
-            marginBottom: '8px',
+            color: '#C8813A',
+            marginBottom: '4px',
           }}>
-            ACTIVE CONVERSATIONS
+            Total
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -68,21 +64,26 @@ export default function MayaPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            3
+            {conversations?.length || 0}
           </div>
         </div>
         
-        <div className="card">
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+        }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '11px',
             fontWeight: 500,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#C9B99A',
-            marginBottom: '8px',
+            color: '#C8813A',
+            marginBottom: '4px',
           }}>
-            COMPLETED TODAY
+            Active
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -90,21 +91,26 @@ export default function MayaPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            18
+            {conversations?.filter(c => c.status === 'active').length || 0}
           </div>
         </div>
         
-        <div className="card">
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+        }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '11px',
             fontWeight: 500,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#C9B99A',
-            marginBottom: '8px',
+            color: '#C8813A',
+            marginBottom: '4px',
           }}>
-            AVG RESPONSE TIME
+            Completed
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -112,21 +118,26 @@ export default function MayaPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            2.4m
+            {conversations?.filter(c => c.status === 'completed').length || 0}
           </div>
         </div>
         
-        <div className="card">
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+        }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '11px',
             fontWeight: 500,
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#C9B99A',
-            marginBottom: '8px',
+            color: '#C8813A',
+            marginBottom: '4px',
           }}>
-            SATISFACTION RATE
+            Gaps identified
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -134,170 +145,233 @@ export default function MayaPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            98.2%
+            {conversations?.reduce((sum, c) => sum + (c.gaps_identified || 0), 0) || 0}
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Conversation List */}
       <div style={{
-        display: 'flex',
-        gap: '8px',
-        borderBottom: '1px solid #2E1A0E',
-        paddingBottom: '16px',
+        background: '#120A06',
+        border: '1px solid #2E1A0E',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {['active', 'pending', 'completed', 'all'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              background: activeTab === tab ? '#C8813A' : 'transparent',
-              color: activeTab === tab ? '#120A06' : '#C9B99A',
+        <div style={{
+          padding: '20px',
+          borderBottom: '1px solid #2E1A0E',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>
+            All conversations
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+          }}>
+            <button style={{
               fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              fontWeight: activeTab === tab ? 500 : 400,
-              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '6px 12px',
               borderRadius: '100px',
+              background: '#C8813A',
+              color: '#120A06',
               border: 'none',
               cursor: 'pointer',
-              textTransform: 'capitalize',
-              transition: 'all 0.2s',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Conversations List */}
-      <div className="panel">
-        <div className="panel-header">
-          <h2 className="panel-title">Recent Conversations</h2>
-          <button className="panel-action">Start new conversation</button>
-        </div>
-        <div className="panel-body">
-          {filteredConversations.map((conv) => (
-            <div key={conv.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '16px 0',
-              borderBottom: '1px solid #2E1A0E',
-              background: conv.unread ? 'rgba(200, 129, 58, 0.05)' : 'transparent',
             }}>
-              <div style={{
-                position: 'relative',
-              }}>
+              All
+            </button>
+            <button style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '6px 12px',
+              borderRadius: '100px',
+              background: 'transparent',
+              color: '#C9B99A',
+              border: '1px solid #2E1A0E',
+              cursor: 'pointer',
+            }}>
+              Active
+            </button>
+            <button style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '6px 12px',
+              borderRadius: '100px',
+              background: 'transparent',
+              color: '#C9B99A',
+              border: '1px solid #2E1A0E',
+              cursor: 'pointer',
+            }}>
+              Completed
+            </button>
+          </div>
+        </div>
+        
+        <div>
+          {conversations && conversations.length > 0 ? (
+            conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #2E1A0E',
+                  cursor: 'pointer',
+                }}
+              >
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  background: conv.status === 'active' ? '#C8813A' : 
-                            conv.status === 'pending' ? '#4299E1' : '#2E1A0E',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  color: conv.status === 'active' ? '#120A06' : '#C9B99A',
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '18px',
-                  fontWeight: 500,
-                }}>
-                  {conv.client.charAt(0)}
-                </div>
-                {conv.unread && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    background: '#C8813A',
-                    border: '2px solid #120A06',
-                  }} />
-                )}
-              </div>
-              
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px',
-                }}>
-                  <div style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '16px',
-                    fontWeight: 500,
-                    color: '#F5ECD7',
-                  }}>
-                    {conv.client}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}>
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '12px',
-                      color: '#C9B99A',
-                    }}>
-                      {conv.time}
-                    </div>
-                    <span className={`pill ${
-                      conv.status === 'active' ? 'pill-ok' :
-                      conv.status === 'pending' ? 'pill-info' : 'pill-amber'
-                    }`}>
-                      {conv.status}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  color: '#C9B99A',
-                  marginBottom: '12px',
-                }}>
-                  {conv.message}
-                </div>
-                
-                <div style={{
-                  display: 'flex',
                   gap: '12px',
                 }}>
-                  <button style={{
+                  {/* Avatar */}
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
                     background: '#C8813A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     color: '#120A06',
                     fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    padding: '6px 16px',
-                    borderRadius: '100px',
-                    border: 'none',
-                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    flexShrink: 0,
                   }}>
-                    Reply
-                  </button>
-                  <button style={{
-                    background: 'transparent',
-                    border: '1px solid #2E1A0E',
-                    color: '#C9B99A',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '12px',
-                    padding: '6px 16px',
-                    borderRadius: '100px',
-                    cursor: 'pointer',
-                  }}>
-                    View details
-                  </button>
+                    {conversation.clients?.name?.charAt(0) || 'C'}
+                  </div>
+                  
+                  {/* Content */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '4px',
+                    }}>
+                      <div style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#F5ECD7',
+                      }}>
+                        {conversation.clients?.name || 'Client'}
+                      </div>
+                      <div style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '11px',
+                        color: '#C9B99A',
+                      }}>
+                        {conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : 'No messages'}
+                      </div>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '12px',
+                        color: '#C9B99A',
+                        lineHeight: 1.4,
+                        maxWidth: '70%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {conversation.last_message || 'No message yet'}
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}>
+                        {conversation.gaps_identified && conversation.gaps_identified > 0 && (
+                          <span style={{
+                            background: '#E53E3E',
+                            color: '#FFFFFF',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            padding: '2px 6px',
+                            borderRadius: '100px',
+                          }}>
+                            {conversation.gaps_identified} gap{conversation.gaps_identified > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        
+                        <span style={{
+                          background: conversation.status === 'active' ? '#38A169' : '#C9B99A',
+                          color: conversation.status === 'active' ? '#120A06' : '#1C0F0A',
+                          fontSize: '10px',
+                          fontWeight: 500,
+                          padding: '2px 8px',
+                          borderRadius: '100px',
+                        }}>
+                          {conversation.status || 'unknown'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div style={{
+              padding: '60px 20px',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: '24px',
+                color: '#F5ECD7',
+                marginBottom: '16px',
+              }}>
+                No conversations yet
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#C9B99A',
+                lineHeight: 1.6,
+                maxWidth: '400px',
+                margin: '0 auto',
+              }}>
+                When clients message you on WhatsApp, conversations will appear here.
+              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+// Helper function to format time ago
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

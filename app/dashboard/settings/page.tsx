@@ -1,8 +1,16 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
 
-import React from 'react';
+export default async function SettingsPage() {
+  const supabase = await createClient();
+  
+  // Fetch user profile
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user?.id)
+    .single();
 
-export default function SettingsPage() {
   return (
     <div style={{
       display: 'flex',
@@ -47,8 +55,9 @@ export default function SettingsPage() {
             <input
               type="text"
               className="input"
-              defaultValue="Tan Ah Kow"
-              style={{ maxWidth: '300px' }}
+              defaultValue={profile?.name || ''}
+              readOnly
+              style={{ background: '#1C0F0A', color: '#C9B99A' }}
             />
           </div>
           
@@ -64,8 +73,9 @@ export default function SettingsPage() {
             <input
               type="email"
               className="input"
-              defaultValue="ahkow@taktech.com"
-              style={{ maxWidth: '300px' }}
+              defaultValue={user?.email || ''}
+              readOnly
+              style={{ background: '#1C0F0A', color: '#C9B99A' }}
             />
           </div>
           
@@ -76,19 +86,65 @@ export default function SettingsPage() {
               color: '#C9B99A',
               fontWeight: 500,
             }}>
-              Phone
+              WhatsApp number
             </label>
             <input
               type="tel"
               className="input"
-              defaultValue="+65 9123 4567"
-              style={{ maxWidth: '300px' }}
+              defaultValue={profile?.phone || ''}
+              readOnly
+              style={{ background: '#1C0F0A', color: '#C9B99A' }}
             />
           </div>
           
-          <button className="btn-secondary" style={{ alignSelf: 'flex-start' }}>
-            Save changes
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              fontWeight: 500,
+            }}>
+              Plan
+            </label>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#F5ECD7',
+                background: 'rgba(200, 129, 58, 0.2)',
+                border: '1px solid #C8813A',
+                padding: '6px 12px',
+                borderRadius: '6px',
+              }}>
+                {profile?.plan === 'solo' ? 'Solo' : 
+                 profile?.plan === 'pro' ? 'Pro' : 
+                 profile?.plan === 'team' ? 'Team' : 'Trial'}
+              </span>
+              <button className="btn-secondary" style={{
+                fontSize: '12px',
+                padding: '6px 12px',
+              }}>
+                Upgrade
+              </button>
+            </div>
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '8px',
+          }}>
+            <button className="btn-primary" style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+            }}>
+              Save changes
+            </button>
+          </div>
         </div>
       </div>
 
@@ -97,94 +153,80 @@ export default function SettingsPage() {
         <div className="panel-header">
           <h2 className="panel-title">Maya settings</h2>
         </div>
-        <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '14px',
                 color: '#F5ECD7',
                 fontWeight: 500,
+                marginBottom: '4px',
               }}>
-                Response style
+                Auto-reply to new WhatsApp messages
               </div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '12px',
                 color: '#C9B99A',
               }}>
-                Professional
+                Maya will greet new clients automatically
               </div>
             </div>
-            <select className="input" style={{ width: '150px' }}>
-              <option>Professional</option>
-              <option>Friendly</option>
-              <option>Concise</option>
-            </select>
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '14px',
                 color: '#F5ECD7',
                 fontWeight: 500,
+                marginBottom: '4px',
               }}>
-                Auto-brief
+                Coverage gap detection
               </div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '12px',
                 color: '#C9B99A',
               }}>
-                On
+                Maya will flag missing coverage during conversations
               </div>
             </div>
-            <div style={{
-              width: '40px',
-              height: '20px',
-              background: '#C8813A',
-              borderRadius: '10px',
-              position: 'relative',
-              cursor: 'pointer',
-            }}>
-              <div style={{
-                position: 'absolute',
-                right: '2px',
-                top: '2px',
-                width: '16px',
-                height: '16px',
-                background: '#120A06',
-                borderRadius: '50%',
-              }} />
-            </div>
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '14px',
                 color: '#F5ECD7',
                 fontWeight: 500,
+                marginBottom: '4px',
               }}>
-                Pause hours
+                Renewal reminders
               </div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: '12px',
                 color: '#C9B99A',
               }}>
-                10pm-8am
+                Maya will send reminders 30 days before renewal
               </div>
             </div>
-            <input
-              type="text"
-              className="input"
-              defaultValue="10pm-8am"
-              style={{ width: '150px' }}
-            />
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
           </div>
         </div>
       </div>
@@ -195,50 +237,80 @@ export default function SettingsPage() {
           <h2 className="panel-title">Notifications</h2>
         </div>
         <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {[
-            { label: 'Renewal alerts', description: 'On', enabled: true },
-            { label: 'Claim updates', description: 'On', enabled: true },
-            { label: 'Coverage gaps', description: 'On', enabled: true },
-          ].map((item, index) => (
-            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  color: '#F5ECD7',
-                  fontWeight: 500,
-                }}>
-                  {item.label}
-                </div>
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '12px',
-                  color: '#C9B99A',
-                }}>
-                  {item.description}
-                </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#F5ECD7',
+                fontWeight: 500,
+                marginBottom: '4px',
+              }}>
+                Email notifications
               </div>
               <div style={{
-                width: '40px',
-                height: '20px',
-                background: item.enabled ? '#C8813A' : '#2E1A0E',
-                borderRadius: '10px',
-                position: 'relative',
-                cursor: 'pointer',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#C9B99A',
               }}>
-                <div style={{
-                  position: 'absolute',
-                  right: item.enabled ? '2px' : '22px',
-                  top: '2px',
-                  width: '16px',
-                  height: '16px',
-                  background: '#120A06',
-                  borderRadius: '50%',
-                  transition: 'right 0.2s',
-                }} />
+                Receive alerts and summaries via email
               </div>
             </div>
-          ))}
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#F5ECD7',
+                fontWeight: 500,
+                marginBottom: '4px',
+              }}>
+                WhatsApp notifications
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#C9B99A',
+              }}>
+                Get urgent alerts on WhatsApp
+              </div>
+            </div>
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#F5ECD7',
+                fontWeight: 500,
+                marginBottom: '4px',
+              }}>
+                Daily summary
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#C9B99A',
+              }}>
+                Receive a daily recap at 9 AM
+              </div>
+            </div>
+            <label className="toggle">
+              <input type="checkbox" defaultChecked />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -248,80 +320,101 @@ export default function SettingsPage() {
           <h2 className="panel-title">Plan & billing</h2>
         </div>
         <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#F5ECD7',
-                fontWeight: 500,
-              }}>
-                Current plan
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-              }}>
-                Pro
-              </div>
-            </div>
+          <div>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '14px',
               color: '#F5ECD7',
               fontWeight: 500,
+              marginBottom: '8px',
             }}>
-              SGD $79/month
+              Current plan
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '16px',
+                color: '#F5ECD7',
+                background: 'rgba(200, 129, 58, 0.2)',
+                border: '1px solid #C8813A',
+                padding: '8px 16px',
+                borderRadius: '8px',
+              }}>
+                {profile?.plan === 'solo' ? 'Solo · $49/month' : 
+                 profile?.plan === 'pro' ? 'Pro · $99/month' : 
+                 profile?.plan === 'team' ? 'Team · $199/month' : 'Trial · Free for 14 days'}
+              </div>
+              <button className="btn-secondary" style={{
+                fontSize: '13px',
+                padding: '8px 16px',
+              }}>
+                Change plan
+              </button>
             </div>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#F5ECD7',
-                fontWeight: 500,
-              }}>
-                Next billing
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-              }}>
-                1 May 2026
-              </div>
+          <div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '14px',
+              color: '#F5ECD7',
+              fontWeight: 500,
+              marginBottom: '8px',
+            }}>
+              Billing information
             </div>
-            <button className="btn-secondary">
-              Update payment
-            </button>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              background: '#1C0F0A',
+              border: '1px solid #2E1A0E',
+              padding: '12px',
+              borderRadius: '6px',
+            }}>
+              {profile?.plan === 'solo' || profile?.plan === 'pro' || profile?.plan === 'team' 
+                ? 'Billing managed via Stripe. Visit stripe.com to update payment method.'
+                : 'No billing information required during trial period.'}
+            </div>
           </div>
         </div>
       </div>
 
       {/* DANGER ZONE SECTION */}
-      <div className="panel" style={{ borderColor: '#E53E3E' }}>
+      <div className="panel">
         <div className="panel-header">
           <h2 className="panel-title" style={{ color: '#E53E3E' }}>Danger zone</h2>
         </div>
         <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <button className="btn-secondary">
-            Export data
-          </button>
-          <button style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            color: '#E53E3E',
-            background: 'transparent',
-            border: 'none',
-            padding: '8px 0',
-            cursor: 'pointer',
-            textAlign: 'left' as const,
-          }}>
-            Cancel subscription
-          </button>
+          <div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '14px',
+              color: '#F5ECD7',
+              fontWeight: 500,
+              marginBottom: '8px',
+            }}>
+              Delete account
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              marginBottom: '12px',
+            }}>
+              Permanently delete your account and all data. This action cannot be undone.
+            </div>
+            <button className="btn-danger" style={{
+              fontSize: '13px',
+              padding: '8px 16px',
+            }}>
+              Delete account
+            </button>
+          </div>
         </div>
       </div>
     </div>

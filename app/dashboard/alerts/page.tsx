@@ -1,178 +1,200 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
 
-import React, { useState } from 'react';
-
-export default function AlertsPage() {
-  const [activeFilter, setActiveFilter] = useState('all');
+export default async function AlertsPage() {
+  const supabase = await createClient();
   
-  const alerts = [
-    { 
-      id: 1, 
-      title: 'Renewal due tomorrow', 
-      client: 'James Wong', 
-      policy: 'Life Insurance', 
-      time: '2 hours ago', 
-      priority: 'high', 
-      color: 'red',
-      action: 'Resolve →'
-    },
-    { 
-      id: 2, 
-      title: 'Document missing', 
-      client: 'Lisa Tan', 
-      policy: 'Health Insurance', 
-      time: '3 hours ago', 
-      priority: 'medium', 
-      color: 'amber',
-      action: 'Resolve →'
-    },
-    { 
-      id: 3, 
-      title: 'Payment overdue', 
-      client: 'Michael Lee', 
-      policy: 'Car Insurance', 
-      time: '5 hours ago', 
-      priority: 'high', 
-      color: 'red',
-      action: 'Resolve →'
-    },
-    { 
-      id: 4, 
-      title: 'Coverage gap detected', 
-      client: 'Tan Ah Kow', 
-      policy: 'Group Insurance', 
-      time: '8 hours ago', 
-      priority: 'medium', 
-      color: 'amber',
-      action: 'Resolve →'
-    },
-    { 
-      id: 5, 
-      title: 'Claim requires attention', 
-      client: 'Angela Foo', 
-      policy: 'Medical Insurance', 
-      time: '12 hours ago', 
-      priority: 'high', 
-      color: 'red',
-      action: 'Resolve →'
-    },
-    { 
-      id: 6, 
-      title: 'Renewal in 7 days', 
-      client: 'Sarah Lim', 
-      policy: 'Travel Insurance', 
-      time: '1 day ago', 
-      priority: 'medium', 
-      color: 'amber',
-      action: 'Resolve →'
-    },
-    { 
-      id: 7, 
-      title: 'Policy renewed successfully', 
-      client: 'Robert Chen', 
-      policy: 'Home Insurance', 
-      time: '1 day ago', 
-      priority: 'info', 
-      color: 'green',
-      action: 'View →'
-    },
-    { 
-      id: 8, 
-      title: 'Missing beneficiary details', 
-      client: 'Priya Nair', 
-      policy: 'Life Insurance', 
-      time: '2 days ago', 
-      priority: 'medium', 
-      color: 'amber',
-      action: 'Resolve →'
-    },
-  ];
+  // Fetch real alerts with client names
+  const { data: alerts } = await supabase
+    .from('alerts')
+    .select('*, clients(name)')
+    .order('created_at', { ascending: false });
 
-  const filters = ['All', 'Renewals', 'Claims', 'Documents', 'Payments'];
-
-  const getPriorityPillClass = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'pill pill-danger';
-      case 'medium': return 'pill pill-amber';
-      case 'info': return 'pill pill-ok';
-      default: return 'pill pill-ok';
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'high priority';
-      case 'medium': return 'medium priority';
-      case 'info': return 'info';
-      default: return 'info';
-    }
-  };
-
-  const getDotColor = (color: string) => {
-    switch (color) {
-      case 'red': return '#E53E3E';
-      case 'amber': return '#C8813A';
-      case 'green': return '#38A169';
-      default: return '#C9B99A';
-    }
-  };
+  const filters = ['all', 'unresolved', 'high', 'medium', 'low'];
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px',
-    }}>
-      {/* TITLE ROW */}
+    <div style={{ width: '100%' }}>
+      {/* Header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: '24px',
       }}>
         <h1 style={{
           fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '28px',
+          fontSize: '32px',
           fontWeight: 400,
           color: '#F5ECD7',
           margin: 0,
         }}>
           Alerts
         </h1>
-        <button style={{
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '13px',
-          color: '#C8813A',
-          background: 'transparent',
-          border: '1px solid #2E1A0E',
-          padding: '8px 16px',
-          cursor: 'pointer',
-          borderRadius: '100px',
+        
+        <div style={{
+          display: 'flex',
+          gap: '8px',
         }}>
-          Mark all read
-        </button>
+          <button className="btn-secondary" style={{
+            fontSize: '13px',
+            padding: '8px 16px',
+          }}>
+            Filter
+          </button>
+          <button className="btn-primary" style={{
+            fontSize: '13px',
+            padding: '8px 16px',
+          }}>
+            Mark all as read
+          </button>
+        </div>
       </div>
 
-      {/* FILTER TABS */}
+      {/* Stats Bar */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>
+            Total
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>
+            {alerts?.length || 0}
+          </div>
+        </div>
+        
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>
+            Unresolved
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>
+            {alerts?.filter(a => !a.resolved).length || 0}
+          </div>
+        </div>
+        
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>
+            High priority
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>
+            {alerts?.filter(a => a.priority === 'high').length || 0}
+          </div>
+        </div>
+        
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>
+            This week
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>
+            {alerts?.filter(a => {
+              const alertDate = new Date(a.created_at);
+              const weekAgo = new Date();
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              return alertDate >= weekAgo;
+            }).length || 0}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
       <div style={{
         display: 'flex',
         gap: '8px',
         marginBottom: '24px',
+        paddingBottom: '16px',
+        borderBottom: '1px solid #2E1A0E',
       }}>
         {filters.map((filter) => (
           <button
             key={filter}
-            onClick={() => setActiveFilter(filter.toLowerCase())}
             style={{
               fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              fontWeight: activeFilter === filter.toLowerCase() ? 500 : 400,
-              color: activeFilter === filter.toLowerCase() ? '#120A06' : '#C8813A',
-              background: activeFilter === filter.toLowerCase() ? '#C8813A' : 'transparent',
-              border: '1px solid #2E1A0E',
-              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '6px 12px',
               borderRadius: '100px',
+              background: filter === 'all' ? '#C8813A' : 'transparent',
+              color: filter === 'all' ? '#120A06' : '#C9B99A',
+              border: filter === 'all' ? 'none' : '1px solid #2E1A0E',
               cursor: 'pointer',
-              transition: 'all 0.2s',
+              textTransform: 'capitalize',
             }}
           >
             {filter}
@@ -180,95 +202,182 @@ export default function AlertsPage() {
         ))}
       </div>
 
-      {/* ALERT LIST */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-      }}>
-        {alerts.map((alert) => (
-          <div 
-            key={alert.id}
-            style={{
-              padding: '16px 0',
-              borderBottom: '1px solid #2E1A0E',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-            }}
-          >
-            {/* Colored Dot */}
-            <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              background: getDotColor(alert.color),
-              flexShrink: 0,
-              marginTop: '2px',
-            }} />
-
-            {/* Content */}
-            <div style={{ flex: 1 }}>
-              {/* Top Row: Title + Time */}
-              <div style={{
+      {/* Alerts List */}
+      {alerts && alerts.length > 0 ? (
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}>
+          {alerts.map((alert) => (
+            <div
+              key={alert.id}
+              style={{
+                padding: '20px',
+                borderBottom: '1px solid #2E1A0E',
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                marginBottom: '4px',
-              }}>
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#F5ECD7',
-                }}>
-                  {alert.title}
-                </div>
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '11px',
-                  color: '#C9B99A',
-                  textAlign: 'right',
-                }}>
-                  {alert.time}
-                </div>
-              </div>
-
-              {/* Client Info */}
+                gap: '16px',
+              }}
+            >
+              {/* Priority Dot */}
               <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-                marginBottom: '8px',
-              }}>
-                {alert.client} · {alert.policy}
-              </div>
-
-              {/* Bottom Row: Priority Pill + Action */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}>
-                <span className={getPriorityPillClass(alert.priority)}>
-                  {getPriorityLabel(alert.priority)}
-                </span>
-                <button style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: alert.priority === 'high' ? '#E53E3E' : 
+                           alert.priority === 'medium' ? '#C8813A' : '#38A169',
+                flexShrink: 0,
+                marginTop: '4px',
+              }} />
+              
+              {/* Content */}
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '8px',
+                }}>
+                  <div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: '#F5ECD7',
+                      marginBottom: '4px',
+                    }}>
+                      {alert.title}
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '12px',
+                      color: '#C9B99A',
+                    }}>
+                      {alert.clients?.name || 'Client'} · {alert.type || 'Alert'}
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                    }}>
+                      {formatTimeAgo(alert.created_at)}
+                    </div>
+                    
+                    <span style={{
+                      display: 'inline-block',
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      borderRadius: '100px',
+                      background: alert.priority === 'high' ? 'rgba(229, 62, 62, 0.2)' : 
+                                 alert.priority === 'medium' ? 'rgba(200, 129, 58, 0.2)' : 'rgba(56, 161, 105, 0.2)',
+                      color: alert.priority === 'high' ? '#E53E3E' : 
+                             alert.priority === 'medium' ? '#C8813A' : '#38A169',
+                      border: `1px solid ${alert.priority === 'high' ? '#E53E3E' : 
+                                            alert.priority === 'medium' ? '#C8813A' : '#38A169'}`,
+                      textTransform: 'capitalize',
+                    }}>
+                      {alert.priority || 'low'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div style={{
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: '13px',
-                  color: '#C8813A',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px 0',
+                  color: '#C9B99A',
+                  lineHeight: 1.5,
+                  marginBottom: '12px',
                 }}>
-                  {alert.action}
-                </button>
+                  {alert.body || 'No description available.'}
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    color: '#C8813A',
+                    cursor: 'pointer',
+                  }}>
+                    {alert.resolved ? 'Resolved' : 'Mark as resolved →'}
+                  </div>
+                  
+                  {alert.policy && (
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      color: '#C9B99A',
+                      background: 'rgba(201, 185, 154, 0.1)',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                    }}>
+                      {alert.policy}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '60px 40px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '24px',
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>
+            No alerts
           </div>
-        ))}
-      </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            color: '#C9B99A',
+            lineHeight: 1.6,
+            maxWidth: '400px',
+            margin: '0 auto',
+          }}>
+            You're all caught up.
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// Helper function to format time ago
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
