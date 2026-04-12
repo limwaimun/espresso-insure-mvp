@@ -2,13 +2,21 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 export default async function ClientsPage() {
-  const supabase = await createClient();
-  
-  // Fetch real clients
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const supabase = await createClient();
+    
+    // Fetch real clients
+    const { data: clients, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching clients:", error);
+      throw error;
+    }
+    
+    console.log(`Fetched ${clients?.length || 0} clients`);
 
   const tabs = ['All', 'Platinum', 'Gold', 'Silver', 'Bronze', 'At risk'];
 
@@ -105,7 +113,7 @@ export default async function ClientsPage() {
               fontWeight: 600,
               color: '#F5ECD7',
             }}>
-              {clients?.reduce((sum, client) => sum + (client.active_policies || 0), 0) || 0}
+              {clients?.reduce((sum, client) => sum + ((client as any).active_policies || 0), 0) || 0}
             </div>
           </div>
           
@@ -133,7 +141,7 @@ export default async function ClientsPage() {
               fontWeight: 600,
               color: '#F5ECD7',
             }}>
-              {clients?.reduce((sum, client) => sum + (client.renewals_due || 0), 0) || 0}
+              {clients?.reduce((sum, client) => sum + ((client as any).renewals_due || 0), 0) || 0}
             </div>
           </div>
           
@@ -161,7 +169,7 @@ export default async function ClientsPage() {
               fontWeight: 600,
               color: '#F5ECD7',
             }}>
-              ${clients?.reduce((sum, client) => sum + (client.annual_premium || 0), 0)?.toLocaleString() || '0'}
+              ${clients?.reduce((sum, client) => sum + ((client as any).annual_premium || 0), 0)?.toLocaleString() || '0'}
             </div>
           </div>
         </div>
@@ -456,7 +464,7 @@ export default async function ClientsPage() {
                         color: '#C9B99A',
                         padding: '12px 16px',
                       }}>
-                        {client.active_policies || 0}
+                        {(client as any).active_policies || 0}
                       </td>
                       <td style={{
                         fontFamily: 'DM Sans, sans-serif',
@@ -464,7 +472,7 @@ export default async function ClientsPage() {
                         color: '#C9B99A',
                         padding: '12px 16px',
                       }}>
-                        {client.next_renewal_date ? new Date(client.next_renewal_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : '—'}
+                        {(client as any).next_renewal_date ? new Date((client as any).next_renewal_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : '—'}
                       </td>
                       <td style={{
                         fontFamily: 'DM Sans, sans-serif',
@@ -472,7 +480,7 @@ export default async function ClientsPage() {
                         color: '#C9B99A',
                         padding: '12px 16px',
                       }}>
-                        {client.annual_premium ? `$${client.annual_premium.toLocaleString()}/yr` : '—'}
+                        {(client as any).annual_premium ? `$${(client as any).annual_premium.toLocaleString()}/yr` : '—'}
                       </td>
                       <td style={{
                         padding: '12px 16px',
@@ -484,17 +492,17 @@ export default async function ClientsPage() {
                           fontWeight: 500,
                           padding: '4px 8px',
                           borderRadius: '100px',
-                          background: client.status === 'active' ? 'rgba(56, 161, 105, 0.2)' : 
-                                     client.status === 'at-risk' ? 'rgba(229, 62, 62, 0.2)' :
-                                     client.status === 'inactive' ? 'rgba(201, 185, 154, 0.2)' : 'rgba(200, 129, 58, 0.2)',
-                          color: client.status === 'active' ? '#38A169' : 
-                                 client.status === 'at-risk' ? '#E53E3E' :
-                                 client.status === 'inactive' ? '#C9B99A' : '#C8813A',
-                          border: `1px solid ${client.status === 'active' ? '#38A169' : 
-                                            client.status === 'at-risk' ? '#E53E3E' :
-                                            client.status === 'inactive' ? '#C9B99A' : '#C8813A'}`,
+                          background: (client as any).status === 'active' ? 'rgba(56, 161, 105, 0.2)' : 
+                                     (client as any).status === 'at-risk' ? 'rgba(229, 62, 62, 0.2)' :
+                                     (client as any).status === 'inactive' ? 'rgba(201, 185, 154, 0.2)' : 'rgba(200, 129, 58, 0.2)',
+                          color: (client as any).status === 'active' ? '#38A169' : 
+                                 (client as any).status === 'at-risk' ? '#E53E3E' :
+                                 (client as any).status === 'inactive' ? '#C9B99A' : '#C8813A',
+                          border: `1px solid ${(client as any).status === 'active' ? '#38A169' : 
+                                            (client as any).status === 'at-risk' ? '#E53E3E' :
+                                            (client as any).status === 'inactive' ? '#C9B99A' : '#C8813A'}`,
                         }}>
-                          {client.status || 'New'}
+                          {(client as any).status || 'New'}
                         </span>
                       </td>
                       <td style={{
@@ -553,4 +561,43 @@ export default async function ClientsPage() {
       </div>
     </div>
   );
+  } catch (error: any) {
+    console.error("Error in ClientsPage:", error);
+    return (
+      <div style={{ width: '100%', padding: '40px' }}>
+        <div style={{
+          background: 'rgba(229, 62, 62, 0.1)',
+          border: '1px solid #E53E3E',
+          borderRadius: '8px',
+          padding: '24px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '16px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '8px',
+          }}>
+            Error loading clients
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            color: '#C9B99A',
+            marginBottom: '16px',
+          }}>
+            {error.message || 'Please try again later.'}
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="btn-primary"
+            style={{ padding: '8px 16px' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 }

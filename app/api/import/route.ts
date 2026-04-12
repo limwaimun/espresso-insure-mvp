@@ -5,14 +5,21 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
-    const { clients, policies } = await request.json();
+    console.log("Import API called");
+    const body = await request.json();
+    console.log("Request body received:", JSON.stringify(body, null, 2).substring(0, 1000));
+    
+    const { clients, policies } = body;
 
     if (!clients || !policies) {
+      console.error("Missing clients or policies data:", { clients, policies });
       return NextResponse.json(
         { error: "Missing clients or policies data" },
         { status: 400 }
       );
     }
+    
+    console.log(`Processing ${clients.length} clients and ${policies.length} policies`);
 
     // Verify user is authenticated
     const cookieStore = await cookies();
@@ -97,11 +104,19 @@ export async function POST(request: Request) {
 
     // Prepare policies with client_id
     const policiesWithClientIds = policies.map((policy: any) => {
-      const clientKey = policy.clientName.toLowerCase().trim();
+      // Handle both clientName and client_name for compatibility
+      const clientName = policy.clientName || policy.client_name;
+      if (!clientName) {
+        console.error("Policy missing client name:", policy);
+        throw new Error(`Policy missing client name: ${JSON.stringify(policy)}`);
+      }
+      
+      const clientKey = clientName.toLowerCase().trim();
       const clientId = clientIdMap.get(clientKey);
       
       if (!clientId) {
-        throw new Error(`Client not found for policy: ${policy.clientName}`);
+        console.error(`Client not found for policy: ${clientName}. Available clients:`, Array.from(clientIdMap.keys()));
+        throw new Error(`Client not found for policy: ${clientName}`);
       }
 
       return {
