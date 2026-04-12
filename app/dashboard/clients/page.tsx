@@ -1,24 +1,92 @@
+'use client';
+
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
-export default async function ClientsPage() {
-  try {
-    const supabase = await createClient();
-    
-    // Fetch real clients - only fields that exist in the database
-    const { data: clients, error } = await supabase
-      .from('clients')
-      .select('id, name, company, type, tier, email, whatsapp, created_at')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error("Error fetching clients:", error);
-      throw error;
+export default function ClientsPage() {
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        setLoading(true);
+        const supabase = await createClient();
+        
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, name, company, type, tier, email, whatsapp, created_at')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching clients:", error);
+          throw error;
+        }
+        
+        console.log(`Fetched ${data?.length || 0} clients`);
+        setClients(data || []);
+      } catch (err: any) {
+        console.error("Error in fetchClients:", err);
+        setError(err.message || 'Failed to load clients');
+      } finally {
+        setLoading(false);
+      }
     }
     
-    console.log(`Fetched ${clients?.length || 0} clients`);
+    fetchClients();
+  }, []);
+  const tabs = ['All', 'Platinum', 'Gold', 'Silver', 'Bronze'];
 
-    const tabs = ['All', 'Platinum', 'Gold', 'Silver', 'Bronze'];
+  if (loading) {
+    return (
+      <div style={{ width: '100%', padding: '40px', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '16px', color: '#C9B99A' }}>
+          Loading clients...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ width: '100%', padding: '40px' }}>
+        <div style={{
+          background: 'rgba(229, 62, 62, 0.1)',
+          border: '1px solid #E53E3E',
+          borderRadius: '8px',
+          padding: '24px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '16px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '8px',
+          }}>
+            Error loading clients
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            color: '#C9B99A',
+            marginBottom: '16px',
+          }}>
+            {error || 'Please try again later.'}
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="btn-primary"
+            style={{ padding: '8px 16px' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
     return (
       <div style={{
@@ -91,7 +159,7 @@ export default async function ClientsPage() {
                 fontWeight: 600,
                 color: '#F5ECD7',
               }}>
-                {clients?.length || 0}
+                {clients.length || 0}
               </div>
             </div>
             
@@ -119,7 +187,7 @@ export default async function ClientsPage() {
                 fontWeight: 600,
                 color: '#F5ECD7',
               }}>
-                {clients?.filter(c => c.type === 'individual').length || 0}
+                {clients.filter(c => c.type === 'individual').length || 0}
               </div>
             </div>
             
@@ -147,7 +215,7 @@ export default async function ClientsPage() {
                 fontWeight: 600,
                 color: '#F5ECD7',
               }}>
-                {clients?.filter(c => c.type === 'sme').length || 0}
+                {clients.filter(c => c.type === 'sme').length || 0}
               </div>
             </div>
             
@@ -175,7 +243,7 @@ export default async function ClientsPage() {
                 fontWeight: 600,
                 color: '#F5ECD7',
               }}>
-                {clients?.filter(c => c.type === 'corporate').length || 0}
+                {clients.filter(c => c.type === 'corporate').length || 0}
               </div>
             </div>
           </div>
@@ -305,7 +373,7 @@ export default async function ClientsPage() {
           </div>
 
           {/* Clients Table */}
-          {clients && clients.length > 0 ? (
+          {clients.length > 0 ? (
             <div style={{
               background: '#120A06',
               border: '1px solid #2E1A0E',
@@ -573,43 +641,4 @@ export default async function ClientsPage() {
         </div>
       </div>
     );
-  } catch (error: any) {
-    console.error("Error in ClientsPage:", error);
-    return (
-      <div style={{ width: '100%', padding: '40px' }}>
-        <div style={{
-          background: 'rgba(229, 62, 62, 0.1)',
-          border: '1px solid #E53E3E',
-          borderRadius: '8px',
-          padding: '24px',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '16px',
-            fontWeight: 500,
-            color: '#F5ECD7',
-            marginBottom: '8px',
-          }}>
-            Error loading clients
-          </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '14px',
-            color: '#C9B99A',
-            marginBottom: '16px',
-          }}>
-            {error.message || 'Please try again later.'}
-          </div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-            style={{ padding: '8px 16px' }}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
   }
-}

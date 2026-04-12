@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // Espresso fields that need mapping
 const ESPRESSO_FIELDS = [
@@ -165,6 +166,14 @@ export default function ImportPage() {
     setError(null);
     
     try {
+      // Get current user
+      const supabase = createClientComponentClient();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('Please sign in to import data');
+      }
+      
       // Transform data
       const { clients, policies } = transformData();
       
@@ -174,7 +183,11 @@ export default function ImportPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clients, policies }),
+        body: JSON.stringify({ 
+          clients, 
+          policies,
+          userId: user.id 
+        }),
       });
       
       if (!response.ok) {

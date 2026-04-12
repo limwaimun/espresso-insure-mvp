@@ -9,48 +9,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Request body received:", JSON.stringify(body, null, 2).substring(0, 1000));
     
-    const { clients, policies } = body;
+    const { clients, policies, userId } = body;
 
-    if (!clients || !policies) {
-      console.error("Missing clients or policies data:", { clients, policies });
+    if (!clients || !policies || !userId) {
+      console.error("Missing required data:", { 
+        hasClients: !!clients, 
+        hasPolicies: !!policies, 
+        hasUserId: !!userId 
+      });
       return NextResponse.json(
-        { error: "Missing clients or policies data" },
+        { error: "Missing required data (clients, policies, or userId)" },
         { status: 400 }
       );
     }
     
-    console.log(`Processing ${clients.length} clients and ${policies.length} policies`);
-
-    // Verify user is authenticated
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          },
-        },
-      }
-    );
-    
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
-    }
+    console.log(`Processing ${clients.length} clients and ${policies.length} policies for user ${userId}`);
 
     // Create admin client with service role key
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -70,12 +43,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // Deduplicate clients by name (case-insensitive)
+    // Deduplicate clients by name (case-insensitive) and add ifa_id
     const uniqueClients = new Map();
     clients.forEach((client: any) => {
       const key = client.name.toLowerCase().trim();
       if (!uniqueClients.has(key)) {
-        uniqueClients.set(key, client);
+        uniqueClients.set(key, {
+          ...client,
+          ifa_id: userId
+        });
       }
     });
 
