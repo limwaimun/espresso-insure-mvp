@@ -253,10 +253,6 @@ export default async function ConversationsPage() {
                   padding: '16px 20px',
                   borderBottom: '1px solid #2E1A0E',
                   cursor: 'pointer',
-                  transition: 'background 0.2s',
-                  ':hover': {
-                    background: 'rgba(28, 15, 10, 0.5)',
-                  },
                 }}
               >
                 <div style={{
