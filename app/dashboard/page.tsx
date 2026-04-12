@@ -23,59 +23,17 @@ export default async function DashboardHome() {
     console.error('Profile fetch error:', error);
   }
   
-  // Calculate date 30 days from now for renewals
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  // Note: Real queries commented out until tables exist in Supabase
+  // For now, show zeros and empty states
+  const clientCount = 0;
+  const policyCount = 0;
+  const conversationCount = 0;
+  const renewalCount = 0;
+  const formattedPremium = '$0';
   
-  // Real queries
-  const { count: clientCount } = await supabase
-    .from('clients')
-    .select('*', { count: 'exact', head: true });
-  
-  const { count: policyCount } = await supabase
-    .from('policies')
-    .select('*', { count: 'exact', head: true });
-  
-  const { count: conversationCount } = await supabase
-    .from('conversations')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active');
-  
-  const { count: renewalCount } = await supabase
-    .from('policies')
-    .select('*', { count: 'exact', head: true })
-    .lte('renewal_date', thirtyDaysFromNow.toISOString());
-  
-  const { data: totalPremiumData } = await supabase
-    .from('policies')
-    .select('premium')
-    .eq('status', 'active');
-  
-  // Calculate total premium
-  const totalPremium = totalPremiumData?.reduce((sum, p) => sum + (p.premium || 0), 0) || 0;
-  
-  // Format premium as currency
-  const formattedPremium = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(totalPremium);
-  
-  // Recent conversations
-  const { data: recentConversations } = await supabase
-    .from('conversations')
-    .select('*, clients(name)')
-    .order('last_message_at', { ascending: false })
-    .limit(3);
-  
-  // Alerts
-  const { data: alerts } = await supabase
-    .from('alerts')
-    .select('*')
-    .eq('resolved', false)
-    .order('created_at', { ascending: false })
-    .limit(3);
+  // Empty arrays for now
+  const recentConversations: any[] = [];
+  const alerts: any[] = [];
   
   // Metric cards data
   const metricCards = [
