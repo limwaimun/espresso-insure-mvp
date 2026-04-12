@@ -90,54 +90,12 @@ export default function AlertsPage() {
 
   const filters = ['All', 'Renewals', 'Claims', 'Documents', 'Payments'];
 
-  const getPriorityPillStyle = (priority: string) => {
+  const getPriorityPillClass = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'pill pill-danger';
-      case 'medium':
-        return 'pill pill-amber';
-      case 'info':
-        return 'pill pill-ok';
-      default:
-        return 'pill pill-ok';
-    }
-  };
-      case 'medium':
-        return {
-          background: '#C8813A',
-          color: '#120A06',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '11px',
-          fontWeight: 500,
-          padding: '4px 8px',
-          borderRadius: '100px',
-          textTransform: 'uppercase' as const,
-          letterSpacing: '0.05em',
-        };
-      case 'info':
-        return {
-          background: '#38A169',
-          color: '#120A06',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '11px',
-          fontWeight: 500,
-          padding: '4px 8px',
-          borderRadius: '100px',
-          textTransform: 'uppercase' as const,
-          letterSpacing: '0.05em',
-        };
-      default:
-        return {
-          background: '#2E1A0E',
-          color: '#C9B99A',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '11px',
-          fontWeight: 500,
-          padding: '4px 8px',
-          borderRadius: '100px',
-          textTransform: 'uppercase' as const,
-          letterSpacing: '0.05em',
-        };
+      case 'high': return 'pill pill-danger';
+      case 'medium': return 'pill pill-amber';
+      case 'info': return 'pill pill-ok';
+      default: return 'pill pill-ok';
     }
   };
 
@@ -148,7 +106,6 @@ export default function AlertsPage() {
       case 'info': return 'info';
       default: return 'info';
     }
-  }
   };
 
   const getDotColor = (color: string) => {
@@ -195,7 +152,7 @@ export default function AlertsPage() {
         </button>
       </div>
 
-            {/* FILTER TABS */}
+      {/* FILTER TABS */}
       <div style={{
         display: 'flex',
         gap: '8px',
@@ -271,7 +228,7 @@ export default function AlertsPage() {
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: '11px',
                   color: '#C9B99A',
-                  textAlign: 'right' as const,
+                  textAlign: 'right',
                 }}>
                   {alert.time}
                 </div>
@@ -293,7 +250,7 @@ export default function AlertsPage() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <span className={getPriorityPillStyle(alert.priority)}>
+                <span className={getPriorityPillClass(alert.priority)}>
                   {getPriorityLabel(alert.priority)}
                 </span>
                 <button style={{
