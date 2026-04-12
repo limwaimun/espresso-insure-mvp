@@ -39,7 +39,7 @@ export default function ConfirmedPage() {
         </div>
 
         {/* Heading */}
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', width: '100%' }}>
           <h1 style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: '36px',
@@ -77,17 +77,7 @@ export default function ConfirmedPage() {
             </div>
           </div>
           
-          <p style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '14px',
-            color: '#C9B99A',
-            lineHeight: 1.6,
-            maxWidth: '320px',
-            marginTop: '24px',
-            textAlign: 'center',
-          }}>
-            Maya will message you on WhatsApp within 5 minutes to help you get started.
-          </p>
+          <p style={{ textAlign: 'center', width: '100%', margin: '0 auto' }}>Maya will message you on WhatsApp within 5 minutes to help you get started.</p>
         </div>
 
         {/* Buttons */}
