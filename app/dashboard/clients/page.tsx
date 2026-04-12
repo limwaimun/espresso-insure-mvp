@@ -548,3 +548,9 @@ export default async function ClientsPage() {
             }}>
               + Add your first client
             </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
