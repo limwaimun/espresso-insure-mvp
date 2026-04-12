@@ -9,7 +9,7 @@ export default function TrialPage() {
     email: '',
     whatsapp: '',
     country: 'Singapore',
-    plan: 'pro'
+    plan: 'solo'
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -44,8 +44,8 @@ export default function TrialPage() {
   };
 
   const plans = [
-    { id: 'solo', name: 'Solo', price: 'SGD $29/month', clients: 'Up to 100 clients' },
-    { id: 'pro', name: 'Pro', price: 'SGD $79/month', clients: 'Unlimited clients', popular: true },
+    { id: 'solo', name: 'Solo', price: 'SGD $29/month', clients: 'Up to 100 clients', popular: true },
+    { id: 'pro', name: 'Pro', price: 'SGD $79/month', clients: 'Unlimited clients' },
     { id: 'team', name: 'Team', price: 'SGD $199/month', clients: '5 advisors, unlimited clients' }
   ];
 

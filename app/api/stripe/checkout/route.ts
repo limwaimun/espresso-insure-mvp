@@ -19,11 +19,14 @@ export async function POST(request: NextRequest) {
     // Determine price ID based on plan
     let priceId: string
     switch (plan) {
+      case 'solo':
+        priceId = process.env.STRIPE_PRICE_SOLO!
+        break
       case 'pro':
-        priceId = process.env.STRIPE_PRO_PRICE_ID!
+        priceId = process.env.STRIPE_PRICE_PRO!
         break
       case 'team':
-        priceId = process.env.STRIPE_TEAM_PRICE_ID!
+        priceId = process.env.STRIPE_PRICE_TEAM!
         break
       default:
         return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
