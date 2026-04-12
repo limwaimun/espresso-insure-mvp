@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { logout } from '@/app/(auth)/login/actions';
 
 const DashboardSidebar = () => {
   const pathname = usePathname();
@@ -141,6 +142,7 @@ const DashboardSidebar = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
+          marginBottom: '12px',
         }}>
           {/* Avatar */}
           <div style={{
@@ -194,6 +196,42 @@ const DashboardSidebar = () => {
             </div>
           </div>
         </div>
+        
+        {/* Logout Button */}
+        <form action={logout}>
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '8px 16px',
+              background: 'transparent',
+              border: '1px solid #2E1A0E',
+              borderRadius: '6px',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#C9B99A',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(229, 62, 62, 0.1)';
+              e.currentTarget.style.borderColor = '#E53E3E';
+              e.currentTarget.style.color = '#E53E3E';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = '#2E1A0E';
+              e.currentTarget.style.color = '#C9B99A';
+            }}
+          >
+            <span style={{ fontSize: '14px' }}>↩</span>
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
   );

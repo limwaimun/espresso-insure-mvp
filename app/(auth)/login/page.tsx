@@ -1,23 +1,60 @@
 'use client';
 
+'use client';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { login, loginWithMagicLink } from './actions';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const [error, setError] = useState<string | null>(null);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just redirect to dashboard
-    window.location.href = '/dashboard';
+    setIsLoading(true);
+    setError(null);
+
+    const formDataObj = new FormData();
+    formDataObj.append('email', formData.email);
+    formDataObj.append('password', formData.password);
+
+    const result = await login(formDataObj);
+    
+    if (result?.error) {
+      setError(result.error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const formDataObj = new FormData();
+    formDataObj.append('email', formData.email);
+
+    const result = await loginWithMagicLink(formDataObj);
+    
+    if (result?.error) {
+      setError(result.error);
+      setIsLoading(false);
+    } else {
+      setMagicLinkSent(true);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,71 +133,127 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#C9B99A',
-                  fontWeight: 500,
-                }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  className="input"
-                  placeholder="you@company.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  style={{ width: '100%' }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#C9B99A',
-                  fontWeight: 500,
-                }}>
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  className="input"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  style={{ width: '100%' }}
-                  required
-                />
-              </div>
-
-              <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-                Sign in
-              </button>
-
+            {magicLinkSent ? (
               <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                marginTop: '8px',
+                background: 'rgba(56, 161, 105, 0.1)',
+                border: '1px solid #38A169',
+                borderRadius: '8px',
+                padding: '16px',
+                textAlign: 'center' as const,
               }}>
-                <button type="button" style={{
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '14px',
+                  color: '#38A169',
+                  fontWeight: 500,
+                  marginBottom: '8px',
+                }}>
+                  Check your email!
+                </div>
+                <div style={{
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: '13px',
-                  color: '#C8813A',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
+                  color: '#C9B99A',
                 }}>
-                  Forgot password?
-                </button>
+                  We've sent a magic link to {formData.email}. Click the link to sign in.
+                </div>
               </div>
-            </form>
+            ) : (
+              <>
+                {error && (
+                  <div style={{
+                    background: 'rgba(229, 62, 62, 0.1)',
+                    border: '1px solid #E53E3E',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '13px',
+                    color: '#E53E3E',
+                  }}>
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '13px',
+                      color: '#C9B99A',
+                      fontWeight: 500,
+                    }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      className="input"
+                      placeholder="you@company.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      style={{ width: '100%' }}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '13px',
+                      color: '#C9B99A',
+                      fontWeight: 500,
+                    }}>
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      className="input"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      style={{ width: '100%' }}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn-primary" 
+                    style={{ width: '100%' }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Signing in...' : 'Sign in'}
+                  </button>
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    marginTop: '8px',
+                  }}>
+                    <button 
+                      type="button" 
+                      onClick={handleMagicLink}
+                      style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '13px',
+                        color: '#C8813A',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        textDecoration: 'underline',
+                      }}
+                      disabled={isLoading}
+                    >
+                      Send magic link instead
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
 
