@@ -39,7 +39,7 @@ export default function ConfirmedPage() {
         </div>
 
         {/* Heading */}
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <h1 style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: '36px',
