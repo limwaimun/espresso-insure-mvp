@@ -46,7 +46,7 @@ export default async function DashboardLayout({
         zIndex: 200,
         overflowY: 'auto',
       }}>
-        <DashboardSidebar profile={profile} />
+        <DashboardSidebar profile={profile || undefined} />
       </aside>
 
       {/* Main content — starts exactly where sidebar ends */}
