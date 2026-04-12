@@ -20,7 +20,7 @@ export default function ConfirmedPage() {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '32px',
-        textAlign: 'center' as const,
+        textAlign: 'center',
       }}>
         {/* Green Checkmark */}
         <div style={{
@@ -56,7 +56,7 @@ export default function ConfirmedPage() {
             background: 'rgba(56, 161, 105, 0.1)',
             border: '1px solid #38A169',
             borderRadius: '8px',
-            textAlign: 'left' as const,
+            textAlign: 'center',
           }}>
             <div style={{
               fontFamily: 'DM Sans, sans-serif',
@@ -76,17 +76,6 @@ export default function ConfirmedPage() {
               Welcome to Espresso! Check your email to confirm your account, then log in with your password.
             </div>
           </div>
-          
-          <p style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '14px',
-            color: '#C9B99A',
-            lineHeight: 1.6,
-            maxWidth: '320px',
-            marginTop: '24px',
-          }}>
-            Maya will message you on WhatsApp within 5 minutes to help you get started.
-          </p>
         </div>
 
         {/* Buttons */}
@@ -97,11 +86,8 @@ export default function ConfirmedPage() {
           width: '100%',
           maxWidth: '300px',
         }}>
-          <button className="btn-primary" style={{ width: '100%' }}>
-            Open WhatsApp
-          </button>
           <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button className="btn-secondary" style={{ width: '100%' }}>
+            <button className="btn-primary" style={{ width: '100%' }}>
               Go to login
             </button>
           </Link>
