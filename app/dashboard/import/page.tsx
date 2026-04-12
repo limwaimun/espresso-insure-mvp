@@ -10,6 +10,8 @@ const ESPRESSO_FIELDS = [
   { id: 'company', label: 'Company', required: false, keywords: ['company', 'firm', 'organization', 'business'] },
   { id: 'email', label: 'Email', required: false, keywords: ['email', 'e-mail', 'mail'] },
   { id: 'whatsapp', label: 'WhatsApp / Phone', required: false, keywords: ['phone', 'mobile', 'whatsapp', 'contact', 'hp', 'telephone'] },
+  { id: 'birthday', label: 'Birthday', required: false, keywords: ['birthday', 'dob', 'date of birth', 'birth date'] },
+  { id: 'address', label: 'Address', required: false, keywords: ['address', 'addr', 'mailing address'] },
   { id: 'insurer', label: 'Insurer', required: false, keywords: ['insurer', 'insurance', 'provider', 'carrier'] },
   { id: 'type', label: 'Policy type', required: false, keywords: ['type', 'plan', 'product', 'policy type', 'coverage'] },
   { id: 'premium', label: 'Premium (annual)', required: false, keywords: ['premium', 'amount', 'price', 'cost', 'annual', 'yearly'] },
@@ -102,6 +104,59 @@ export default function ImportPage() {
     return true;
   };
 
+  // Transform rows into clients and policies
+  const transformData = () => {
+    const clientMap = new Map<string, any>(); // name -> client object
+    const policies: any[] = [];
+    
+    rows.forEach((row, rowIndex) => {
+      // Get values from row using column mapping
+      const getValue = (fieldId: string) => {
+        const header = columnMap[fieldId];
+        if (!header || header === '') return null;
+        const headerIndex = headers.indexOf(header);
+        return headerIndex !== -1 ? row[headerIndex] : null;
+      };
+      
+      const name = getValue('name');
+      if (!name) return; // Skip rows without name
+      
+      const nameStr = String(name).trim();
+      const nameLower = nameStr.toLowerCase();
+      
+      // Add/update client
+      if (!clientMap.has(nameLower)) {
+        clientMap.set(nameLower, {
+          name: nameStr,
+          company: getValue('company'),
+          email: getValue('email'),
+          whatsapp: getValue('whatsapp'),
+          birthday: getValue('birthday'),
+          address: getValue('address'),
+        });
+      }
+      
+      // Check if this row has policy data
+      const insurer = getValue('insurer');
+      const type = getValue('type');
+      
+      if (insurer || type) {
+        policies.push({
+          clientName: nameStr,
+          insurer: insurer,
+          type: type,
+          premium: getValue('premium'),
+          renewal_date: getValue('renewal_date'),
+        });
+      }
+    });
+    
+    return {
+      clients: Array.from(clientMap.values()),
+      policies,
+    };
+  };
+
   // Handle import
   const handleImport = async () => {
     if (!validateMapping()) return;
@@ -110,30 +165,29 @@ export default function ImportPage() {
     setError(null);
     
     try {
-      // Prepare data for import
-      const mappedData = rows.map(row => {
-        const data: Record<string, any> = {};
-        ESPRESSO_FIELDS.forEach(field => {
-          const header = columnMap[field.id];
-          if (header && header !== '') {
-            const headerIndex = headers.indexOf(header);
-            if (headerIndex !== -1) {
-              data[field.id] = row[headerIndex];
-            }
-          }
-        });
-        return data;
+      // Transform data
+      const { clients, policies } = transformData();
+      
+      // Call API to import data
+      const response = await fetch('/api/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ clients, policies }),
       });
-
-      // TODO: Call API to import data
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Import failed: ${response.status}`);
+      }
+      
+      const result = await response.json();
       
       setResult({
         success: true,
-        imported: mappedData.length,
-        skipped: 0,
-        errors: [],
+        clientsImported: result.clientsImported,
+        policiesImported: result.policiesImported,
       });
       
       setStep(4); // Move to results step
@@ -576,7 +630,184 @@ export default function ImportPage() {
               flexDirection: 'column',
               gap: '32px',
             }}>
-              {/* Preview */}
+              {/* Import Summary */}
+              <div style={{
+                background: 'rgba(28, 15, 10, 0.5)',
+                border: '1px solid #2E1A0E',
+                borderRadius: '8px',
+                padding: '20px',
+              }}>
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  color: '#F5ECD7',
+                  marginBottom: '12px',
+                }}>
+                  Import summary
+                </div>
+                
+                {/* Calculate counts */}
+                {(() => {
+                  // Transform rows to preview data
+                  const previewData = rows.slice(0, 5).map(row => {
+                    const data: Record<string, any> = {};
+                    ESPRESSO_FIELDS.forEach(field => {
+                      const header = columnMap[field.id];
+                      if (header && header !== '') {
+                        const headerIndex = headers.indexOf(header);
+                        if (headerIndex !== -1) {
+                          data[field.id] = row[headerIndex];
+                        }
+                      }
+                    });
+                    return data;
+                  });
+                  
+                  // Calculate unique clients
+                  const clientNames = new Set<string>();
+                  const rowsWithMissingRenewal: number[] = [];
+                  
+                  rows.forEach((row, index) => {
+                    const nameHeader = columnMap['name'];
+                    if (nameHeader && nameHeader !== '') {
+                      const nameIndex = headers.indexOf(nameHeader);
+                      if (nameIndex !== -1 && row[nameIndex]) {
+                        clientNames.add(String(row[nameIndex]).trim());
+                      }
+                    }
+                    
+                    // Check for missing renewal date
+                    const renewalHeader = columnMap['renewal_date'];
+                    if (renewalHeader && renewalHeader !== '') {
+                      const renewalIndex = headers.indexOf(renewalHeader);
+                      if (renewalIndex === -1 || !row[renewalIndex]) {
+                        rowsWithMissingRenewal.push(index + 1);
+                      }
+                    }
+                  });
+                  
+                  // Count policies (rows with insurer or type)
+                  let policyCount = 0;
+                  rows.forEach(row => {
+                    const insurerHeader = columnMap['insurer'];
+                    const typeHeader = columnMap['type'];
+                    
+                    const hasInsurer = insurerHeader && insurerHeader !== '' && 
+                      headers.indexOf(insurerHeader) !== -1 && 
+                      row[headers.indexOf(insurerHeader)];
+                    
+                    const hasType = typeHeader && typeHeader !== '' && 
+                      headers.indexOf(typeHeader) !== -1 && 
+                      row[headers.indexOf(typeHeader)];
+                    
+                    if (hasInsurer || hasType) {
+                      policyCount++;
+                    }
+                  });
+                  
+                  return (
+                    <>
+                      <div style={{
+                        display: 'flex',
+                        gap: '24px',
+                        marginBottom: '20px',
+                      }}>
+                        <div style={{
+                          flex: 1,
+                          textAlign: 'center',
+                        }}>
+                          <div style={{
+                            fontFamily: 'Cormorant Garamond, serif',
+                            fontSize: '32px',
+                            fontWeight: 300,
+                            color: '#F5ECD7',
+                            marginBottom: '4px',
+                          }}>
+                            {clientNames.size}
+                          </div>
+                          <div style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '12px',
+                            color: '#C9B99A',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                          }}>
+                            Clients
+                          </div>
+                        </div>
+                        
+                        <div style={{
+                          flex: 1,
+                          textAlign: 'center',
+                        }}>
+                          <div style={{
+                            fontFamily: 'Cormorant Garamond, serif',
+                            fontSize: '32px',
+                            fontWeight: 300,
+                            color: '#F5ECD7',
+                            marginBottom: '4px',
+                          }}>
+                            {policyCount}
+                          </div>
+                          <div style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '12px',
+                            color: '#C9B99A',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                          }}>
+                            Policies
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '14px',
+                        color: '#C9B99A',
+                        lineHeight: 1.5,
+                        marginBottom: '16px',
+                      }}>
+                        Importing <strong>{clientNames.size} clients</strong> and <strong>{policyCount} policies</strong> from {rows.length} rows.
+                      </div>
+                      
+                      {rowsWithMissingRenewal.length > 0 && (
+                        <div style={{
+                          background: 'rgba(200, 129, 58, 0.1)',
+                          border: '1px solid #C8813A',
+                          borderRadius: '6px',
+                          padding: '12px',
+                          marginTop: '12px',
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '8px',
+                          }}>
+                            <div style={{
+                              color: '#C8813A',
+                              fontSize: '14px',
+                              flexShrink: 0,
+                            }}>
+                              ⚠
+                            </div>
+                            <div style={{
+                              fontFamily: 'DM Sans, sans-serif',
+                              fontSize: '13px',
+                              color: '#C9B99A',
+                            }}>
+                              <strong>{rowsWithMissingRenewal.length} rows</strong> have no renewal date. These policies will be marked as "New".
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Preview Table */}
               <div>
                 <div style={{
                   fontFamily: 'DM Sans, sans-serif',
@@ -605,46 +836,146 @@ export default function ImportPage() {
                         background: '#1C0F0A',
                       }}>
                         <tr>
-                          {ESPRESSO_FIELDS.filter(f => columnMap[f.id] && columnMap[f.id] !== '').map((field) => (
-                            <th key={field.id} style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                              fontSize: '11px',
-                              fontWeight: 500,
-                              color: '#C8813A',
-                              textTransform: 'uppercase',
-                              padding: '12px 16px',
-                              textAlign: 'left',
-                              borderBottom: '1px solid #2E1A0E',
-                              whiteSpace: 'nowrap',
-                            }}>
-                              {field.label}
-                            </th>
-                          ))}
+                          <th style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: '#C8813A',
+                            textTransform: 'uppercase',
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            borderBottom: '1px solid #2E1A0E',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Name
+                          </th>
+                          <th style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: '#C8813A',
+                            textTransform: 'uppercase',
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            borderBottom: '1px solid #2E1A0E',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Insurer
+                          </th>
+                          <th style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: '#C8813A',
+                            textTransform: 'uppercase',
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            borderBottom: '1px solid #2E1A0E',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Policy Type
+                          </th>
+                          <th style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: '#C8813A',
+                            textTransform: 'uppercase',
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            borderBottom: '1px solid #2E1A0E',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Premium
+                          </th>
+                          <th style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '11px',
+                            fontWeight: 500,
+                            color: '#C8813A',
+                            textTransform: 'uppercase',
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            borderBottom: '1px solid #2E1A0E',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            Renewal Date
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.slice(0, 5).map((row, rowIndex) => (
-                          <tr key={rowIndex} style={{
-                            borderBottom: '1px solid #2E1A0E',
-                          }}>
-                            {ESPRESSO_FIELDS.filter(f => columnMap[f.id] && columnMap[f.id] !== '').map((field) => {
-                              const header = columnMap[field.id];
+                        {(() => {
+                          // Transform first 5 rows for preview
+                          const previewRows = rows.slice(0, 5).map((row, rowIndex) => {
+                            const getValue = (fieldId: string) => {
+                              const header = columnMap[fieldId];
+                              if (!header || header === '') return null;
                               const headerIndex = headers.indexOf(header);
-                              const value = headerIndex !== -1 ? row[headerIndex] : '';
-                              return (
-                                <td key={field.id} style={{
-                                  fontFamily: 'DM Sans, sans-serif',
-                                  fontSize: '13px',
-                                  color: '#C9B99A',
-                                  padding: '12px 16px',
-                                  verticalAlign: 'top',
-                                }}>
-                                  {value !== null && value !== undefined ? String(value) : '—'}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
+                              return headerIndex !== -1 ? row[headerIndex] : null;
+                            };
+                            
+                            return {
+                              name: getValue('name'),
+                              insurer: getValue('insurer'),
+                              type: getValue('type'),
+                              premium: getValue('premium'),
+                              renewal_date: getValue('renewal_date'),
+                            };
+                          });
+                          
+                          return previewRows.map((rowData, rowIndex) => (
+                            <tr key={rowIndex} style={{
+                              borderBottom: '1px solid #2E1A0E',
+                            }}>
+                              <td style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#F5ECD7',
+                                fontWeight: 500,
+                                padding: '12px 16px',
+                                verticalAlign: 'top',
+                              }}>
+                                {rowData.name || '—'}
+                              </td>
+                              <td style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#C9B99A',
+                                padding: '12px 16px',
+                                verticalAlign: 'top',
+                              }}>
+                                {rowData.insurer || '—'}
+                              </td>
+                              <td style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#C9B99A',
+                                padding: '12px 16px',
+                                verticalAlign: 'top',
+                              }}>
+                                {rowData.type || '—'}
+                              </td>
+                              <td style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#C9B99A',
+                                padding: '12px 16px',
+                                verticalAlign: 'top',
+                              }}>
+                                {rowData.premium ? (typeof rowData.premium === 'number' ? `$${rowData.premium.toLocaleString()}` : rowData.premium) : '—'}
+                              </td>
+                              <td style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#C9B99A',
+                                padding: '12px 16px',
+                                verticalAlign: 'top',
+                              }}>
+                                {rowData.renewal_date ? (typeof rowData.renewal_date === 'string' ? rowData.renewal_date : new Date(rowData.renewal_date).toLocaleDateString()) : '—'}
+                              </td>
+                            </tr>
+                          ));
+                        })()}
                       </tbody>
                     </table>
                   </div>
@@ -657,7 +988,7 @@ export default function ImportPage() {
                   marginTop: '12px',
                   textAlign: 'center',
                 }}>
-                  Showing 5 of {rows.length} clients
+                  Showing 5 of {rows.length} rows
                 </div>
               </div>
 
@@ -749,7 +1080,7 @@ export default function ImportPage() {
                   color: '#C9B99A',
                   lineHeight: 1.5,
                 }}>
-                  Successfully imported {result.imported} clients to your dashboard.
+                  Successfully imported <strong>{result.clientsImported} clients</strong> and <strong>{result.policiesImported} policies</strong> to your dashboard.
                 </div>
               </div>
               
@@ -770,12 +1101,12 @@ export default function ImportPage() {
                 }}>
                   <div style={{
                     fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: '24px',
+                    fontSize: '32px',
                     fontWeight: 300,
                     color: '#F5ECD7',
                     marginBottom: '4px',
                   }}>
-                    {result.imported}
+                    {result.clientsImported}
                   </div>
                   <div style={{
                     fontFamily: 'DM Sans, sans-serif',
@@ -784,7 +1115,7 @@ export default function ImportPage() {
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                   }}>
-                    Clients added
+                    Clients imported
                   </div>
                 </div>
                 
@@ -798,12 +1129,12 @@ export default function ImportPage() {
                 }}>
                   <div style={{
                     fontFamily: 'Cormorant Garamond, serif',
-                    fontSize: '24px',
+                    fontSize: '32px',
                     fontWeight: 300,
                     color: '#F5ECD7',
                     marginBottom: '4px',
                   }}>
-                    {result.skipped}
+                    {result.policiesImported}
                   </div>
                   <div style={{
                     fontFamily: 'DM Sans, sans-serif',
@@ -812,7 +1143,7 @@ export default function ImportPage() {
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                   }}>
-                    Skipped
+                    Policies imported
                   </div>
                 </div>
               </div>
