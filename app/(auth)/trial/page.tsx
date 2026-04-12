@@ -11,18 +11,24 @@ export default function TrialPage() {
     country: 'Singapore',
     plan: 'solo'
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
   const handlePlanSelect = (plan: string) => {
     setFormData(prev => ({ ...prev, plan }));
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -35,11 +41,24 @@ export default function TrialPage() {
         }),
       });
       
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || 'Failed to start checkout');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError('No checkout URL returned');
+        setIsLoading(false);
+      }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Unable to start checkout. Please try again.');
+      setError('Unable to start checkout. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -120,6 +139,22 @@ export default function TrialPage() {
           flexDirection: 'column',
           gap: '24px',
         }}>
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              background: 'rgba(229, 62, 62, 0.1)',
+              border: '1px solid #E53E3E',
+              borderRadius: '8px',
+              padding: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#E53E3E',
+              textAlign: 'center',
+            }}>
+              {error}
+            </div>
+          )}
+          
           {/* Full Name */}
           <div>
             <label style={{
@@ -139,6 +174,7 @@ export default function TrialPage() {
               placeholder="Your full name"
               required
               className="input"
+              disabled={isLoading}
             />
           </div>
 
@@ -161,6 +197,7 @@ export default function TrialPage() {
               placeholder="your@email.com"
               required
               className="input"
+              disabled={isLoading}
             />
           </div>
 
@@ -183,6 +220,7 @@ export default function TrialPage() {
               placeholder="+65 / +60 / +63 / +62 / +66 / +84"
               required
               className="input"
+              disabled={isLoading}
             />
             <p style={{
               fontFamily: 'DM Sans, sans-serif',
@@ -212,6 +250,7 @@ export default function TrialPage() {
               onChange={handleChange}
               className="input"
               required
+              disabled={isLoading}
             >
               <option value="Singapore">Singapore</option>
               <option value="Malaysia">Malaysia</option>
@@ -358,8 +397,9 @@ export default function TrialPage() {
             style={{
               marginTop: '8px',
             }}
+            disabled={isLoading}
           >
-            Start my 14-day free trial →
+            {isLoading ? 'Starting trial...' : 'Start my 14-day free trial →'}
           </button>
 
           {/* Terms */}
