@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -13,7 +13,7 @@ export default function ClientsPage() {
     async function fetchClients() {
       try {
         setLoading(true);
-        const supabase = await createClient();
+        const supabase = createClient();
         
         const { data, error } = await supabase
           .from('clients')
