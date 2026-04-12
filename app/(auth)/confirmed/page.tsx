@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -13,7 +13,7 @@ type SessionData = {
   error?: string;
 };
 
-export default function ConfirmedPage() {
+function ConfirmedContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
@@ -256,5 +256,30 @@ export default function ConfirmedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmedPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100vh',
+        background: '#1C0F0A',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}>
+        <div style={{
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: '14px',
+          color: '#C9B99A',
+        }}>
+          Loading...
+        </div>
+      </div>
+    }>
+      <ConfirmedContent />
+    </Suspense>
   );
 }
