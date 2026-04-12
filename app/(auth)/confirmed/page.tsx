@@ -73,7 +73,7 @@ export default function ConfirmedPage() {
               color: '#C9B99A',
               lineHeight: 1.5,
             }}>
-              We've sent you a login link. Click it to access your account and start your 14-day free trial.
+              Welcome to Espresso! Check your email to confirm your account, then log in with your password.
             </div>
           </div>
           

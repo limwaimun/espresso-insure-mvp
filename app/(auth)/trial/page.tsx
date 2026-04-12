@@ -7,6 +7,8 @@ export default function TrialPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     whatsapp: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +25,19 @@ export default function TrialPage() {
     setIsLoading(true);
     setError(null);
     
+    // Validate passwords
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -30,6 +45,7 @@ export default function TrialPage() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          password: formData.password,
           whatsapp: formData.whatsapp,
         }),
       });
@@ -178,6 +194,61 @@ export default function TrialPage() {
               value={formData.email}
               onChange={handleChange}
               placeholder="your@email.com"
+              required
+              className="input"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              marginBottom: '8px',
+            }}>
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="At least 8 characters"
+              required
+              className="input"
+              disabled={isLoading}
+            />
+            <p style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#C9B99A',
+              marginTop: '4px',
+              lineHeight: 1.5,
+            }}>
+              Must be at least 8 characters long
+            </p>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              marginBottom: '8px',
+            }}>
+              Confirm password
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
               required
               className="input"
               disabled={isLoading}
