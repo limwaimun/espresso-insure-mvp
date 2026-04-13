@@ -206,13 +206,13 @@ export default async function DashboardHome() {
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
   // Calculate renewals due in next 30 days
-  const now = new Date();
+  const currentTime = new Date();
   const thirtyDays = new Date();
   thirtyDays.setDate(thirtyDays.getDate() + 30);
   const renewalCount = (allPolicies || []).filter((p: any) => {
     if (!p.renewal_date) return false;
     const d = new Date(p.renewal_date);
-    return d >= now && d <= thirtyDays;
+    return d >= currentTime && d <= thirtyDays;
   }).length;
   
   // For now, hardcode conversation count until conversations table exists
