@@ -191,10 +191,10 @@ export default async function DashboardHome() {
   
   const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
   
-  const totalPremium = allPolicies?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
+  const totalPremium = allPolicies ? allPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) : 0;
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
-  const renewalCount = allPolicies?.filter(p => {
+  const renewalCount = allPolicies ? allPolicies.filter(p => {
     if (!p.renewal_date) return false;
     try {
       const renewalDate = new Date(p.renewal_date);
@@ -207,7 +207,7 @@ export default async function DashboardHome() {
     } catch (e) {
       return false;
     }
-  }).length || 0;
+  }).length : 0;
   
   // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
