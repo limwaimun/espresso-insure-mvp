@@ -202,7 +202,6 @@ export default function ImportPage() {
         success: true,
         clientsImported: result.clientsImported,
         policiesImported: result.policiesImported,
-        debug: result.debug,
       });
       
       setStep(4); // Move to results step
@@ -1193,35 +1192,6 @@ export default function ImportPage() {
                   Import more clients
                 </button>
               </div>
-              
-              {/* Debug Info */}
-              {result.debug && (
-                <div style={{
-                  background: 'rgba(28, 15, 10, 0.5)',
-                  border: '1px solid #2E1A0E',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginTop: '24px',
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '12px',
-                  color: '#C9B99A',
-                  whiteSpace: 'pre-wrap',
-                  overflowX: 'auto',
-                }}>
-                  <div style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    color: '#C8813A',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: '8px',
-                  }}>
-                    Debug Info
-                  </div>
-                  {JSON.stringify(result.debug, null, 2)}
-                </div>
-              )}
             </div>
           </div>
         </div>

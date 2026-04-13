@@ -186,12 +186,24 @@ export default async function DashboardHome() {
   }
   
   // If user has clients, show normal dashboard
-  // Note: Real queries commented out until tables exist in Supabase
-  // For now, show zeros and empty states
-  const policyCount = 0;
+  // Fetch policy metrics
+  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true });
+  
+  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status');
+  
+  const totalPremium = allPolicies?.reduce((sum, p) => sum + (p.premium || 0), 0) || 0;
+  const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
+  
+  const renewalCount = allPolicies?.filter(p => {
+    if (!p.renewal_date) return false;
+    const renewalDate = new Date(p.renewal_date);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    return renewalDate <= thirtyDaysFromNow && renewalDate >= new Date();
+  }).length || 0;
+  
+  // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
-  const renewalCount = 0;
-  const formattedPremium = '$0';
   
   // Empty arrays for now
   const recentConversations: any[] = [];
@@ -199,12 +211,48 @@ export default async function DashboardHome() {
   
   // Metric cards data
   const metricCards = [
-    { id: 1, title: 'CLIENTS', value: clientCount?.toString() || '0', change: 'No data yet', color: 'amber' },
-    { id: 2, title: 'RENEWALS', value: renewalCount?.toString() || '0', change: 'No data yet', color: 'danger' },
-    { id: 3, title: 'CHATS', value: conversationCount?.toString() || '0', change: 'No data yet', color: 'ok' },
-    { id: 4, title: 'POLICIES', value: policyCount?.toString() || '0', change: 'No data yet', color: 'info' },
-    { id: 5, title: 'PREMIUM', value: formattedPremium, change: 'No data yet', color: 'amber' },
-    { id: 6, title: 'RATE', value: '0%', change: 'No data yet', color: 'ok' },
+    { 
+      id: 1, 
+      title: 'CLIENTS', 
+      value: clientCount?.toString() || '0', 
+      change: clientCount > 0 ? `${clientCount} total` : 'No data yet', 
+      color: 'amber' 
+    },
+    { 
+      id: 2, 
+      title: 'RENEWALS', 
+      value: renewalCount?.toString() || '0', 
+      change: renewalCount > 0 ? `${renewalCount} due in 30 days` : 'No renewals due', 
+      color: renewalCount > 0 ? 'danger' : 'ok' 
+    },
+    { 
+      id: 3, 
+      title: 'CHATS', 
+      value: conversationCount?.toString() || '0', 
+      change: 'No data yet', 
+      color: 'ok' 
+    },
+    { 
+      id: 4, 
+      title: 'POLICIES', 
+      value: policyCount?.toString() || '0', 
+      change: policyCount > 0 ? `${policyCount} total` : 'No data yet', 
+      color: 'info' 
+    },
+    { 
+      id: 5, 
+      title: 'PREMIUM', 
+      value: formattedPremium, 
+      change: totalPremium > 0 ? 'Annual premium' : 'No data yet', 
+      color: 'amber' 
+    },
+    { 
+      id: 6, 
+      title: 'RATE', 
+      value: '0%', 
+      change: 'No data yet', 
+      color: 'ok' 
+    },
   ];
   
   // Format recent conversations for display
