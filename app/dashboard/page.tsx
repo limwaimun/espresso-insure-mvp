@@ -187,31 +187,43 @@ export default async function DashboardHome() {
   
   // If user has clients, show normal dashboard
   // Fetch policy metrics for current user
-  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
+  const policyResult = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
+  const policyCount = policyResult.count || 0;
   
-  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
+  const policiesResult = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
+  const allPolicies = policiesResult.data || [];
   
-  const totalPremium = allPolicies?.reduce((sum, p) => {
-    const premium = p.premium;
-    if (typeof premium === 'number') return sum + premium;
-    if (typeof premium === 'string') return sum + parseFloat(premium) || 0;
-    return sum;
-  }, 0) || 0;
+  // Calculate total premium
+  let totalPremium = 0;
+  for (const p of allPolicies) {
+    if (p.premium) {
+      const premiumNum = typeof p.premium === 'number' ? p.premium : parseFloat(String(p.premium));
+      if (!isNaN(premiumNum)) {
+        totalPremium += premiumNum;
+      }
+    }
+  }
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
-  const renewalCount = allPolicies?.filter(p => {
-    if (!p.renewal_date) return false;
-    try {
-      const renewalDate = new Date(p.renewal_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const thirtyDaysFromNow = new Date(today);
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
-    } catch {
-      return false;
+  // Calculate renewals due in next 30 days
+  let renewalCount = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  
+  for (const p of allPolicies) {
+    if (p.renewal_date) {
+      try {
+        const renewalDate = new Date(p.renewal_date);
+        if (renewalDate >= today && renewalDate <= thirtyDaysFromNow) {
+          renewalCount++;
+        }
+      } catch {
+        // Skip invalid dates
+      }
     }
-  }).length || 0;
+  }
   
   // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
