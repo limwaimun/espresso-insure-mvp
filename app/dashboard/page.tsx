@@ -347,7 +347,11 @@ export default async function DashboardHome() {
       }}>
         {/* Recent Conversations */}
         <div className="panel">
-          <div className="panel-header">
+          <div className="panel-header" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
             <span className="panel-title">Recent conversations</span>
             <Link href="/dashboard/conversations" style={{
               fontFamily: 'DM Sans, sans-serif',
@@ -432,7 +436,11 @@ export default async function DashboardHome() {
 
         {/* Recent Alerts */}
         <div className="panel">
-          <div className="panel-header">
+          <div className="panel-header" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
             <span className="panel-title">Recent alerts</span>
             <Link href="/dashboard/alerts" style={{
               fontFamily: 'DM Sans, sans-serif',
