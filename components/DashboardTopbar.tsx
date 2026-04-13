@@ -3,8 +3,24 @@
 import React from 'react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
-const DashboardTopbar = () => {
+interface DashboardTopbarProps {
+  profile?: {
+    name: string;
+  } | null;
+}
+
+const DashboardTopbar = ({ profile }: DashboardTopbarProps) => {
   const isMobile = useIsMobile();
+  
+  // Get time-based greeting
+  const now = new Date();
+  const hours = now.getHours();
+  let greeting = 'Good morning';
+  if (hours >= 12 && hours < 17) {
+    greeting = 'Good afternoon';
+  } else if (hours >= 17) {
+    greeting = 'Good evening';
+  }
   
   return (
     <div style={{
@@ -32,7 +48,15 @@ const DashboardTopbar = () => {
           </button>
         )}
         
-        {/* Left side empty - logo is in sidebar */}
+        {/* Left side - Greeting */}
+        <div style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+        }}>
+          {greeting}, {profile?.name || 'User'}
+        </div>
       </div>
 
       {/* Right side - Actions and status */}

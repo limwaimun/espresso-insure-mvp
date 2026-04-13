@@ -10,15 +10,7 @@ export default async function DashboardHome() {
     return <div>Please log in</div>;
   }
   
-  // Get time-based greeting
-  const now = new Date();
-  const hours = now.getHours();
-  let greeting = 'Good morning';
-  if (hours >= 12 && hours < 17) {
-    greeting = 'Good afternoon';
-  } else if (hours >= 17) {
-    greeting = 'Good evening';
-  }
+
   
   // Fetch user profile for greeting
   let profile: { name: string } | null = null;
@@ -43,7 +35,6 @@ export default async function DashboardHome() {
   if ((clientCount ?? 0) === 0) {
     return (
       <div style={{ width: '100%' }}>
-        {/* Greeting */}
         <div style={{ marginBottom: '32px' }}>
           <h1 style={{
             fontFamily: 'Cormorant Garamond, serif',
@@ -52,7 +43,7 @@ export default async function DashboardHome() {
             color: '#F5ECD7',
             margin: '0 0 8px 0',
           }}>
-            {greeting}, {profile?.name || 'User'}!
+            Welcome to Espresso!
           </h1>
           <p style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -205,29 +196,59 @@ export default async function DashboardHome() {
   const totalPremium = (allPolicies || []).reduce((sum: number, p: any) => sum + (Number(p.premium) || 0), 0);
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
-  // Calculate renewals due in next 30 days
+  // Calculate renewals due in next 90 days (3 months for IFA planning)
   const currentTime = new Date();
-  const thirtyDays = new Date();
-  thirtyDays.setDate(thirtyDays.getDate() + 30);
+  const ninetyDays = new Date();
+  ninetyDays.setDate(ninetyDays.getDate() + 90);
   const renewalCount = (allPolicies || []).filter((p: any) => {
     if (!p.renewal_date) return false;
     const d = new Date(p.renewal_date);
-    return d >= currentTime && d <= thirtyDays;
+    return d >= currentTime && d <= ninetyDays;
   }).length;
   
   // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
   
+  // Fetch clients for birthday calculation
+  const { data: allClients } = await supabase.from('clients').select('birthday').eq('ifa_id', user.id);
+  
+  // Calculate upcoming birthdays (next 30 days, compare month/day only)
+  const today = new Date();
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  
+  let birthdayCount = 0;
+  if (allClients) {
+    birthdayCount = allClients.filter((client: any) => {
+      if (!client.birthday) return false;
+      
+      try {
+        const birthday = new Date(client.birthday);
+        const birthdayThisYear = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+        
+        // If birthday has already passed this year, check next year
+        if (birthdayThisYear < today) {
+          birthdayThisYear.setFullYear(today.getFullYear() + 1);
+        }
+        
+        return birthdayThisYear >= today && birthdayThisYear <= thirtyDaysFromNow;
+      } catch {
+        return false;
+      }
+    }).length;
+  }
+  
   // Create null-safe versions
   const safeClientCount = clientCount ?? 0;
   const safePolicyCount = policyCount ?? 0;
   const safeConversationCount = conversationCount ?? 0;
+  const safeBirthdayCount = birthdayCount ?? 0;
   
   // Empty arrays for now
   const recentConversations: any[] = [];
   const alerts: any[] = [];
   
-  // Metric cards data (5 cards, no RATE)
+  // Metric cards data (6 cards with BIRTHDAYS)
   const metricCards = [
     { 
       id: 1, 
@@ -240,7 +261,7 @@ export default async function DashboardHome() {
       id: 2, 
       title: 'RENEWALS', 
       value: renewalCount.toString(), 
-      change: renewalCount > 0 ? `${renewalCount} due in 30 days` : 'No renewals due', 
+      change: renewalCount > 0 ? `${renewalCount} due in 90 days` : 'No renewals due', 
       color: renewalCount > 0 ? 'danger' : 'ok' 
     },
     { 
@@ -263,6 +284,13 @@ export default async function DashboardHome() {
       value: formattedPremium, 
       change: totalPremium > 0 ? 'Annual premium' : 'No data yet', 
       color: 'amber' 
+    },
+    { 
+      id: 6, 
+      title: 'BIRTHDAYS', 
+      value: safeBirthdayCount.toString(), 
+      change: safeBirthdayCount > 0 ? `${safeBirthdayCount} this month` : 'None upcoming', 
+      color: 'ok' 
     },
   ];
   
@@ -288,15 +316,6 @@ export default async function DashboardHome() {
     <div style={{ width: '100%' }}>
       {/* Greeting */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '32px',
-          fontWeight: 400,
-          color: '#F5ECD7',
-          margin: '0 0 8px 0',
-        }}>
-          {greeting}, {profile?.name || 'User'}
-        </h1>
         <p style={{
           fontFamily: 'DM Sans, sans-serif',
           fontSize: '16px',

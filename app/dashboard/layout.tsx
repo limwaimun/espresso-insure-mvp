@@ -29,12 +29,29 @@ export default async function DashboardLayout({
   }
   
   // Fetch real counts for sidebar badges
-  const [conversationsCount, alertsCount, renewalsCount, claimsCount] = await Promise.all([
+  const [conversationsCount, alertsCount, claimsCount] = await Promise.all([
     supabase.from('conversations').select('*', { count: 'exact', head: true }),
     supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('resolved', false),
-    supabase.from('policies').select('*', { count: 'exact', head: true }),
     supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('type', 'claim'),
   ]);
+  
+  // Calculate renewals due in next 90 days (matching dashboard logic)
+  const ninetyDaysFromNow = new Date();
+  ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
+  
+  const { data: allPoliciesForRenewals } = await supabase
+    .from('policies')
+    .select('renewal_date')
+    .eq('ifa_id', user.id);
+  
+  const renewalsCount = {
+    count: allPoliciesForRenewals?.filter((p: any) => {
+      if (!p.renewal_date) return false;
+      const renewalDate = new Date(p.renewal_date);
+      const today = new Date();
+      return renewalDate >= today && renewalDate <= ninetyDaysFromNow;
+    }).length || 0
+  };
 
   return (
     <div style={{
@@ -80,7 +97,7 @@ export default async function DashboardLayout({
           background: '#1C0F0A',
           padding: '20px 32px',
         }}>
-          <DashboardTopbar />
+          <DashboardTopbar profile={profile} />
         </div>
         
         {/* Page Content */}
