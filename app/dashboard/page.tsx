@@ -186,28 +186,21 @@ export default async function DashboardHome() {
   }
   
   // If user has clients, show normal dashboard
-  // Fetch policy metrics for current user
-  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
+  // Fetch policy metrics
+  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true });
   
-  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
+  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status');
   
-  const totalPremium = allPolicies ? allPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) : 0;
+  const totalPremium = allPolicies?.reduce((sum, p) => sum + (p.premium || 0), 0) || 0;
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
-  const renewalCount = allPolicies ? allPolicies.filter(p => {
+  const renewalCount = allPolicies?.filter(p => {
     if (!p.renewal_date) return false;
-    try {
-      const renewalDate = new Date(p.renewal_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Start of today
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      thirtyDaysFromNow.setHours(23, 59, 59, 999); // End of day 30 days from now
-      return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
-    } catch (e) {
-      return false;
-    }
-  }).length : 0;
+    const renewalDate = new Date(p.renewal_date);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    return renewalDate <= thirtyDaysFromNow && renewalDate >= new Date();
+  }).length || 0;
   
   // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
