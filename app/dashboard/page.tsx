@@ -186,12 +186,16 @@ export default async function DashboardHome() {
   }
   
   // If user has clients, show normal dashboard
-  // Fetch policy metrics
-  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true });
+  // Fetch policy metrics for current user
+  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
   
-  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status');
+  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
   
-  const totalPremium = allPolicies?.reduce((sum, p) => sum + (p.premium || 0), 0) || 0;
+  const totalPremium = allPolicies?.reduce((sum: number, p: any) => {
+    const premium = p.premium ?? 0;
+    const premiumNum = typeof premium === 'number' ? premium : Number(premium) || 0;
+    return sum + premiumNum;
+  }, 0) || 0;
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
   const renewalCount = allPolicies?.filter(p => {
