@@ -206,8 +206,10 @@ export default async function DashboardHome() {
     return d >= currentTime && d <= ninetyDays;
   }).length;
   
-  // For now, hardcode conversation count until conversations table exists
-  const conversationCount = 0;
+  // Fetch conversation count
+  const { count: conversationCount } = await supabase
+    .from('conversations')
+    .select('*', { count: 'exact', head: true });
   
   // Fetch clients for birthday calculation
   const { data: allClients } = await supabase.from('clients').select('birthday').eq('ifa_id', user.id);
@@ -244,9 +246,25 @@ export default async function DashboardHome() {
   const safeConversationCount = conversationCount ?? 0;
   const safeBirthdayCount = birthdayCount ?? 0;
   
-  // Empty arrays for now
-  const recentConversations: any[] = [];
-  const alerts: any[] = [];
+  // Format conversation change text
+  const conversationChangeText = safeConversationCount > 0 
+    ? `${safeConversationCount} total` 
+    : 'No data yet';
+  
+  // Fetch recent conversations with client info
+  const { data: recentConversations } = await supabase
+    .from('conversations')
+    .select('*, clients(name, company)')
+    .order('last_message_at', { ascending: false })
+    .limit(5);
+  
+  // Fetch recent unresolved alerts with client info
+  const { data: alerts } = await supabase
+    .from('alerts')
+    .select('*, clients(name)')
+    .eq('resolved', false)
+    .order('created_at', { ascending: false })
+    .limit(5);
   
   // Metric cards data (6 cards with BIRTHDAYS)
   const metricCards = [
@@ -268,7 +286,7 @@ export default async function DashboardHome() {
       id: 3, 
       title: 'CHATS', 
       value: safeConversationCount.toString(), 
-      change: 'No data yet', 
+      change: conversationChangeText, 
       color: 'ok' 
     },
     { 
@@ -295,13 +313,22 @@ export default async function DashboardHome() {
   ];
   
   // Format recent conversations for display
-  const formattedConversations = recentConversations?.map((conv: any) => ({
-    id: conv.id,
-    client: conv.clients?.name || 'Client',
-    message: conv.last_message || 'No message',
-    time: conv.last_message_at ? formatTimeAgo(conv.last_message_at) : 'No time',
-    status: conv.status || 'unknown',
-  })) || [];
+  const formattedConversations = recentConversations?.map((conv: any) => {
+    const clientName = conv.clients?.name || 'Client';
+    const company = conv.clients?.company ? ` · ${conv.clients.company}` : '';
+    const lastMessage = conv.last_message ? 
+      conv.last_message.slice(0, 60) + (conv.last_message.length > 60 ? '...' : '') : 
+      'No message';
+    
+    return {
+      id: conv.id,
+      client: clientName,
+      company: company,
+      message: lastMessage,
+      time: conv.last_message_at ? formatTimeAgo(conv.last_message_at) : 'No time',
+      status: conv.status || 'active',
+    };
+  }) || [];
   
   // Format alerts for display
   const formattedAlerts = alerts?.map((alert: any) => ({
@@ -309,7 +336,7 @@ export default async function DashboardHome() {
     title: alert.title || 'Alert',
     client: alert.clients?.name || 'Client',
     time: alert.created_at ? formatTimeAgo(alert.created_at) : 'No time',
-    priority: alert.priority || 'low',
+    priority: alert.priority || 'info',
   })) || [];
 
   return (
@@ -387,13 +414,19 @@ export default async function DashboardHome() {
           <div className="panel-body">
             {formattedConversations.length > 0 ? (
               formattedConversations.map((conv) => (
-                <div key={conv.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 0',
-                  borderBottom: '1px solid #2E1A0E',
-                }}>
+                <Link 
+                  key={conv.id} 
+                  href="/dashboard/conversations"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 0',
+                    borderBottom: '1px solid #2E1A0E',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
                   <div style={{
                     width: '32px',
                     height: '32px',
@@ -417,8 +450,16 @@ export default async function DashboardHome() {
                       fontWeight: 500,
                       color: '#F5ECD7',
                       marginBottom: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      flexWrap: 'wrap',
                     }}>
-                      {conv.client}
+                      <span>{conv.client}</span>
+                      <span style={{ color: '#C9B99A', fontWeight: 400 }}>{conv.company}</span>
+                      <span className={`pill ${conv.status === 'active' ? 'pill-ok' : 'pill-amber'}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+                        {conv.status === 'active' ? 'Active' : 'Waiting'}
+                      </span>
                     </div>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
@@ -440,7 +481,7 @@ export default async function DashboardHome() {
                   }}>
                     {conv.time}
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div style={{
@@ -476,13 +517,19 @@ export default async function DashboardHome() {
           <div className="panel-body">
             {formattedAlerts.length > 0 ? (
               formattedAlerts.map((alert) => (
-                <div key={alert.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 0',
-                  borderBottom: '1px solid #2E1A0E',
-                }}>
+                <Link 
+                  key={alert.id} 
+                  href="/dashboard/alerts"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 0',
+                    borderBottom: '1px solid #2E1A0E',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
                   <div style={{
                     width: '12px',
                     height: '12px',
@@ -498,8 +545,15 @@ export default async function DashboardHome() {
                       fontWeight: 500,
                       color: '#F5ECD7',
                       marginBottom: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      flexWrap: 'wrap',
                     }}>
-                      {alert.title}
+                      <span>{alert.title}</span>
+                      <span className={`pill ${alert.priority === 'high' ? 'pill-danger' : alert.priority === 'medium' ? 'pill-amber' : 'pill-info'}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+                        {alert.priority === 'high' ? 'High' : alert.priority === 'medium' ? 'Medium' : 'Info'}
+                      </span>
                     </div>
                     <div style={{
                       fontFamily: 'DM Sans, sans-serif',
@@ -517,7 +571,7 @@ export default async function DashboardHome() {
                   }}>
                     {alert.time}
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div style={{
