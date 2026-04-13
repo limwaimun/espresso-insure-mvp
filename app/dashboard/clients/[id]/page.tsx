@@ -39,6 +39,33 @@ export default async function ClientProfilePage({ params }: PageProps) {
     .eq('type', 'claim')
     .order('created_at', { ascending: false });
   
+  // Fetch all alerts for this client (for timeline)
+  const { data: allAlerts } = await supabase
+    .from('alerts')
+    .select('*')
+    .eq('client_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  
+  // Fetch conversations for this client
+  const { data: clientConvos } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('client_id', id);
+  
+  // Fetch messages for these conversations
+  let clientMessages: any[] = [];
+  if (clientConvos && clientConvos.length > 0) {
+    const convoIds = clientConvos.map((c: any) => c.id);
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('*')
+      .in('conversation_id', convoIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    clientMessages = msgs || [];
+  }
+  
   // If client doesn't exist, show 404
   if (!client) {
     return (
@@ -105,24 +132,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     },
   ];
   
-  // Generate activity from conversations and policies
-  const activity = [
-    ...(conversations?.map(conv => ({
-      id: conv.id,
-      text: `Message: ${conv.last_message?.substring(0, 50)}${conv.last_message && conv.last_message.length > 50 ? '...' : ''}`,
-      date: conv.last_message_at,
-    })) || []),
-    ...(policies?.filter(p => p.renewal_date && new Date(p.renewal_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).map(policy => ({
-      id: policy.id,
-      text: `Renewal due for ${policy.name || 'policy'}`,
-      date: policy.renewal_date,
-    })) || []),
-    ...(policies?.filter(p => p.claims_open && p.claims_open > 0).map(policy => ({
-      id: policy.id,
-      text: `Claim open — ${policy.name || 'policy'}`,
-      date: policy.updated_at,
-    })) || []),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
 
   // Calculate age from birthday (only for individuals)
   let birthdayDisplay = '—';
@@ -155,6 +165,45 @@ export default async function ClientProfilePage({ params }: PageProps) {
       return '—';
     }
   };
+  
+  // Format relative time for timeline
+  const formatRelativeTime = (dateStr: string) => {
+    if (!dateStr) return '—';
+    try {
+      const now = new Date();
+      const date = new Date(dateStr);
+      const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      if (diffHours < 1) return 'Just now';
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return '—';
+    }
+  };
+  
+  // Build timeline from messages, alerts, and policies
+  const timeline = [
+    ...clientMessages.map((m: any) => ({
+      date: m.created_at,
+      icon: m.role === 'client' ? '💬' : '🤖',
+      text: m.role === 'client' ? `Client: "${m.content?.slice(0, 80) || 'No content'}${m.content && m.content.length > 80 ? '...' : ''}"` : `Maya: "${m.content?.slice(0, 80) || 'No content'}${m.content && m.content.length > 80 ? '...' : ''}"`,
+      type: 'message'
+    })),
+    ...(allAlerts || []).map((a: any) => ({
+      date: a.created_at,
+      icon: a.type === 'claim' ? '📋' : a.type === 'renewal' ? '⚠️' : '🔔',
+      text: a.title || 'Alert',
+      type: 'alert'
+    })),
+    ...(policies || []).map((p: any) => ({
+      date: p.created_at,
+      icon: '📄',
+      text: `${p.insurer || 'Unknown'} ${p.type || 'policy'} added ($${(Number(p.premium) || 0).toLocaleString()}/yr)`,
+      type: 'policy'
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 15);
   
   // Insurance types for coverage analysis based on client type
   let coverageTypes = [];
@@ -562,24 +611,39 @@ export default async function ClientProfilePage({ params }: PageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {claims.map((claim: any) => (
-                    <tr key={claim.id}>
-                      <td>
-                        {claim.created_at ? new Date(claim.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                      </td>
-                      <td>{claim.description || 'No description'}</td>
-                      <td>
-                        <span className={`pill ${claim.status === 'resolved' ? 'pill-ok' : 'pill-amber'}`}>
-                          {claim.status === 'resolved' ? 'Resolved' : 'Open'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`pill ${claim.priority === 'high' ? 'pill-danger' : claim.priority === 'medium' ? 'pill-amber' : 'pill-ok'}`}>
-                          {claim.priority === 'high' ? 'High' : claim.priority === 'medium' ? 'Medium' : 'Low'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {claims.map((claim: any) => {
+                    const claimDate = claim.created_at ? new Date(claim.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                    const claimDescription = claim.title || (claim.body ? claim.body.slice(0, 60) + (claim.body.length > 60 ? '...' : '') : 'No description');
+                    const claimBody = claim.body ? claim.body.slice(0, 100) + (claim.body.length > 100 ? '...' : '') : null;
+                    
+                    return (
+                      <tr key={claim.id}>
+                        <td style={{ verticalAlign: 'top' }}>
+                          {claimDate}
+                        </td>
+                        <td style={{ verticalAlign: 'top' }}>
+                          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#F5ECD7', fontWeight: 500, marginBottom: '4px' }}>
+                            {claimDescription}
+                          </div>
+                          {claimBody && (
+                            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#C9B99A', lineHeight: 1.4 }}>
+                              {claimBody}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ verticalAlign: 'top' }}>
+                          <span className={`pill ${claim.resolved === true ? 'pill-ok' : 'pill-amber'}`}>
+                            {claim.resolved === true ? 'Resolved' : 'Open'}
+                          </span>
+                        </td>
+                        <td style={{ verticalAlign: 'top' }}>
+                          <span className={`pill ${claim.priority === 'high' ? 'pill-danger' : claim.priority === 'medium' ? 'pill-amber' : 'pill-info'}`}>
+                            {claim.priority === 'high' ? 'High' : claim.priority === 'medium' ? 'Medium' : 'Info'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -597,34 +661,38 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </div>
       </div>
       
-      {/* == SECTION 7: RECENT ACTIVITY == */}
+      {/* == SECTION 7: ACTIVITY TIMELINE == */}
       <div className="panel">
         <div className="panel-header">
           <span className="panel-title">Activity</span>
         </div>
         <div className="panel-body">
-          {activity.length > 0 ? (
-            activity.map((a, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px 0',
-                borderBottom: '1px solid #2E1A0E',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#C9B99A',
-                alignItems: 'center',
-              }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#C8813A',
-                  flexShrink: 0,
-                }} />
-                {a.text}
-              </div>
-            ))
+          {timeline.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {timeline.map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontFamily: 'DM Sans, sans-serif', 
+                      fontSize: '13px', 
+                      color: '#F5ECD7',
+                      lineHeight: 1.4,
+                      marginBottom: '2px'
+                    }}>
+                      {item.text}
+                    </div>
+                    <div style={{ 
+                      fontFamily: 'DM Sans, sans-serif', 
+                      fontSize: '11px', 
+                      color: '#C9B99A',
+                    }}>
+                      {formatRelativeTime(item.date)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div style={{
               padding: '20px',
@@ -633,7 +701,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
               fontSize: '13px',
               color: '#C9B99A',
             }}>
-              No recent activity
+              No activity yet.
             </div>
           )}
         </div>
