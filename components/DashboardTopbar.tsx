@@ -32,14 +32,7 @@ const DashboardTopbar = () => {
           </button>
         )}
         
-        <div style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: 400,
-          color: '#F5ECD7',
-        }}>
-          espresso<span style={{ color: '#C8813A' }}>.</span>
-        </div>
+        {/* Left side empty - logo is in sidebar */}
       </div>
 
       {/* Right side - Actions and status */}

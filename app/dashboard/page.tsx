@@ -10,6 +10,16 @@ export default async function DashboardHome() {
     return <div>Please log in</div>;
   }
   
+  // Get time-based greeting
+  const now = new Date();
+  const hours = now.getHours();
+  let greeting = 'Good morning';
+  if (hours >= 12 && hours < 17) {
+    greeting = 'Good afternoon';
+  } else if (hours >= 17) {
+    greeting = 'Good evening';
+  }
+  
   // Fetch user profile for greeting
   let profile: { name: string } | null = null;
   try {
@@ -42,7 +52,7 @@ export default async function DashboardHome() {
             color: '#F5ECD7',
             margin: '0 0 8px 0',
           }}>
-            Welcome to Espresso, {profile?.name || 'User'}!
+            {greeting}, {profile?.name || 'User'}!
           </h1>
           <p style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -217,7 +227,7 @@ export default async function DashboardHome() {
   const recentConversations: any[] = [];
   const alerts: any[] = [];
   
-  // Metric cards data
+  // Metric cards data (5 cards, no RATE)
   const metricCards = [
     { 
       id: 1, 
@@ -254,13 +264,6 @@ export default async function DashboardHome() {
       change: totalPremium > 0 ? 'Annual premium' : 'No data yet', 
       color: 'amber' 
     },
-    { 
-      id: 6, 
-      title: 'RATE', 
-      value: '0%', 
-      change: 'No data yet', 
-      color: 'ok' 
-    },
   ];
   
   // Format recent conversations for display
@@ -292,7 +295,7 @@ export default async function DashboardHome() {
           color: '#F5ECD7',
           margin: '0 0 8px 0',
         }}>
-          Good morning, {profile?.name || 'User'}
+          {greeting}, {profile?.name || 'User'}
         </h1>
         <p style={{
           fontFamily: 'DM Sans, sans-serif',
