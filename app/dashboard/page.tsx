@@ -201,10 +201,16 @@ export default async function DashboardHome() {
   
   const renewalCount = allPolicies?.filter(p => {
     if (!p.renewal_date) return false;
-    const renewalDate = new Date(p.renewal_date);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return renewalDate <= thirtyDaysFromNow && renewalDate >= new Date();
+    try {
+      const renewalDate = new Date(p.renewal_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thirtyDaysFromNow = new Date(today);
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
+    } catch {
+      return false;
+    }
   }).length || 0;
   
   // For now, hardcode conversation count until conversations table exists
