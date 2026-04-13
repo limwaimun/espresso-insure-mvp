@@ -30,7 +30,7 @@ export default async function DashboardHome() {
     .select('*', { count: 'exact', head: true });
   
   // If no clients, show onboarding screen
-  if (clientCount === 0) {
+  if ((clientCount ?? 0) === 0) {
     return (
       <div style={{ width: '100%' }}>
         {/* Greeting */}
@@ -187,46 +187,31 @@ export default async function DashboardHome() {
   
   // If user has clients, show normal dashboard
   // Fetch policy metrics for current user
-  const policyResult = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
-  const policyCount = policyResult.count || 0;
+  const { count: policyCount } = await supabase.from('policies').select('*', { count: 'exact', head: true }).eq('ifa_id', user.id);
   
-  const policiesResult = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
-  const allPolicies = policiesResult.data || [];
+  const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
   
   // Calculate total premium
-  let totalPremium = 0;
-  for (const p of allPolicies) {
-    if (p.premium) {
-      const premiumNum = typeof p.premium === 'number' ? p.premium : parseFloat(String(p.premium));
-      if (!isNaN(premiumNum)) {
-        totalPremium += premiumNum;
-      }
-    }
-  }
+  const totalPremium = (allPolicies || []).reduce((sum: number, p: any) => sum + (Number(p.premium) || 0), 0);
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
   // Calculate renewals due in next 30 days
-  let renewalCount = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const thirtyDaysFromNow = new Date(today);
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-  
-  for (const p of allPolicies) {
-    if (p.renewal_date) {
-      try {
-        const renewalDate = new Date(p.renewal_date);
-        if (renewalDate >= today && renewalDate <= thirtyDaysFromNow) {
-          renewalCount++;
-        }
-      } catch {
-        // Skip invalid dates
-      }
-    }
-  }
+  const now = new Date();
+  const thirtyDays = new Date();
+  thirtyDays.setDate(thirtyDays.getDate() + 30);
+  const renewalCount = (allPolicies || []).filter((p: any) => {
+    if (!p.renewal_date) return false;
+    const d = new Date(p.renewal_date);
+    return d >= now && d <= thirtyDays;
+  }).length;
   
   // For now, hardcode conversation count until conversations table exists
   const conversationCount = 0;
+  
+  // Create null-safe versions
+  const safeClientCount = clientCount ?? 0;
+  const safePolicyCount = policyCount ?? 0;
+  const safeConversationCount = conversationCount ?? 0;
   
   // Empty arrays for now
   const recentConversations: any[] = [];
@@ -237,29 +222,29 @@ export default async function DashboardHome() {
     { 
       id: 1, 
       title: 'CLIENTS', 
-      value: clientCount?.toString() || '0', 
-      change: clientCount > 0 ? `${clientCount} total` : 'No data yet', 
+      value: safeClientCount.toString(), 
+      change: safeClientCount > 0 ? `${safeClientCount} total` : 'No data yet', 
       color: 'amber' 
     },
     { 
       id: 2, 
       title: 'RENEWALS', 
-      value: renewalCount?.toString() || '0', 
+      value: renewalCount.toString(), 
       change: renewalCount > 0 ? `${renewalCount} due in 30 days` : 'No renewals due', 
       color: renewalCount > 0 ? 'danger' : 'ok' 
     },
     { 
       id: 3, 
       title: 'CHATS', 
-      value: conversationCount?.toString() || '0', 
+      value: safeConversationCount.toString(), 
       change: 'No data yet', 
       color: 'ok' 
     },
     { 
       id: 4, 
       title: 'POLICIES', 
-      value: policyCount?.toString() || '0', 
-      change: policyCount > 0 ? `${policyCount} total` : 'No data yet', 
+      value: safePolicyCount.toString(), 
+      change: safePolicyCount > 0 ? `${safePolicyCount} total` : 'No data yet', 
       color: 'info' 
     },
     { 
