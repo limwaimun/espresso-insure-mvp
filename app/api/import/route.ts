@@ -142,6 +142,42 @@ export async function POST(request: Request) {
       // continue — clients were already inserted
     }
 
+    // AUTO-TIER CALCULATION: Calculate and update client tiers based on total premium
+    if (policiesImported > 0) {
+      console.log('Calculating auto-tiers for clients...');
+      
+      for (const [clientName, clientId] of clientIdMap) {
+        try {
+          // Get all policies for this client
+          const { data: clientPolicies } = await supabaseAdmin
+            .from('policies')
+            .select('premium')
+            .eq('client_id', clientId);
+          
+          // Calculate total annual premium
+          const totalPremium = (clientPolicies || []).reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
+          
+          // Determine tier based on thresholds
+          let tier = 'bronze';
+          if (totalPremium >= 10000) tier = 'platinum';
+          else if (totalPremium >= 5000) tier = 'gold';
+          else if (totalPremium >= 1000) tier = 'silver';
+          
+          console.log(`Client ${clientName}: $${totalPremium} → ${tier}`);
+          
+          // Update client tier
+          await supabaseAdmin
+            .from('clients')
+            .update({ tier })
+            .eq('id', clientId);
+            
+        } catch (tierError) {
+          console.error(`Error calculating tier for client ${clientName}:`, tierError);
+        }
+      }
+      console.log('Auto-tier calculation complete');
+    }
+
     return NextResponse.json({
       success: true,
       clientsImported: insertedClients.length,

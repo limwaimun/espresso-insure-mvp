@@ -62,6 +62,15 @@ export default async function ClientProfilePage({ params }: PageProps) {
   const activePolicies = policies?.filter(p => p.status === 'active').length || 0;
   const totalPremium = policies?.filter(p => p.status === 'active').reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
   
+  // Calculate tier based on total premium
+  let calculatedTier = 'bronze';
+  if (totalPremium >= 10000) calculatedTier = 'platinum';
+  else if (totalPremium >= 5000) calculatedTier = 'gold';
+  else if (totalPremium >= 1000) calculatedTier = 'silver';
+  
+  // Use calculated tier (override stored tier)
+  const displayTier = calculatedTier;
+  
   // Get next renewal date and days until
   let nextRenewalDate = null;
   let daysUntilRenewal = null;
@@ -115,10 +124,10 @@ export default async function ClientProfilePage({ params }: PageProps) {
     })) || []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
-  // Calculate age from birthday
+  // Calculate age from birthday (only for individuals)
   let birthdayDisplay = '—';
   let age = null;
-  if (client.birthday) {
+  if (client.type === 'individual' && client.birthday) {
     try {
       const birthday = new Date(client.birthday);
       const today = new Date();
@@ -147,20 +156,61 @@ export default async function ClientProfilePage({ params }: PageProps) {
     }
   };
   
-  // Standard insurance types for coverage analysis
-  const standardTypes = [
-    { key: 'life', label: 'Life' },
-    { key: 'health', label: 'Health' },
-    { key: 'critical illness', label: 'Critical Illness' },
-    { key: 'disability', label: 'Disability' },
-    { key: 'motor', label: 'Motor' },
-    { key: 'travel', label: 'Travel' },
-    { key: 'property', label: 'Property' },
-    { key: 'professional indemnity', label: 'Professional Indemnity' },
-  ];
+  // Insurance types for coverage analysis based on client type
+  let coverageTypes = [];
   
-  // Check coverage for each standard type
-  const coverageAnalysis = standardTypes.map(type => {
+  if (client.type === 'individual') {
+    coverageTypes = [
+      { key: 'life', label: 'Life' },
+      { key: 'health', label: 'Health' },
+      { key: 'critical illness', label: 'Critical Illness' },
+      { key: 'disability', label: 'Disability' },
+      { key: 'motor', label: 'Motor' },
+      { key: 'travel', label: 'Travel' },
+      { key: 'property', label: 'Property' },
+      { key: 'professional indemnity', label: 'Professional Indemnity' },
+    ];
+  } else if (client.type === 'sme') {
+    coverageTypes = [
+      { key: 'group health', label: 'Group Health' },
+      { key: 'group life', label: 'Group Life' },
+      { key: 'fire', label: 'Fire Insurance' },
+      { key: 'professional indemnity', label: 'Professional Indemnity' },
+      { key: 'business interruption', label: 'Business Interruption' },
+      { key: 'keyman', label: 'Keyman Insurance' },
+      { key: 'directors & officers', label: 'Directors & Officers (D&O)' },
+      { key: 'cyber', label: 'Cyber Insurance' },
+    ];
+  } else if (client.type === 'corporate') {
+    coverageTypes = [
+      { key: 'group health', label: 'Group Health' },
+      { key: 'group life', label: 'Group Life' },
+      { key: 'fire', label: 'Fire Insurance' },
+      { key: 'professional indemnity', label: 'Professional Indemnity' },
+      { key: 'business interruption', label: 'Business Interruption' },
+      { key: 'keyman', label: 'Keyman Insurance' },
+      { key: 'directors & officers', label: 'Directors & Officers (D&O)' },
+      { key: 'cyber', label: 'Cyber Insurance' },
+      { key: 'workers compensation', label: 'Workers Compensation' },
+      { key: 'public liability', label: 'Public Liability' },
+      { key: 'marine', label: 'Marine Insurance' },
+    ];
+  } else {
+    // Default to individual types
+    coverageTypes = [
+      { key: 'life', label: 'Life' },
+      { key: 'health', label: 'Health' },
+      { key: 'critical illness', label: 'Critical Illness' },
+      { key: 'disability', label: 'Disability' },
+      { key: 'motor', label: 'Motor' },
+      { key: 'travel', label: 'Travel' },
+      { key: 'property', label: 'Property' },
+      { key: 'professional indemnity', label: 'Professional Indemnity' },
+    ];
+  }
+  
+  // Check coverage for each type based on client type
+  const coverageAnalysis = coverageTypes.map(type => {
     const matchingPolicy = policies?.find(p => 
       p.type && p.type.toLowerCase().includes(type.key.toLowerCase())
     );
@@ -221,10 +271,10 @@ export default async function ClientProfilePage({ params }: PageProps) {
                 color: '#F5ECD7',
                 margin: 0,
               }}>
-                {client.name}
+                {client.type === 'individual' ? client.name : client.company}
               </h1>
-              <span className="pill pill-amber" style={{ fontSize: '11px', padding: '2px 8px' }}>
-                {client.tier || 'Standard'}
+              <span className={`pill pill-${displayTier === 'platinum' ? 'teal' : displayTier === 'gold' ? 'amber' : displayTier === 'silver' ? 'ok' : 'danger'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                {displayTier.charAt(0).toUpperCase() + displayTier.slice(1)}
               </span>
             </div>
             <div style={{
@@ -233,7 +283,10 @@ export default async function ClientProfilePage({ params }: PageProps) {
               color: '#C9B99A',
               marginBottom: '8px',
             }}>
-              {client.company || 'Individual'}
+              {client.type === 'individual' 
+                ? (client.company || 'Individual')
+                : `Contact: ${client.name}`
+              }
             </div>
             
             {/* Contact info inline (not cards) */}
@@ -256,7 +309,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
                   ✉️ {client.email}
                 </span>
               )}
-              {client.birthday && (
+              {client.type === 'individual' && client.birthday && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   🎂 {birthdayDisplay}
                 </span>
