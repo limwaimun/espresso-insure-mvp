@@ -53,8 +53,22 @@ export async function POST(request: Request) {
     clients.forEach((client: any) => {
       const key = client.name.toLowerCase().trim();
       if (!uniqueClients.has(key)) {
+        // Normalize client type to valid values
+        let clientType = 'individual';
+        if (client.type) {
+          const typeLower = String(client.type).toLowerCase().trim();
+          if (typeLower === 'sme' || typeLower === 'corporate') {
+            clientType = typeLower;
+          } else if (typeLower.includes('sme') || typeLower.includes('small') || typeLower.includes('medium')) {
+            clientType = 'sme';
+          } else if (typeLower.includes('corporate') || typeLower.includes('large') || typeLower.includes('enterprise')) {
+            clientType = 'corporate';
+          }
+        }
+        
         uniqueClients.set(key, {
           ...client,
+          type: clientType,
           ifa_id: userId
         });
       }

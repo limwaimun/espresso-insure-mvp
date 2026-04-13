@@ -13,6 +13,7 @@ const ESPRESSO_FIELDS = [
   { id: 'whatsapp', label: 'WhatsApp / Phone', required: false, keywords: ['phone', 'mobile', 'whatsapp', 'contact', 'hp', 'telephone'] },
   { id: 'birthday', label: 'Birthday', required: false, keywords: ['birthday', 'dob', 'date of birth', 'birth date'] },
   { id: 'address', label: 'Address', required: false, keywords: ['address', 'addr', 'mailing address'] },
+  { id: 'client_type', label: 'Client Type', required: false, keywords: ['type', 'client type', 'category', 'client category'] },
   { id: 'insurer', label: 'Insurer', required: false, keywords: ['insurer', 'insurance', 'provider', 'carrier'] },
   { id: 'type', label: 'Policy type', required: false, keywords: ['type', 'plan', 'product', 'policy type', 'coverage'] },
   { id: 'premium', label: 'Premium (annual)', required: false, keywords: ['premium', 'amount', 'price', 'cost', 'annual', 'yearly'] },
@@ -134,6 +135,7 @@ export default function ImportPage() {
           whatsapp: getValue('whatsapp'),
           birthday: getValue('birthday'),
           address: getValue('address'),
+          type: getValue('client_type'),
         });
       }
       
