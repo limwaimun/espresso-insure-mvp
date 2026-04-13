@@ -191,15 +191,22 @@ export default async function DashboardHome() {
   
   const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status');
   
-  const totalPremium = allPolicies?.reduce((sum, p) => sum + (p.premium || 0), 0) || 0;
+  const totalPremium = allPolicies?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
   const renewalCount = allPolicies?.filter(p => {
     if (!p.renewal_date) return false;
-    const renewalDate = new Date(p.renewal_date);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return renewalDate <= thirtyDaysFromNow && renewalDate >= new Date();
+    try {
+      const renewalDate = new Date(p.renewal_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of today
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      thirtyDaysFromNow.setHours(23, 59, 59, 999); // End of day 30 days from now
+      return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
+    } catch (e) {
+      return false;
+    }
   }).length || 0;
   
   // For now, hardcode conversation count until conversations table exists
