@@ -4,10 +4,33 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+type TierType = 'all' | 'platinum' | 'gold' | 'silver' | 'bronze';
+type ClientType = 'all' | 'individual' | 'sme' | 'corporate';
+
+interface Client {
+  id: string;
+  name: string;
+  company: string | null;
+  type: string | null;
+  tier: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  created_at: string;
+}
+
 export default function ClientsPage() {
-  const [clients, setClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTier, setSelectedTier] = useState<TierType>('all');
+  const [selectedType, setSelectedType] = useState<ClientType>('all');
+  
+  // Three dots menu state
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchClients() {
@@ -27,6 +50,7 @@ export default function ClientsPage() {
         
         console.log(`Fetched ${data?.length || 0} clients`);
         setClients(data || []);
+        setFilteredClients(data || []);
       } catch (err: any) {
         console.error("Error in fetchClients:", err);
         setError(err.message || 'Failed to load clients');
@@ -37,7 +61,64 @@ export default function ClientsPage() {
     
     fetchClients();
   }, []);
-  const tabs = ['All', 'Platinum', 'Gold', 'Silver', 'Bronze'];
+
+  // Apply filters whenever searchQuery, selectedTier, or selectedType changes
+  useEffect(() => {
+    let result = clients;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(client => 
+        client.name?.toLowerCase().includes(query) ||
+        client.email?.toLowerCase().includes(query) ||
+        client.company?.toLowerCase().includes(query) ||
+        client.whatsapp?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply tier filter
+    if (selectedTier !== 'all') {
+      result = result.filter(client => client.tier === selectedTier);
+    }
+    
+    // Apply type filter
+    if (selectedType !== 'all') {
+      result = result.filter(client => client.type === selectedType);
+    }
+    
+    setFilteredClients(result);
+  }, [clients, searchQuery, selectedTier, selectedType]);
+
+  // Close menu when clicking elsewhere
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setMenuOpen(null);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const handleMenuClick = (e: React.MouseEvent, clientId: string) => {
+    e.stopPropagation();
+    setMenuOpen(menuOpen === clientId ? null : clientId);
+  };
+
+  const handleWhatsAppClick = (whatsappNumber: string | null) => {
+    if (whatsappNumber) {
+      window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+    }
+  };
+
+  const tabs: TierType[] = ['all', 'platinum', 'gold', 'silver', 'bronze'];
+  const tabLabels = {
+    all: 'All',
+    platinum: 'Platinum',
+    gold: 'Gold',
+    silver: 'Silver',
+    bronze: 'Bronze'
+  };
 
   if (loading) {
     return (
@@ -248,7 +329,7 @@ export default function ClientsPage() {
             </div>
           </div>
 
-          {/* Filter Tabs */}
+          {/* Tier Filter Pills */}
           <div style={{
             display: 'flex',
             gap: '8px',
@@ -259,20 +340,21 @@ export default function ClientsPage() {
             {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => {}}
+                onClick={() => setSelectedTier(tab)}
                 style={{
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: '12px',
                   fontWeight: 500,
                   padding: '6px 12px',
                   borderRadius: '100px',
-                  background: 'All' === tab ? '#C8813A' : 'transparent',
-                  color: 'All' === tab ? '#120A06' : '#C9B99A',
-                  border: 'All' === tab ? 'none' : '1px solid #2E1A0E',
+                  background: selectedTier === tab ? '#C8813A' : 'transparent',
+                  color: selectedTier === tab ? '#120A06' : '#C9B99A',
+                  border: selectedTier === tab ? 'none' : '1px solid #2E1A0E',
                   cursor: 'pointer',
+                  transition: 'all 0.2s',
                 }}
               >
-                {tab}
+                {tabLabels[tab]}
               </button>
             ))}
           </div>
@@ -289,12 +371,15 @@ export default function ClientsPage() {
               alignItems: 'center',
               gap: '12px',
             }}>
+              {/* Search Bar */}
               <div style={{
                 position: 'relative',
               }}>
                 <input
                   type="text"
                   placeholder="Search clients..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     background: '#120A06',
                     border: '1px solid #2E1A0E',
@@ -318,33 +403,45 @@ export default function ClientsPage() {
                 </span>
               </div>
               
-              <select style={{
-                background: '#120A06',
-                border: '1px solid #2E1A0E',
-                borderRadius: '6px',
-                padding: '8px 12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#F5ECD7',
-                minWidth: '120px',
-              }}>
-                <option value="">All types</option>
+              {/* Type Dropdown */}
+              <select 
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value as ClientType)}
+                style={{
+                  background: '#120A06',
+                  border: '1px solid #2E1A0E',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#F5ECD7',
+                  minWidth: '120px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">All types</option>
                 <option value="individual">Individual</option>
                 <option value="sme">SME</option>
                 <option value="corporate">Corporate</option>
               </select>
               
-              <select style={{
-                background: '#120A06',
-                border: '1px solid #2E1A0E',
-                borderRadius: '6px',
-                padding: '8px 12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#F5ECD7',
-                minWidth: '120px',
-              }}>
-                <option value="">All tiers</option>
+              {/* Tier Dropdown (syncs with pills) */}
+              <select 
+                value={selectedTier}
+                onChange={(e) => setSelectedTier(e.target.value as TierType)}
+                style={{
+                  background: '#120A06',
+                  border: '1px solid #2E1A0E',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#F5ECD7',
+                  minWidth: '120px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">All tiers</option>
                 <option value="platinum">Platinum</option>
                 <option value="gold">Gold</option>
                 <option value="silver">Silver</option>
@@ -352,28 +449,11 @@ export default function ClientsPage() {
               </select>
             </div>
             
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <button className="btn-secondary" style={{
-                fontSize: '12px',
-                padding: '6px 12px',
-              }}>
-                Filter
-              </button>
-              <button className="btn-secondary" style={{
-                fontSize: '12px',
-                padding: '6px 12px',
-              }}>
-                Clear
-              </button>
-            </div>
+            {/* REMOVED: Filter and Clear buttons */}
           </div>
 
           {/* Clients Table */}
-          {clients.length > 0 ? (
+          {filteredClients.length > 0 ? (
             <div style={{
               background: '#120A06',
               border: '1px solid #2E1A0E',
@@ -496,7 +576,7 @@ export default function ClientsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {clients.map((client) => (
+                    {filteredClients.map((client) => (
                       <tr key={client.id} style={{
                         borderBottom: '1px solid #2E1A0E',
                       }}>
@@ -585,17 +665,94 @@ export default function ClientsPage() {
                         </td>
                         <td style={{
                           padding: '12px 16px',
+                          position: 'relative',
                         }}>
-                          <button style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#C9B99A',
-                            fontSize: '16px',
-                            cursor: 'pointer',
-                            padding: '4px',
-                          }}>
+                          <button 
+                            onClick={(e) => handleMenuClick(e, client.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#C9B99A',
+                              fontSize: '16px',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(201, 185, 154, 0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
                             ⋮
                           </button>
+                          
+                          {/* Three Dots Menu Dropdown */}
+                          {menuOpen === client.id && (
+                            <div style={{
+                              position: 'absolute',
+                              right: '16px',
+                              top: '40px',
+                              background: '#3D2215',
+                              border: '1px solid #2E1A0E',
+                              borderRadius: '6px',
+                              padding: '8px 0',
+                              minWidth: '160px',
+                              zIndex: 100,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                            }}>
+                              <Link 
+                                href={`/dashboard/clients/${client.id}`}
+                                style={{
+                                  display: 'block',
+                                  padding: '8px 16px',
+                                  fontFamily: 'DM Sans, sans-serif',
+                                  fontSize: '13px',
+                                  color: '#F5ECD7',
+                                  textDecoration: 'none',
+                                  cursor: 'pointer',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(200, 129, 58, 0.2)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                View profile
+                              </Link>
+                              
+                              <button
+                                onClick={() => handleWhatsAppClick(client.whatsapp)}
+                                disabled={!client.whatsapp}
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 16px',
+                                  fontFamily: 'DM Sans, sans-serif',
+                                  fontSize: '13px',
+                                  color: client.whatsapp ? '#F5ECD7' : '#5A5A5A',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  textAlign: 'left',
+                                  cursor: client.whatsapp ? 'pointer' : 'not-allowed',
+                                }}
+                                onMouseEnter={(e) => client.whatsapp && (e.currentTarget.style.background = 'rgba(200, 129, 58, 0.2)')}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                WhatsApp
+                              </button>
+                              
+                              <div style={{
+                                padding: '8px 16px',
+                                fontFamily: 'DM Sans, sans-serif',
+                                fontSize: '13px',
+                                color: '#5A5A5A',
+                                borderTop: '1px solid #2E1A0E',
+                                fontStyle: 'italic',
+                              }}>
+                                Delete (Coming soon)
+                              </div>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -617,7 +774,9 @@ export default function ClientsPage() {
                 color: '#F5ECD7',
                 marginBottom: '16px',
               }}>
-                No clients yet
+                {searchQuery || selectedTier !== 'all' || selectedType !== 'all' 
+                  ? 'No clients match your filters' 
+                  : 'No clients yet'}
               </div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
@@ -627,7 +786,9 @@ export default function ClientsPage() {
                 maxWidth: '400px',
                 margin: '0 auto 24px auto',
               }}>
-                Import your client list to get started.
+                {searchQuery || selectedTier !== 'all' || selectedType !== 'all' 
+                  ? 'Try adjusting your search or filters.'
+                  : 'Import your client list to get started.'}
               </div>
               <Link href="/dashboard/import" style={{ textDecoration: 'none' }}>
                 <button className="btn-primary" style={{
