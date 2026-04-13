@@ -4,24 +4,24 @@ import Link from 'next/link';
 export default async function AnalyticsPage() {
   const supabase = await createClient();
   
-  // Fetch all data
-  const { data: allPolicies } = await supabase
+  // Fetch all data with defensive null handling
+  const { data: allPolicies = [] } = await supabase
     .from('policies')
     .select('*, clients(name, company, type, tier)');
   
-  const { data: allClients } = await supabase
+  const { data: allClients = [] } = await supabase
     .from('clients')
     .select('*');
   
   // == DATA CALCULATIONS ==
-  const activePolicies = allPolicies?.filter(p => p.status === 'active') || [];
-  const lapsedPolicies = allPolicies?.filter(p => p.status === 'lapsed') || [];
-  const clientCount = allClients?.length || 0;
-  const policyCount = allPolicies?.length || 0;
+  const activePolicies = (allPolicies || []).filter(p => p?.status === 'active');
+  const lapsedPolicies = (allPolicies || []).filter(p => p?.status === 'lapsed');
+  const clientCount = (allClients || []).length;
+  const policyCount = (allPolicies || []).length;
   
   // Premium calculations
-  const totalPremium = activePolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
-  const lapsedPremium = lapsedPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
+  const totalPremium = (activePolicies || []).reduce((sum, p) => sum + (Number(p?.premium) || 0), 0);
+  const lapsedPremium = (lapsedPolicies || []).reduce((sum, p) => sum + (Number(p?.premium) || 0), 0);
   const avgPerClient = clientCount > 0 ? Math.round(totalPremium / clientCount) : 0;
   
   // Renewal pipeline
@@ -34,14 +34,14 @@ export default async function AnalyticsPage() {
   ];
   
   const renewalData = renewalPeriods.map(period => {
-    const periodPolicies = activePolicies.filter(policy => {
-      if (!policy.renewal_date) return false;
+    const periodPolicies = (activePolicies || []).filter(policy => {
+      if (!policy?.renewal_date) return false;
       const renewalDate = new Date(policy.renewal_date);
       const daysUntilRenewal = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return daysUntilRenewal > 0 && daysUntilRenewal <= period.days;
     });
     
-    const periodPremium = periodPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
+    const periodPremium = periodPolicies.reduce((sum, p) => sum + (Number(p?.premium) || 0), 0);
     
     return {
       ...period,
@@ -59,10 +59,10 @@ export default async function AnalyticsPage() {
   const coverageGapAnalysis = standardTypes.map(type => {
     let clientsWithCoverage = 0;
     
-    allClients?.forEach(client => {
-      const clientPolicies = allPolicies?.filter(p => p.client_id === client.id) || [];
+    (allClients || []).forEach(client => {
+      const clientPolicies = (allPolicies || []).filter(p => p?.client_id === client?.id);
       const hasCoverage = clientPolicies.some(p => 
-        p.type && p.type.toLowerCase().includes(type.toLowerCase())
+        p?.type && p.type.toLowerCase().includes(type.toLowerCase())
       );
       if (hasCoverage) clientsWithCoverage++;
     });
@@ -82,10 +82,10 @@ export default async function AnalyticsPage() {
   
   // Premium by insurer (top 5 + others)
   const insurerMap = new Map<string, number>();
-  activePolicies.forEach(policy => {
-    const insurer = policy.insurer || 'Unknown';
+  (activePolicies || []).forEach(policy => {
+    const insurer = policy?.insurer || 'Unknown';
     const current = insurerMap.get(insurer) || 0;
-    insurerMap.set(insurer, current + (Number(policy.premium) || 0));
+    insurerMap.set(insurer, current + (Number(policy?.premium) || 0));
   });
   
   const insurerData = Array.from(insurerMap.entries())
@@ -105,17 +105,17 @@ export default async function AnalyticsPage() {
   // Top 5 clients by premium
   const clientPremiumMap = new Map<string, { name: string; company: string | null; type: string | null; premium: number; policyCount: number; id: string }>();
   
-  allClients?.forEach(client => {
-    const clientPolicies = activePolicies.filter(p => p.client_id === client.id);
-    const clientPremium = clientPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
+  (allClients || []).forEach(client => {
+    const clientPolicies = (activePolicies || []).filter(p => p?.client_id === client?.id);
+    const clientPremium = clientPolicies.reduce((sum, p) => sum + (Number(p?.premium) || 0), 0);
     
-    clientPremiumMap.set(client.id, {
-      name: client.name,
-      company: client.company,
-      type: client.type,
+    clientPremiumMap.set(client?.id || '', {
+      name: client?.name || '',
+      company: client?.company || null,
+      type: client?.type || null,
       premium: clientPremium,
       policyCount: clientPolicies.length,
-      id: client.id,
+      id: client?.id || '',
     });
   });
   
@@ -125,9 +125,9 @@ export default async function AnalyticsPage() {
   
   // Client distribution by type
   const typeCounts = {
-    individual: allClients?.filter(c => c.type === 'individual').length || 0,
-    sme: allClients?.filter(c => c.type === 'sme').length || 0,
-    corporate: allClients?.filter(c => c.type === 'corporate').length || 0,
+    individual: (allClients || []).filter(c => c?.type === 'individual').length,
+    sme: (allClients || []).filter(c => c?.type === 'sme').length,
+    corporate: (allClients || []).filter(c => c?.type === 'corporate').length,
   };
   
   const totalTypeCount = typeCounts.individual + typeCounts.sme + typeCounts.corporate;
@@ -140,10 +140,10 @@ export default async function AnalyticsPage() {
     bronze: { count: 0, premium: 0 },
   };
   
-  allClients?.forEach(client => {
-    const tier = client.tier || 'bronze';
-    const clientPolicies = activePolicies.filter(p => p.client_id === client.id);
-    const clientPremium = clientPolicies.reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
+  (allClients || []).forEach(client => {
+    const tier = client?.tier || 'bronze';
+    const clientPolicies = (activePolicies || []).filter(p => p?.client_id === client?.id);
+    const clientPremium = clientPolicies.reduce((sum, p) => sum + (Number(p?.premium) || 0), 0);
     
     if (tierData[tier as keyof typeof tierData]) {
       tierData[tier as keyof typeof tierData].count++;
