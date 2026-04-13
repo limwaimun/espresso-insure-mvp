@@ -191,10 +191,11 @@ export default async function DashboardHome() {
   
   const { data: allPolicies } = await supabase.from('policies').select('premium, renewal_date, status').eq('ifa_id', user.id);
   
-  const totalPremium = allPolicies?.reduce((sum: number, p: any) => {
-    const premium = p.premium ?? 0;
-    const premiumNum = typeof premium === 'number' ? premium : Number(premium) || 0;
-    return sum + premiumNum;
+  const totalPremium = allPolicies?.reduce((sum, p) => {
+    const premium = p.premium;
+    if (typeof premium === 'number') return sum + premium;
+    if (typeof premium === 'string') return sum + parseFloat(premium) || 0;
+    return sum;
   }, 0) || 0;
   const formattedPremium = totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '$0';
   
