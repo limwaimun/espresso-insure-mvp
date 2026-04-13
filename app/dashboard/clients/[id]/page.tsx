@@ -119,6 +119,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthday.getDate())) {
         age--;
       }
+      // Format as "Mar 15, 1978 (age 48)"
       birthdayDisplay = birthday.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
       if (age > 0) {
         birthdayDisplay += ` (age ${age})`;
@@ -128,8 +129,15 @@ export default async function ClientProfilePage({ params }: PageProps) {
     }
   }
   
-  // Format client since date
-  const clientSince = client.created_at ? new Date(client.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  // Format date function for policies table
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '—';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return '—';
+    }
+  };
   
   return (
     <div style={{ width: '100%' }}>
@@ -145,110 +153,190 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </Link>
       </div>
       
-      {/* Client Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: '#C8813A',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '24px',
-          color: '#120A06',
-        }}>
-          {client.name.charAt(0)}
-        </div>
-        <div style={{ flex: 1 }}>
-          <h1 style={{
+      {/* ROW 1 — HEADER */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        {/* Left: Avatar + Name + Company + Type */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: '#C8813A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '28px',
-            fontWeight: 400,
-            color: '#F5ECD7',
-            margin: '0 0 4px 0',
+            fontSize: '24px',
+            color: '#120A06',
           }}>
-            {client.name}
-          </h1>
+            {client.name.charAt(0)}
+          </div>
+          <div>
+            <h1 style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: '28px',
+              fontWeight: 400,
+              color: '#F5ECD7',
+              margin: '0 0 4px 0',
+            }}>
+              {client.name}
+            </h1>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+            }}>
+              {client.company || 'Individual'} · {client.type || 'Individual'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Right: Tier badge + Edit button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="pill pill-amber">{client.tier || 'Standard'}</span>
+          <Link href={`/dashboard/clients/${id}/edit`} style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#C8813A',
+            textDecoration: 'none',
+            padding: '6px 12px',
+            border: '1px solid #C8813A',
+            borderRadius: '4px',
+          }}>
+            Edit
+          </Link>
+        </div>
+      </div>
+      
+      {/* ROW 2 — CONTACT INFO (4 items in a row, each in a small card) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '16px',
+        marginBottom: '24px',
+      }}>
+        {/* WhatsApp */}
+        <div className="card" style={{ padding: '12px' }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            color: '#C9B99A',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            📱 Phone
+          </div>
+          {client.whatsapp ? (
+            <a href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#F5ECD7',
+              textDecoration: 'none',
+            }}>
+              {client.whatsapp}
+            </a>
+          ) : (
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              fontStyle: 'italic',
+            }}>
+              —
+            </div>
+          )}
+        </div>
+        
+        {/* Email */}
+        <div className="card" style={{ padding: '12px' }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            color: '#C9B99A',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            ✉️ Email
+          </div>
+          {client.email ? (
+            <a href={`mailto:${client.email}`} style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#F5ECD7',
+              textDecoration: 'none',
+            }}>
+              {client.email}
+            </a>
+          ) : (
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              fontStyle: 'italic',
+            }}>
+              —
+            </div>
+          )}
+        </div>
+        
+        {/* Birthday */}
+        <div className="card" style={{ padding: '12px' }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            color: '#C9B99A',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            🎂 Birthday
+          </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '13px',
-            color: '#C9B99A',
-            marginBottom: '4px',
+            color: '#F5ECD7',
           }}>
-            {client.company || 'Individual'} · {client.type || 'Individual'}
-          </div>
-          
-          {/* Contact Info */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px' }}>
-            {client.whatsapp && (
-              <a href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C8813A',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                📱 {client.whatsapp}
-              </a>
-            )}
-            {client.email && (
-              <a href={`mailto:${client.email}`} style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C8813A',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                ✉️ {client.email}
-              </a>
-            )}
-            {client.birthday && (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                🎂 {birthdayDisplay}
-              </div>
-            )}
-            {client.address && (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                📍 {client.address}
-              </div>
-            )}
-            {client.created_at && (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                color: '#C9B99A',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                📅 Client since {clientSince}
-              </div>
-            )}
+            {client.birthday ? birthdayDisplay : '—'}
           </div>
         </div>
-        <span className="pill pill-amber">{client.tier || 'Standard'}</span>
+        
+        {/* Address */}
+        <div className="card" style={{ padding: '12px' }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            color: '#C9B99A',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            📍 Address
+          </div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px',
+            color: '#F5ECD7',
+          }}>
+            {client.address || '—'}
+          </div>
+        </div>
       </div>
       
+      {/* ROW 3 — METRIC CARDS (keep as is) */}
       <div className="metric-grid" style={{ marginBottom: '24px' }}>
         {metrics.map((m, i) => (
           <div key={i} className="card">
@@ -284,14 +372,14 @@ export default async function ClientProfilePage({ params }: PageProps) {
         ))}
       </div>
       
-      {/* Two Column Layout: Policies Table + Key Dates */}
+      {/* ROW 4 — TWO COLUMNS: 70% Policies Table, 30% Key Dates */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '70% 30%',
         gap: '24px',
         marginBottom: '24px',
       }}>
-        {/* Policies Table */}
+        {/* Left column (70% width): POLICIES TABLE */}
         <div className="panel">
           <div className="panel-header">
             <span className="panel-title">Policies</span>
@@ -299,49 +387,51 @@ export default async function ClientProfilePage({ params }: PageProps) {
           <div className="panel-body">
             {policies && policies.length > 0 ? (
               <div className="table">
-                <div className="table-header">
-                  <div className="table-cell">Insurer</div>
-                  <div className="table-cell">Type</div>
-                  <div className="table-cell">Premium</div>
-                  <div className="table-cell">Renewal Date</div>
-                  <div className="table-cell">Status</div>
-                </div>
-                {policies.map((policy: any) => {
-                  // Calculate days until renewal
-                  let daysUntilRenewal = null;
-                  let statusClass = 'pill-ok';
-                  let statusText = 'Active';
-                  
-                  if (policy.renewal_date) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const renewalDate = new Date(policy.renewal_date);
-                    renewalDate.setHours(0, 0, 0, 0);
-                    daysUntilRenewal = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    
-                    if (daysUntilRenewal <= 30) {
-                      statusClass = 'pill-danger';
-                      statusText = `Due in ${daysUntilRenewal} days`;
-                    } else if (daysUntilRenewal <= 90) {
-                      statusClass = 'pill-amber';
-                      statusText = `Renews in ${daysUntilRenewal} days`;
-                    }
-                  }
-                  
-                  return (
-                    <div key={policy.id} className="table-row">
-                      <div className="table-cell">{policy.insurer || '—'}</div>
-                      <div className="table-cell">{policy.type || '—'}</div>
-                      <div className="table-cell">${(Number(policy.premium) || 0).toLocaleString()}</div>
-                      <div className="table-cell">
-                        {policy.renewal_date ? new Date(policy.renewal_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                      </div>
-                      <div className="table-cell">
-                        <span className={`pill ${statusClass}`}>{statusText}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                <table style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Insurer</th>
+                      <th>Type</th>
+                      <th>Premium</th>
+                      <th>Renewal Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {policies.map((policy: any) => {
+                      // Calculate days until renewal
+                      let daysUntilRenewal = null;
+                      let pillClass = 'pill-ok';
+                      let statusText = 'Active';
+                      
+                      if (policy.renewal_date) {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const renewalDate = new Date(policy.renewal_date);
+                        renewalDate.setHours(0, 0, 0, 0);
+                        daysUntilRenewal = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        if (daysUntilRenewal <= 30) {
+                          pillClass = 'pill-danger';
+                          statusText = `Due in ${daysUntilRenewal} days`;
+                        } else if (daysUntilRenewal <= 90) {
+                          pillClass = 'pill-amber';
+                          statusText = `Renews in ${daysUntilRenewal} days`;
+                        }
+                      }
+                      
+                      return (
+                        <tr key={policy.id}>
+                          <td>{policy.insurer || '—'}</td>
+                          <td>{policy.type || '—'}</td>
+                          <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
+                          <td>{formatDate(policy.renewal_date)}</td>
+                          <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div style={{
@@ -357,7 +447,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
           </div>
         </div>
         
-        {/* Key Dates */}
+        {/* Right column (30% width): KEY DATES */}
         <div className="panel">
           <div className="panel-header">
             <span className="panel-title">Key Dates</span>
@@ -385,20 +475,6 @@ export default async function ClientProfilePage({ params }: PageProps) {
                     <>
                       {new Date(client.birthday).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
                       {age !== null && ` (age ${age})`}
-                      {(() => {
-                        if (!client.birthday) return null;
-                        const today = new Date();
-                        const birthday = new Date(client.birthday);
-                        const birthdayThisYear = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
-                        if (birthdayThisYear < today) {
-                          birthdayThisYear.setFullYear(today.getFullYear() + 1);
-                        }
-                        const daysUntilBirthday = Math.ceil((birthdayThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                        if (daysUntilBirthday <= 30) {
-                          return <span className="pill pill-amber" style={{ marginLeft: '8px' }}>{daysUntilBirthday} days away</span>;
-                        }
-                        return null;
-                      })()}
                     </>
                   ) : '—'}
                 </div>
@@ -459,6 +535,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </div>
       </div>
       
+      {/* ROW 5 — RECENT ACTIVITY (full width, below the two columns) */}
       <div className="panel">
         <div className="panel-header">
           <span className="panel-title">Recent activity</span>
