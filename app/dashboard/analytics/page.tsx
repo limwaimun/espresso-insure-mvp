@@ -380,7 +380,7 @@ export default async function AnalyticsPage() {
               fontWeight: 500,
               marginBottom: '12px',
             }}>
-              Critical coverage gaps (>50% of clients)
+              Critical coverage gaps (&gt;50% of clients)
             </div>
             
             <div style={{
