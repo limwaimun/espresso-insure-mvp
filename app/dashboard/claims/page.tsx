@@ -298,9 +298,6 @@ export default function ClaimsPage() {
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
-              gap: '6px',
-              transition: 'all 0.2s',
-            }}
           >
             {tab.label}
             <span style={{
@@ -501,7 +498,7 @@ export default function ClaimsPage() {
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '13px',
                         color: '#C9B99A',
-                        padding: '10px 12px',
+                        padding: '12px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>
