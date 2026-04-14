@@ -162,95 +162,98 @@ export default async function AnalyticsPage() {
           marginBottom: '24px',
         }}>
           {/* Lapsed */}
-          <div style={{
-            background: '#120A06',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            padding: '16px',
-            flex: 1,
-          }}>
+          <Link href="/dashboard/renewals" style={{ textDecoration: 'none', cursor: 'pointer', flex: 1 }}>
             <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#D06060',
-              marginBottom: '4px',
-            }}>Lapsed Policies</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#F5ECD7',
-            }}>{lapsedPolicies.length}</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#D06060',
-              marginTop: '4px',
-            }}>${lapsedAmount.toLocaleString()} at risk</div>
-          </div>
+              background: '#120A06',
+              border: '1px solid #2E1A0E',
+              borderRadius: '8px',
+              padding: '16px',
+            }}>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#D06060',
+                marginBottom: '4px',
+              }}>Lapsed Policies</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#F5ECD7',
+              }}>{lapsedPolicies.length}</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#D06060',
+                marginTop: '4px',
+              }}>${lapsedAmount.toLocaleString()} at risk</div>
+            </div>
+          </Link>
           {/* Urgent Renewals */}
-          <div style={{
-            background: '#120A06',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            padding: '16px',
-            flex: 1,
-          }}>
+          <Link href="/dashboard/renewals" style={{ textDecoration: 'none', cursor: 'pointer', flex: 1 }}>
             <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#D4A030',
-              marginBottom: '4px',
-            }}>Urgent Renewals</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#F5ECD7',
-            }}>{urgentRenewals.count}</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#D4A030',
-              marginTop: '4px',
-            }}>${urgentRenewals.amount.toLocaleString()} in next 30 days</div>
-          </div>
+              background: '#120A06',
+              border: '1px solid #2E1A0E',
+              borderRadius: '8px',
+              padding: '16px',
+            }}>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#D4A030',
+                marginBottom: '4px',
+              }}>Urgent Renewals</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#F5ECD7',
+              }}>{urgentRenewals.count}</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#D4A030',
+                marginTop: '4px',
+              }}>${urgentRenewals.amount.toLocaleString()} in next 30 days</div>
+            </div>
+          </Link>
           {/* Coverage Gaps */}
-          <div style={{
-            background: '#120A06',
-            border: '1px solid #2E1A0E',
-            borderRadius: '8px',
-            padding: '16px',
-            flex: 1,
-          }}>
+          <Link href="/dashboard/clients" style={{ textDecoration: 'none', cursor: 'pointer', flex: 1 }}>
             <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#20A0A0',
-              marginBottom: '4px',
-            }}>Coverage Gaps</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#F5ECD7',
-            }}>{totalGaps}</div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#20A0A0',
-              marginTop: '4px',
-            }}>Upsell opportunities</div>
-          </div>
+              background: '#120A06',
+              border: '1px solid #2E1A0E',
+              borderRadius: '8px',
+              padding: '16px',
+            }}>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#20A0A0',
+                marginBottom: '4px',
+              }}>Coverage Gaps</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#F5ECD7',
+              }}>{totalGaps}</div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: '#20A0A0',
+                marginTop: '4px',
+              }}>Upsell opportunities</div>
+            </div>
+          </Link>
         </div>
 
       {/* Renewal Pipeline - Stacked Bar */}
@@ -301,15 +304,17 @@ export default async function AnalyticsPage() {
           <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '12px' }}>Top coverage gaps ({'>'}50% uncovered)</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {gapData.map((gap, i) => (
-              <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: '#F5ECD7', fontSize: '14px' }}>{gap.type}</span>
-                  <span style={{ color: '#D06060', fontSize: '12px' }}>{gap.missing} of {gap.total} not covered ({gap.pct}%)</span>
+              <Link key={i} href="/dashboard/clients" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ color: '#F5ECD7', fontSize: '14px' }}>{gap.type}</span>
+                    <span style={{ color: '#D06060', fontSize: '12px' }}>{gap.missing} of {gap.total} not covered ({gap.pct}%)</span>
+                  </div>
+                  <div style={{ background: '#2E1A0E', borderRadius: '4px', height: '8px' }}>
+                    <div style={{ width: `${gap.pct}%`, background: '#D06060', borderRadius: '4px', height: '8px', opacity: 0.8 }} />
+                  </div>
                 </div>
-                <div style={{ background: '#2E1A0E', borderRadius: '4px', height: '8px' }}>
-                  <div style={{ width: `${gap.pct}%`, background: '#D06060', borderRadius: '4px', height: '8px', opacity: 0.8 }} />
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -469,7 +474,7 @@ export default async function AnalyticsPage() {
           {insurerData.map(([insurer, amount], i) => {
             const pct = Math.round((amount / totalPremium) * 100);
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <Link key={i} href="/dashboard/clients" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', cursor: 'pointer' }}>
                 <div style={{ width: '140px', fontSize: '13px', color: '#C9B99A', flexShrink: 0 }}>{insurer}</div>
                 <div style={{ flex: 1, background: '#2E1A0E', borderRadius: '4px', height: '28px', position: 'relative' }}>
                   <div style={{ width: `${pct}%`, background: insurerColors[i % insurerColors.length] || '#C8813A', borderRadius: '4px', height: '28px', minWidth: '2px' }} />
@@ -477,7 +482,7 @@ export default async function AnalyticsPage() {
                 <div style={{ width: '110px', textAlign: 'right', fontSize: '13px', color: '#F5ECD7', flexShrink: 0 }}>
                   ${amount.toLocaleString()} ({pct}%)
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -550,13 +555,15 @@ export default async function AnalyticsPage() {
             })}
           </div>
           {typeData.map((t, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: t.color }} />
-                <span style={{ color: '#F5ECD7', fontSize: '14px' }}>{t.label}</span>
+            <Link key={i} href="/dashboard/clients" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: t.color }} />
+                  <span style={{ color: '#F5ECD7', fontSize: '14px' }}>{t.label}</span>
+                </div>
+                <span style={{ color: '#C9B99A', fontSize: '14px' }}>{t.count} ({Math.round((t.count / totalTypeCount) * 100)}%)</span>
               </div>
-              <span style={{ color: '#C9B99A', fontSize: '14px' }}>{t.count} ({Math.round((t.count / totalTypeCount) * 100)}%)</span>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -575,13 +582,15 @@ export default async function AnalyticsPage() {
             marginBottom: '16px',
           }}>Clients by tier</div>
           {tierData.map((t, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ padding: '2px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', background: t.color + '25', color: t.color }}>{t.label}</span>
-                <span style={{ color: '#C9B99A', fontSize: '14px' }}>{t.count} {t.count === 1 ? 'client' : 'clients'}</span>
+            <Link key={i} href="/dashboard/clients" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ padding: '2px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', background: t.color + '25', color: t.color }}>{t.label}</span>
+                  <span style={{ color: '#C9B99A', fontSize: '14px' }}>{t.count} {t.count === 1 ? 'client' : 'clients'}</span>
+                </div>
+                <span style={{ color: '#F5ECD7', fontSize: '14px', fontFamily: 'DM Mono, monospace' }}>${t.premium.toLocaleString()}</span>
               </div>
-              <span style={{ color: '#F5ECD7', fontSize: '14px', fontFamily: 'DM Mono, monospace' }}>${t.premium.toLocaleString()}</span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

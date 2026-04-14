@@ -215,7 +215,7 @@ export default function ClientsPage() {
               fontWeight: 400,
               color: '#F5ECD7',
               margin: 0,
-            }}>All clients</h1>
+            }}>Clients</h1>
             
             <div style={{ display: 'flex', gap: '8px' }}>
               <Link href="/dashboard/import" style={{ textDecoration: 'none' }}>

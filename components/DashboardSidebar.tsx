@@ -25,7 +25,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     { id: 'home', label: 'Home', icon: '🏠', active: pathname === '/dashboard', badge: null },
     { id: 'conversations', label: 'Conversations', icon: '💬', active: pathname?.includes('conversations'), badge: counts?.conversations || 0 },
     { id: 'alerts', label: 'Alerts', icon: '🔔', active: pathname?.includes('alerts'), badge: counts?.alerts || 0, badgeUrgent: (counts?.alerts || 0) > 0 },
-    { id: 'clients', label: 'All clients', icon: '👥', active: pathname?.includes('clients'), badge: null },
+    { id: 'clients', label: 'Clients', icon: '👥', active: pathname?.includes('clients'), badge: null },
     { id: 'renewals', label: 'Renewals', icon: '📅', active: pathname?.includes('renewals'), badge: counts?.renewals || 0 },
     { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: counts?.claims || 0, badgeUrgent: (counts?.claims || 0) > 0 },
     { id: 'analytics', label: 'Analytics', icon: '📊', active: pathname?.includes('analytics'), badge: null },
