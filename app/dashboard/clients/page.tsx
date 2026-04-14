@@ -509,10 +509,12 @@ export default function ClientsPage() {
               <div style={{
                 overflowY: 'auto',
                 maxHeight: 'calc(100vh - 280px)',
+                scrollbarGutter: 'stable',
               }}>
                 <table style={{
                   width: '100%',
                   borderCollapse: 'collapse',
+                  tableLayout: 'fixed',
                 }}>
                   <colgroup>
                     <col style={{ width: '180px' }} />
