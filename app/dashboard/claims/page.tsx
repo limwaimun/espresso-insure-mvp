@@ -458,7 +458,7 @@ export default function ClaimsPage() {
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '13px',
                         color: '#C9B99A',
-                        padding: '10px 12px',
+                        padding: '14px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>
@@ -468,7 +468,7 @@ export default function ClaimsPage() {
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '13px',
                         color: '#C9B99A',
-                        padding: '10px 12px',
+                        padding: '14px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>
