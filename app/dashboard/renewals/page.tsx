@@ -400,23 +400,23 @@ export default async function RenewalsPage() {
 
               return (
                 <tr key={p.id || i} style={{ borderBottom: '1px solid #2E1A0E' }}>
-                  <td style={{ padding: '14px 16px' }}>
-                    <Link href={`/dashboard/clients/${clientId}`} style={{ color: '#F5ECD7', textDecoration: 'none', fontWeight: 'bold' }}>
+                  <td style={{ padding: '12px 16px', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>
+                    <Link href={`/dashboard/clients/${clientId}`} style={{ color: '#F5ECD7', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>
                       {clientName}
                     </Link>
                     {client?.company && (
-                      <div style={{ fontSize: '12px', color: '#C9B99A' }}>{client.company}</div>
+                      <div style={{ fontSize: '11px', color: '#C9B99A', marginTop: '2px' }}>{client.company}</div>
                     )}
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px' }}>{p.type || '—'}</td>
-                  <td style={{ padding: '12px 16px', color: '#C9B99A', fontSize: '13px' }}>{p.insurer || '—'}</td>
-                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px', fontFamily: 'DM Mono, monospace' }}>
+                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>{p.type || '—'}</td>
+                  <td style={{ padding: '12px 16px', color: '#C9B99A', fontSize: '13px', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>{p.insurer || '—'}</td>
+                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px', fontFamily: 'DM Mono, monospace', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>
                     ${(Number(p.premium) || 0).toLocaleString()}/yr
                   </td>
-                  <td style={{ padding: '12px 16px', color: p.days !== null && p.days <= 30 ? p.statusColor : '#C9B99A', fontSize: '13px' }}>
+                  <td style={{ padding: '12px 16px', color: p.days !== null && p.days <= 30 ? p.statusColor : '#C9B99A', fontSize: '13px', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>
                     {renewalDate}
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: '13px', color: p.statusColor, fontFamily: 'DM Mono, monospace' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '13px', color: p.statusColor, fontFamily: 'DM Mono, monospace', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>
                     {p.days === null ? '—' : p.days < 0 ? 'Overdue' : `${p.days}d`}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
@@ -431,7 +431,7 @@ export default async function RenewalsPage() {
                       {p.statusLabel}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px' }}>
+                  <td style={{ padding: '12px 16px', verticalAlign: 'top', borderBottom: '1px solid #2E1A0E' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Link 
                         href={`/dashboard/clients/${p.client_id}`}
