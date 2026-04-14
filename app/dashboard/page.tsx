@@ -452,9 +452,7 @@ export default async function DashboardHome() {
                         borderBottom: '1px solid #2E1A0E',
                         cursor: 'pointer',
                         transition: 'background 0.2s',
-                        ':hover': {
-                          background: '#1C0F0A',
-                        },
+                        background: 'transparent',
                       }}>
                         <div style={{
                           display: 'flex',
@@ -581,9 +579,7 @@ export default async function DashboardHome() {
                         borderBottom: '1px solid #2E1A0E',
                         cursor: 'pointer',
                         transition: 'background 0.2s',
-                        ':hover': {
-                          background: '#1C0F0A',
-                        },
+                        background: 'transparent',
                       }}>
                         <div style={{
                           display: 'flex',

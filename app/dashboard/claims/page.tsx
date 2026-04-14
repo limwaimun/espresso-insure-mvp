@@ -17,7 +17,7 @@ interface Claim {
   clients: {
     name: string;
     company: string | null;
-  } | null;
+  }[] | null;
 }
 
 export default function ClaimsPage() {
@@ -47,7 +47,7 @@ export default function ClaimsPage() {
             priority,
             created_at,
             client_id,
-            clients (
+            clients!inner (
               name,
               company
             )
@@ -413,8 +413,8 @@ export default function ClaimsPage() {
                 </thead>
                 <tbody>
                   {filteredClaims.map((claim) => {
-                    const clientName = claim.clients?.name || 'Unknown';
-                    const company = claim.clients?.company;
+                    const clientName = claim.clients && claim.clients.length > 0 ? claim.clients[0].name : 'Unknown';
+                    const company = claim.clients && claim.clients.length > 0 ? claim.clients[0].company : null;
                     const description = claim.title || 'No title';
                     const bodyPreview = claim.body ? 
                       (claim.body.length > 100 ? claim.body.substring(0, 100) + '...' : claim.body) : 
