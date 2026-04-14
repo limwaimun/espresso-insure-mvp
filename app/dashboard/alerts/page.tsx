@@ -26,6 +26,7 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AlertType>('all');
+  const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set());
   const supabase = createClient();
 
   useEffect(() => {
@@ -75,9 +76,23 @@ export default function AlertsPage() {
   ];
 
   const markResolved = async (alertId: string) => {
+    // Add to resolving set to show visual feedback
+    setResolvingAlerts(prev => new Set(prev).add(alertId));
+    
+    // Update in Supabase
     await supabase.from('alerts').update({ resolved: true }).eq('id', alertId);
+    
+    // Update local state - this will trigger automatic recalculation of all derived values
     setAlerts(prev => prev.map(alert => alert.id === alertId ? { ...alert, resolved: true } : alert));
-    alert('Alert resolved');
+    
+    // Remove from resolving set after a delay to show the resolved state
+    setTimeout(() => {
+      setResolvingAlerts(prev => {
+        const next = new Set(prev);
+        next.delete(alertId);
+        return next;
+      });
+    }, 1000);
   };
 
   const formatTimeAgo = (dateString: string): string => {
@@ -241,7 +256,7 @@ export default function AlertsPage() {
                   borderBottom: '1px solid #2E1A0E',
                   borderRadius: '8px',
                   padding: '16px',
-                  opacity: isResolved ? 0.5 : 1,
+                  opacity: isResolved || resolvingAlerts.has(alert.id) ? 0.5 : 1,
                   transition: 'all 0.2s',
                 }}
               >
@@ -333,30 +348,46 @@ export default function AlertsPage() {
                   {!isResolved && (
                     <button
                       onClick={() => markResolved(alert.id)}
+                      disabled={resolvingAlerts.has(alert.id)}
                       style={{
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '12px',
                         fontWeight: 500,
                         padding: '6px 12px',
                         borderRadius: '4px',
-                        background: '#5AB87A',
+                        background: resolvingAlerts.has(alert.id) ? '#4CAF50' : '#5AB87A',
                         color: '#120A06',
                         border: 'none',
-                        cursor: 'pointer',
+                        cursor: resolvingAlerts.has(alert.id) ? 'default' : 'pointer',
+                        opacity: resolvingAlerts.has(alert.id) ? 0.8 : 1,
                         transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#4CAF50';
+                        if (!resolvingAlerts.has(alert.id)) {
+                          e.currentTarget.style.background = '#4CAF50';
+                        }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#5AB87A';
+                        if (!resolvingAlerts.has(alert.id)) {
+                          e.currentTarget.style.background = '#5AB87A';
+                        }
                       }}
                     >
-                      Mark resolved
+                      {resolvingAlerts.has(alert.id) ? (
+                        <>
+                          <span style={{ fontSize: '14px' }}>✓</span>
+                          Resolved
+                        </>
+                      ) : (
+                        'Mark resolved'
+                      )}
                     </button>
                   )}
                   
-                  {isResolved && (
+                  {isResolved && !resolvingAlerts.has(alert.id) && (
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
