@@ -170,8 +170,8 @@ export default function SettingsPage() {
                   {item.desc}
                 </p>
               </div>
-              <div onClick={() => handleMayaToggle(item.key)} style={{ width: '44px', height: '24px', borderRadius: '12px', background: (mayaSettings as any)[item.key] ? '#C8813A' : '#2E1A0E', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: '2px', left: (mayaSettings as any)[item.key] ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: '#F5ECD7', transition: 'all 0.2s' }} />
+              <div onClick={() => handleMayaToggle(item.key)} style={{ width: '44px', height: '24px', borderRadius: '12px', background: mayaSettings[item.key as keyof typeof mayaSettings] ? '#C8813A' : '#2E1A0E', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: '2px', left: mayaSettings[item.key as keyof typeof mayaSettings] ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: '#F5ECD7', transition: 'all 0.2s' }} />
               </div>
             </div>
           ))}
