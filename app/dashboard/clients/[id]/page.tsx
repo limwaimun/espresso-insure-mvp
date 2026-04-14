@@ -23,13 +23,15 @@ export default async function ClientProfilePage({ params }: PageProps) {
     .eq('client_id', id)
     .order('renewal_date', { ascending: true });
   
-  // Fetch their conversations
-  const { data: conversations } = await supabase
+  // Fetch their conversations with messages for WhatsApp section
+  const { data: conversationsData } = await supabase
     .from('conversations')
-    .select('*')
+    .select('*, messages(id, role, content, created_at)')
     .eq('client_id', id)
     .order('last_message_at', { ascending: false })
-    .limit(5);
+    .limit(1);
+  
+  const conversations = conversationsData && conversationsData.length > 0 ? conversationsData[0] : null;
   
   // Fetch claims for this client
   const { data: claims } = await supabase
@@ -468,7 +470,211 @@ export default async function ClientProfilePage({ params }: PageProps) {
         ))}
       </div>
       
-      {/* == SECTION 3: POLICIES TABLE == */}
+      {/* == SECTION 3: WHATSAPP CONNECTION == */}
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="panel-title">WhatsApp</span>
+            {(() => {
+              if (conversations?.status === 'active') {
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#5AB87A',
+                    }} />
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '12px',
+                      color: '#5AB87A',
+                      fontWeight: 500,
+                    }}>Connected</span>
+                  </div>
+                );
+              } else if (conversations?.status === 'waiting') {
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#F6AD55',
+                    }} />
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '12px',
+                      color: '#F6AD55',
+                      fontWeight: 500,
+                    }}>Pending</span>
+                  </div>
+                );
+              } else {
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#C9B99A',
+                    }} />
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '12px',
+                      color: '#C9B99A',
+                      fontWeight: 500,
+                    }}>Not connected</span>
+                  </div>
+                );
+              }
+            })()}
+          </div>
+          {conversations && (
+            <Link href={`/dashboard/conversations/${conversations.id}`} style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#C8813A',
+              textDecoration: 'none',
+            }}>
+              View full conversation →
+            </Link>
+          )}
+        </div>
+        <div className="panel-body">
+          {conversations ? (
+            <div>
+              {conversations.messages && conversations.messages.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {conversations.messages
+                    .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                    .slice(-3) // Last 3 messages
+                    .map((message: any, index: number) => (
+                      <div 
+                        key={message.id} 
+                        style={{
+                          display: 'flex',
+                          justifyContent: message.role === 'client' ? 'flex-start' : 'flex-end',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        <div style={{
+                          maxWidth: '70%',
+                          padding: '8px 12px',
+                          borderRadius: '12px',
+                          background: message.role === 'client' ? '#2E1A0E' : '#C8813A',
+                          color: message.role === 'client' ? '#F5ECD7' : '#120A06',
+                          fontFamily: 'DM Sans, sans-serif',
+                          fontSize: '13px',
+                          lineHeight: 1.4,
+                        }}>
+                          <div style={{ marginBottom: '2px' }}>{message.content}</div>
+                          <div style={{
+                            fontSize: '10px',
+                            color: message.role === 'client' ? '#C9B99A' : 'rgba(18, 10, 6, 0.7)',
+                            textAlign: 'right',
+                          }}>
+                            {new Date(message.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#C9B99A',
+                }}>
+                  No messages yet in this conversation.
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                <Link href={`/dashboard/conversations/${conversations.id}`} style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#C8813A',
+                  textDecoration: 'none',
+                  padding: '8px 16px',
+                  border: '1px solid #C8813A',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                }}>
+                  View full conversation →
+                </Link>
+                {client.whatsapp && (
+                  <a 
+                    href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '13px',
+                      color: '#120A06',
+                      textDecoration: 'none',
+                      padding: '8px 16px',
+                      background: '#C8813A',
+                      borderRadius: '4px',
+                      display: 'inline-block',
+                      fontWeight: 500,
+                    }}
+                  >
+                    Open in WhatsApp →
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '24px' }}>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                color: '#C9B99A',
+                marginBottom: '16px',
+              }}>
+                This client is not yet connected to Maya on WhatsApp.
+              </div>
+              {client.whatsapp ? (
+                <a 
+                  href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(client.name.split(' ')[0])}!%20I've%20set%20up%20Maya%2C%20my%20AI%20assistant%2C%20to%20help%20manage%20your%20insurance%20policies.%20She'll%20be%20in%20touch!`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '13px',
+                    color: '#120A06',
+                    textDecoration: 'none',
+                    padding: '10px 20px',
+                    background: '#C8813A',
+                    borderRadius: '4px',
+                    display: 'inline-block',
+                    fontWeight: 500,
+                  }}
+                >
+                  Invite to WhatsApp
+                </a>
+              ) : (
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#C9B99A',
+                  padding: '10px 20px',
+                  background: 'rgba(200,129,58,0.1)',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                }}>
+                  No WhatsApp number available
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* == SECTION 4: POLICIES TABLE == */}
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
@@ -544,7 +750,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </div>
       </div>
       
-      {/* == SECTION 4: COVERAGE ANALYSIS == */}
+      {/* == SECTION 5: COVERAGE ANALYSIS == */}
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <span className="panel-title">Coverage analysis</span>
@@ -593,7 +799,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </div>
       </div>
       
-      {/* == SECTION 5: CLAIMS == */}
+      {/* == SECTION 6: CLAIMS == */}
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header">
           <span className="panel-title">Claims</span>
@@ -661,7 +867,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
         </div>
       </div>
       
-      {/* == SECTION 7: ACTIVITY TIMELINE == */}
+      {/* == SECTION 8: ACTIVITY TIMELINE == */}
       <div className="panel">
         <div className="panel-header">
           <span className="panel-title">Activity</span>

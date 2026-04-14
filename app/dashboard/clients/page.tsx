@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 
 type TierType = 'all' | 'platinum' | 'gold' | 'silver' | 'bronze';
 type ClientType = 'all' | 'individual' | 'sme' | 'corporate';
+type ConnectionFilter = 'all' | 'connected' | 'not-connected';
 
 interface Client {
   id: string;
@@ -16,6 +17,12 @@ interface Client {
   email: string | null;
   whatsapp: string | null;
   created_at: string;
+  conversations?: {
+    id: string;
+    status: string;
+    last_message: string | null;
+    last_message_at: string | null;
+  }[];
 }
 
 export default function ClientsPage() {
@@ -28,6 +35,7 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTier, setSelectedTier] = useState<TierType>('all');
   const [selectedType, setSelectedType] = useState<ClientType>('all');
+  const [selectedConnection, setSelectedConnection] = useState<ConnectionFilter>('all');
   
 
 
@@ -39,7 +47,7 @@ export default function ClientsPage() {
         
         const { data, error } = await supabase
           .from('clients')
-          .select('id, name, company, type, tier, email, whatsapp, created_at')
+          .select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id, status, last_message, last_message_at)')
           .order('created_at', { ascending: false });
         
         if (error) {
@@ -61,7 +69,7 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
-  // Apply filters whenever searchQuery, selectedTier, or selectedType changes
+  // Apply filters whenever searchQuery, selectedTier, selectedType, or selectedConnection changes
   useEffect(() => {
     let result = clients;
     
@@ -86,8 +94,20 @@ export default function ClientsPage() {
       result = result.filter(client => client.type === selectedType);
     }
     
+    // Apply connection filter
+    if (selectedConnection !== 'all') {
+      result = result.filter(client => {
+        const hasActiveConversation = client.conversations?.some(conv => conv.status === 'active');
+        if (selectedConnection === 'connected') {
+          return hasActiveConversation;
+        } else { // 'not-connected'
+          return !hasActiveConversation;
+        }
+      });
+    }
+    
     setFilteredClients(result);
-  }, [clients, searchQuery, selectedTier, selectedType]);
+  }, [clients, searchQuery, selectedTier, selectedType, selectedConnection]);
 
 
 
@@ -95,6 +115,25 @@ export default function ClientsPage() {
     if (whatsappNumber) {
       window.open(`https://wa.me/${whatsappNumber}`, '_blank');
     }
+  };
+
+  // Helper function to get WhatsApp connection status
+  const getWhatsAppStatus = (client: Client) => {
+    if (!client.conversations || client.conversations.length === 0) {
+      return { status: 'not-connected', label: 'Not connected', color: '#C9B99A', dotColor: '#C9B99A' };
+    }
+    
+    const activeConversation = client.conversations.find(conv => conv.status === 'active');
+    if (activeConversation) {
+      return { status: 'connected', label: 'Connected', color: '#5AB87A', dotColor: '#5AB87A' };
+    }
+    
+    const waitingConversation = client.conversations.find(conv => conv.status === 'waiting');
+    if (waitingConversation) {
+      return { status: 'pending', label: 'Pending', color: '#F6AD55', dotColor: '#F6AD55' };
+    }
+    
+    return { status: 'not-connected', label: 'Not connected', color: '#C9B99A', dotColor: '#C9B99A' };
   };
 
   const tabs: TierType[] = ['all', 'platinum', 'gold', 'silver', 'bronze'];
@@ -433,6 +472,27 @@ export default function ClientsPage() {
                 <option value="silver">Silver</option>
                 <option value="bronze">Bronze</option>
               </select>
+              
+              {/* Connection Status Dropdown */}
+              <select 
+                value={selectedConnection}
+                onChange={(e) => setSelectedConnection(e.target.value as ConnectionFilter)}
+                style={{
+                  background: '#120A06',
+                  border: '1px solid #2E1A0E',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#F5ECD7',
+                  minWidth: '140px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">All connections</option>
+                <option value="connected">Connected</option>
+                <option value="not-connected">Not connected</option>
+              </select>
             </div>
             
             {/* REMOVED: Filter and Clear buttons */}
@@ -460,6 +520,7 @@ export default function ClientsPage() {
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '200px' }} />
+                    <col style={{ width: '120px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '50px' }} />
                   </colgroup>
@@ -547,6 +608,19 @@ export default function ClientsPage() {
                         borderBottom: '1px solid #2E1A0E',
                       }}>
                         WhatsApp
+                      </th>
+                      <th style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: '#C8813A',
+                        textAlign: 'left',
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #2E1A0E',
+                      }}>
+                        MAYA STATUS
                       </th>
 
                     </tr>
@@ -638,6 +712,27 @@ export default function ClientsPage() {
                           padding: '12px 16px',
                         }}>
                           {client.whatsapp || '—'}
+                        </td>
+                        <td style={{
+                          fontFamily: 'DM Sans, sans-serif',
+                          fontSize: '13px',
+                          color: '#C9B99A',
+                          padding: '12px 16px',
+                        }}>
+                          {(() => {
+                            const status = getWhatsAppStatus(client);
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  backgroundColor: status.dotColor,
+                                }} />
+                                <span style={{ color: status.color }}>{status.label}</span>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                       </tr>
