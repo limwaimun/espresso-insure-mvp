@@ -622,7 +622,6 @@ export default function ClientsPage() {
                       }}>
                         MAYA STATUS
                       </th>
-
                     </tr>
                   </thead>
                   <tbody>
@@ -734,7 +733,6 @@ export default function ClientsPage() {
                             );
                           })()}
                         </td>
-
                       </tr>
                     ))}
                   </tbody>
