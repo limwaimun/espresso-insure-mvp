@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type AlertType = 'all' | 'renewal' | 'claim' | 'payment' | 'birthday' | 'resolved';
 
@@ -28,6 +29,7 @@ export default function AlertsPage() {
   const [activeTab, setActiveTab] = useState<AlertType>('all');
   const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set());
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     fetchAlerts();
@@ -84,6 +86,9 @@ export default function AlertsPage() {
     
     // Update local state - this will trigger automatic recalculation of all derived values
     setAlerts(prev => prev.map(alert => alert.id === alertId ? { ...alert, resolved: true } : alert));
+    
+    // Refresh server components (sidebar counts)
+    router.refresh();
     
     // Remove from resolving set after a delay to show the resolved state
     setTimeout(() => {
