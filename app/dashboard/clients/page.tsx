@@ -29,8 +29,7 @@ export default function ClientsPage() {
   const [selectedTier, setSelectedTier] = useState<TierType>('all');
   const [selectedType, setSelectedType] = useState<ClientType>('all');
   
-  // Three dots menu state
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+
 
   useEffect(() => {
     async function fetchClients() {
@@ -90,20 +89,7 @@ export default function ClientsPage() {
     setFilteredClients(result);
   }, [clients, searchQuery, selectedTier, selectedType]);
 
-  // Close menu when clicking elsewhere
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setMenuOpen(null);
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
-  const handleMenuClick = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    setMenuOpen(menuOpen === clientId ? null : clientId);
-  };
 
   const handleWhatsAppClick = (whatsappNumber: string | null) => {
     if (whatsappNumber) {
@@ -562,17 +548,7 @@ export default function ClientsPage() {
                       }}>
                         WhatsApp
                       </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}></th>
+
                     </tr>
                   </thead>
                   <tbody>
@@ -663,97 +639,7 @@ export default function ClientsPage() {
                         }}>
                           {client.whatsapp || '—'}
                         </td>
-                        <td style={{
-                          padding: '12px 16px',
-                          position: 'relative',
-                        }}>
-                          <button 
-                            onClick={(e) => handleMenuClick(e, client.id)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#C9B99A',
-                              fontSize: '16px',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(201, 185, 154, 0.1)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            ⋮
-                          </button>
-                          
-                          {/* Three Dots Menu Dropdown */}
-                          {menuOpen === client.id && (
-                            <div style={{
-                              position: 'absolute',
-                              right: '16px',
-                              top: '40px',
-                              background: '#3D2215',
-                              border: '1px solid #2E1A0E',
-                              borderRadius: '6px',
-                              padding: '8px 0',
-                              minWidth: '160px',
-                              zIndex: 100,
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                            }}>
-                              <Link 
-                                href={`/dashboard/clients/${client.id}`}
-                                style={{
-                                  display: 'block',
-                                  padding: '8px 16px',
-                                  fontFamily: 'DM Sans, sans-serif',
-                                  fontSize: '13px',
-                                  color: '#F5ECD7',
-                                  textDecoration: 'none',
-                                  cursor: 'pointer',
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(200, 129, 58, 0.2)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                View profile
-                              </Link>
-                              
-                              <button
-                                onClick={() => handleWhatsAppClick(client.whatsapp)}
-                                disabled={!client.whatsapp}
-                                style={{
-                                  display: 'block',
-                                  width: '100%',
-                                  padding: '8px 16px',
-                                  fontFamily: 'DM Sans, sans-serif',
-                                  fontSize: '13px',
-                                  color: client.whatsapp ? '#F5ECD7' : '#5A5A5A',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  textAlign: 'left',
-                                  cursor: client.whatsapp ? 'pointer' : 'not-allowed',
-                                }}
-                                onMouseEnter={(e) => client.whatsapp && (e.currentTarget.style.background = 'rgba(200, 129, 58, 0.2)')}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                WhatsApp
-                              </button>
-                              
-                              <div style={{
-                                padding: '8px 16px',
-                                fontFamily: 'DM Sans, sans-serif',
-                                fontSize: '13px',
-                                color: '#5A5A5A',
-                                borderTop: '1px solid #2E1A0E',
-                                fontStyle: 'italic',
-                              }}>
-                                Delete (Coming soon)
-                              </div>
-                            </div>
-                          )}
-                        </td>
+
                       </tr>
                     ))}
                   </tbody>
