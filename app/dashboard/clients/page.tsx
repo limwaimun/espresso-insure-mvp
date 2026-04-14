@@ -524,7 +524,6 @@ export default function ClientsPage() {
                     <col style={{ width: '200px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '120px' }} />
-                    <col style={{ width: '50px' }} />
                   </colgroup>
                   <thead style={{
                     position: 'sticky',
