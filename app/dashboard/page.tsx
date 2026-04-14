@@ -429,8 +429,8 @@ export default async function DashboardHome() {
             </div>
             
             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {recentConversations && recentConversations.length > 0 ? (
-                recentConversations.map((conv) => {
+              {recentConvos.data && recentConvos.data.length > 0 ? (
+                recentConvos.data.map((conv: any) => {
                   const client = conv.clients as any;
                   const clientName = client?.name || 'Unknown';
                   const clientId = client?.id;
@@ -558,8 +558,8 @@ export default async function DashboardHome() {
             </div>
             
             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {recentAlerts && recentAlerts.length > 0 ? (
-                recentAlerts.map((alert) => {
+              {recentAlerts.data && recentAlerts.data.length > 0 ? (
+                recentAlerts.data.map((alert: any) => {
                   const client = alert.clients as any;
                   const clientName = client?.name || 'Unknown';
                   
