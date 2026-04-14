@@ -507,9 +507,7 @@ export default function ClientsPage() {
               overflow: 'hidden',
             }}>
               <div style={{
-                overflowY: 'auto',
-                maxHeight: 'calc(100vh - 280px)',
-                scrollbarGutter: 'stable',
+                overflow: 'hidden',
               }}>
                 <table style={{
                   width: '100%',
