@@ -338,6 +338,7 @@ export default function ClaimsPage() {
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           overflow: 'hidden',
+          minHeight: 'calc(100vh - 380px)',
         }}>
           <div style={{
             overflowY: 'auto',
