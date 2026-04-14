@@ -264,6 +264,7 @@ export default async function RenewalsPage() {
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           overflow: 'hidden',
+          width: '100%',
         }}>
           <div style={{
             overflowY: 'auto',
@@ -271,6 +272,7 @@ export default async function RenewalsPage() {
           }}>
             <table style={{
               width: '100%',
+              tableLayout: 'auto',
               borderCollapse: 'collapse',
             }}>
               <thead style={{
@@ -430,36 +432,25 @@ export default async function RenewalsPage() {
                     </span>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <Link 
                         href={`/dashboard/clients/${p.client_id}`}
                         style={{
                           color: '#C8813A',
                           textDecoration: 'none',
-                          fontSize: '12px',
+                          fontSize: '13px',
                           cursor: 'pointer',
                         }}
                       >
                         View client →
                       </Link>
                       
-                      {whatsapp ? (
-                        <a
-                          href={`https://wa.me/${whatsapp}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#5AB87A', textDecoration: 'none', fontSize: '12px' }}
-                        >
-                          Message →
-                        </a>
-                      ) : (
-                        <span style={{ color: '#C9B99A', fontSize: '12px', opacity: 0.5 }}>No WhatsApp</span>
-                      )}
+
                       
                       <span 
                         style={{
                           color: '#C9B99A',
-                          fontSize: '12px',
+                          fontSize: '13px',
                           opacity: 0.5,
                           cursor: 'not-allowed',
                           fontStyle: 'italic',
