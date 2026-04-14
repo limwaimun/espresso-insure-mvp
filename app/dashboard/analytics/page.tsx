@@ -304,7 +304,7 @@ export default async function AnalyticsPage() {
           <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '12px' }}>Top coverage gaps ({'>'}50% uncovered)</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {gapData.map((gap, i) => (
-              <div key={i} style={{ background: '#3D2215', borderRadius: '8px', padding: '14px' }}>
+              <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ color: '#F5ECD7', fontSize: '14px' }}>{gap.type}</span>
                   <span style={{ color: '#D06060', fontSize: '12px' }}>{gap.missing} of {gap.total} not covered ({gap.pct}%)</span>

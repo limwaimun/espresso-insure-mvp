@@ -369,19 +369,6 @@ export default async function RenewalsPage() {
                     padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
                   }}>
-                    Days
-                  </th>
-                  <th style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    color: '#C8813A',
-                    textAlign: 'left',
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #2E1A0E',
-                  }}>
                     Status
                   </th>
                   <th style={{
@@ -419,18 +406,18 @@ export default async function RenewalsPage() {
                       <div style={{ fontSize: '12px', color: '#C9B99A' }}>{client.company}</div>
                     )}
                   </td>
-                  <td style={{ padding: '14px 16px', color: '#F5ECD7', fontSize: '14px' }}>{p.type || '—'}</td>
-                  <td style={{ padding: '14px 16px', color: '#C9B99A', fontSize: '14px' }}>{p.insurer || '—'}</td>
-                  <td style={{ padding: '14px 16px', color: '#F5ECD7', fontSize: '14px', fontFamily: 'DM Mono, monospace' }}>
+                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px' }}>{p.type || '—'}</td>
+                  <td style={{ padding: '12px 16px', color: '#C9B99A', fontSize: '13px' }}>{p.insurer || '—'}</td>
+                  <td style={{ padding: '12px 16px', color: '#F5ECD7', fontSize: '13px', fontFamily: 'DM Mono, monospace' }}>
                     ${(Number(p.premium) || 0).toLocaleString()}/yr
                   </td>
-                  <td style={{ padding: '14px 16px', color: p.days !== null && p.days <= 30 ? p.statusColor : '#C9B99A', fontSize: '14px' }}>
+                  <td style={{ padding: '12px 16px', color: p.days !== null && p.days <= 30 ? p.statusColor : '#C9B99A', fontSize: '13px' }}>
                     {renewalDate}
                   </td>
-                  <td style={{ padding: '14px 16px', fontSize: '14px', color: p.statusColor, fontFamily: 'DM Mono, monospace' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '13px', color: p.statusColor, fontFamily: 'DM Mono, monospace' }}>
                     {p.days === null ? '—' : p.days < 0 ? 'Overdue' : `${p.days}d`}
                   </td>
-                  <td style={{ padding: '14px 16px' }}>
+                  <td style={{ padding: '12px 16px' }}>
                     <span style={{
                       padding: '3px 10px',
                       borderRadius: '4px',
@@ -443,18 +430,45 @@ export default async function RenewalsPage() {
                     </span>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    {whatsapp ? (
-                      <a
-                        href={`https://wa.me/${whatsapp}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#5AB87A', textDecoration: 'none', fontSize: '13px' }}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <Link 
+                        href={`/dashboard/clients/${p.client_id}`}
+                        style={{
+                          color: '#C8813A',
+                          textDecoration: 'none',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
                       >
-                        Message →
-                      </a>
-                    ) : (
-                      <span style={{ color: '#C9B99A', fontSize: '13px', opacity: 0.5 }}>No WhatsApp</span>
-                    )}
+                        View client →
+                      </Link>
+                      
+                      {whatsapp ? (
+                        <a
+                          href={`https://wa.me/${whatsapp}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#5AB87A', textDecoration: 'none', fontSize: '12px' }}
+                        >
+                          Message →
+                        </a>
+                      ) : (
+                        <span style={{ color: '#C9B99A', fontSize: '12px', opacity: 0.5 }}>No WhatsApp</span>
+                      )}
+                      
+                      <span 
+                        style={{
+                          color: '#C9B99A',
+                          fontSize: '12px',
+                          opacity: 0.5,
+                          cursor: 'not-allowed',
+                          fontStyle: 'italic',
+                        }}
+                        title="Coming soon"
+                      >
+                        Ask Maya →
+                      </span>
+                    </div>
                   </td>
                 </tr>
               );

@@ -639,7 +639,7 @@ export default function ClientsPage() {
                           }}>
                             <div style={{
                               fontFamily: 'DM Sans, sans-serif',
-                              fontSize: '16px',
+                              fontSize: '13px',
                               fontWeight: 500,
                               color: '#F5ECD7',
                               marginBottom: '4px',

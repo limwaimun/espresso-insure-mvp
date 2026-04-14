@@ -94,7 +94,63 @@ export default async function DashboardHome() {
   
   // ========== FETCH DATA FOR DASHBOARD ==========
   
-  // Fetch clients count by type - optimized with separate count queries
+  // Run ALL queries in parallel for maximum performance
+  const today = new Date();
+  const ninetyDaysFromNow = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+  
+  const [
+    clientResult,
+    policyResult,
+    conversationResult,
+    alertResult,
+    renewalResult,
+    birthdayResult,
+    recentConvos,
+    recentAlerts
+  ] = await Promise.all([
+    supabase.from('clients').select('*', { count: 'exact', head: true }),
+    supabase.from('policies').select('*', { count: 'exact', head: true }),
+    supabase.from('conversations').select('*', { count: 'exact', head: true }),
+    supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('resolved', false),
+    supabase.from('policies').select('premium, renewal_date').gte('renewal_date', today.toISOString()).lte('renewal_date', ninetyDaysFromNow.toISOString()),
+    supabase.from('clients').select('birthday'),
+    supabase.from('conversations').select('*, clients(name, company)').order('last_message_at', { ascending: false }).limit(5),
+    supabase.from('alerts').select('*, clients(name)').eq('resolved', false).order('created_at', { ascending: false }).limit(5),
+  ]);
+  
+  // Extract counts and data
+  const clientCount = clientResult.count || 0;
+  const policyCount = policyResult.count || 0;
+  const conversationCount = conversationResult.count || 0;
+  const alertCount = alertResult.count || 0;
+  
+  // Calculate urgent renewals from renewal result
+  const urgentRenewals = renewalResult.data?.filter(p => {
+    if (!p.renewal_date) return false;
+    const renewalDate = new Date(p.renewal_date);
+    const diffDays = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0;
+  }).length || 0;
+  
+  // Calculate total premium from renewal result (includes all policies in next 90 days)
+  const totalPremium = renewalResult.data?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
+  
+  // For now, we need to fetch active policies separately for accurate count
+  const { data: activePolicies } = await supabase
+    .from('policies')
+    .select('premium')
+    .eq('status', 'active');
+  
+  const activePolicyCount = activePolicies?.length || 0;
+  
+  // Fetch open claims count
+  const { count: openClaims } = await supabase
+    .from('alerts')
+    .select('*', { count: 'exact', head: true })
+    .eq('type', 'claim')
+    .eq('resolved', false);
+  
+  // Fetch clients by type for breakdown
   const [
     { count: individualCount },
     { count: smeCount },
@@ -104,72 +160,6 @@ export default async function DashboardHome() {
     supabase.from('clients').select('*', { count: 'exact', head: true }).eq('type', 'sme'),
     supabase.from('clients').select('*', { count: 'exact', head: true }).eq('type', 'corporate')
   ]);
-  
-  // Fetch policies - optimized with count queries
-  const [
-    { count: policyCount },
-    { data: activePolicies },
-    { data: premiumPolicies }
-  ] = await Promise.all([
-    supabase.from('policies').select('*', { count: 'exact', head: true }),
-    supabase.from('policies').select('premium').eq('status', 'active'),
-    supabase.from('policies').select('premium')
-  ]);
-  
-  const activePolicyCount = activePolicies?.length || 0;
-  const totalPremium = premiumPolicies?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
-  
-  // Fetch urgent renewals count - optimized
-  const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
-  
-  const { count: urgentRenewals } = await supabase
-    .from('policies')
-    .select('*', { count: 'exact', head: true })
-    .not('renewal_date', 'is', null)
-    .gte('renewal_date', today.toISOString().split('T')[0])
-    .lte('renewal_date', thirtyDaysFromNow.toISOString().split('T')[0]);
-  
-  // Fetch open claims count - optimized
-  const { count: openClaims } = await supabase
-    .from('alerts')
-    .select('*', { count: 'exact', head: true })
-    .eq('type', 'claim')
-    .eq('resolved', false);
-  
-  // Fetch recent conversations (last 5)
-  const { data: recentConversations } = await supabase
-    .from('conversations')
-    .select(`
-      id,
-      status,
-      last_message,
-      last_message_at,
-      clients (
-        id,
-        name,
-        company
-      )
-    `)
-    .order('last_message_at', { ascending: false })
-    .limit(5);
-  
-  // Fetch recent alerts (last 5)
-  const { data: recentAlerts } = await supabase
-    .from('alerts')
-    .select(`
-      id,
-      title,
-      body,
-      priority,
-      created_at,
-      clients (
-        name
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(5);
   
   // Helper function to format time ago
   function formatTimeAgo(dateString: string): string {

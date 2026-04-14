@@ -32,7 +32,7 @@ export default function SettingsPage() {
         setProfile(p);
         setName(p.name || '');
         setPhone(p.phone || '');
-        setCompany('');
+        setCompany(p.company || '');
       }
 
       const { count: cc } = await supabase.from('clients').select('*', { count: 'exact', head: true });
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
-    await supabase.from('profiles').update({ name, phone }).eq('id', profile.id);
+    await supabase.from('profiles').update({ name, phone, company }).eq('id', profile.id);
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -255,6 +255,7 @@ export default function SettingsPage() {
             fontSize: '14px',
             cursor: 'pointer',
           }}
+          onClick={() => alert('Coming soon — contact us at hello@espresso.insure to upgrade')}
         >
           Upgrade plan
         </button>
