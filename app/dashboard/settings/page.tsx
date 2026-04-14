@@ -4,55 +4,17 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  company: string | null;
-}
-
-interface MayaSettings {
-  autoReply: boolean;
-  workingHours: string;
-  greetingMessage: string;
-  coverageGapDetection: boolean;
-  renewalReminders: boolean;
-  birthdayGreetings: boolean;
-}
-
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
-  // Maya settings state
-  const [mayaSettings, setMayaSettings] = useState<MayaSettings>({
+  const [mayaSettings, setMayaSettings] = useState({
     autoReply: false,
-    workingHours: '9:00 AM — 6:00 PM',
-    greetingMessage: 'Hi! I\'m Maya, your insurance advisor\'s assistant. How can I help you today?',
     coverageGapDetection: false,
     renewalReminders: false,
     birthdayGreetings: false,
-  });
-  
-  // Trial state
-  const [trialStatus, setTrialStatus] = useState<{
-    active: boolean;
-    daysRemaining: number;
-    expired: boolean;
-  }>({
-    active: true,
-    daysRemaining: 14,
-    expired: false,
-  });
-  
-  // Data metrics
-  const [metrics, setMetrics] = useState({
-    clients: 13,
-    policies: 30,
-    conversations: 3,
   });
   
   const supabase = createClient();
@@ -63,9 +25,7 @@ export default function SettingsPage() {
 
   const fetchData = async () => {
     setLoading(true);
-    
     try {
-      // Fetch user profile
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profileData } = await supabase
@@ -73,15 +33,8 @@ export default function SettingsPage() {
           .select('*')
           .eq('id', user.id)
           .single();
-        
-        if (profileData) {
-          setProfile(profileData);
-        }
+        setProfile(profileData);
       }
-      
-      // In a real app, we would fetch Maya settings, trial status, and metrics from API
-      // For now, we use the default/placeholder values
-      
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -91,7 +44,6 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     if (!profile) return;
-    
     setSaving(true);
     try {
       const { error } = await supabase
@@ -102,9 +54,7 @@ export default function SettingsPage() {
           company: profile.company 
         })
         .eq('id', profile.id);
-      
       if (error) throw error;
-      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (error) {
@@ -114,20 +64,8 @@ export default function SettingsPage() {
     }
   };
 
-  const handleMayaToggle = (setting: keyof MayaSettings) => {
-    if (typeof mayaSettings[setting] === 'boolean') {
-      setMayaSettings(prev => ({
-        ...prev,
-        [setting]: !prev[setting]
-      }));
-    }
-  };
-
-  const handleGreetingMessageChange = (value: string) => {
-    setMayaSettings(prev => ({
-      ...prev,
-      greetingMessage: value
-    }));
+  const handleMayaToggle = (setting: string) => {
+    setMayaSettings(prev => ({ ...prev, [setting]: !prev[setting] }));
   };
 
   if (loading) {
@@ -142,8 +80,6 @@ export default function SettingsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
-      
-      {/* Page Header */}
       <div>
         <h1 style={{
           fontFamily: 'Cormorant Garamond, serif',
@@ -163,396 +99,155 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* ========== SECTION 1: PROFILE ========== */}
-      <div style={{
-        background: '#3D2215',
-        borderRadius: '8px',
-        padding: '24px',
-      }}>
-        <h2 style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '20px',
-          color: '#F5ECD7',
-          margin: '0 0 20px 0',
-        }}>
+      {/* PROFILE */}
+      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '24px' }}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', margin: '0 0 20px 0' }}>
           Profile
         </h2>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '20px',
-          marginBottom: '20px',
-        }}>
-          {/* Name */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#F5ECD7',
-            }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div>
+            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
               Name
             </label>
-            <input
-              type="text"
-              value={profile?.name || ''}
-              onChange={(e) => setProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
-              style={{
-                background: '#2E1A0E',
-                border: '1px solid #3D2215',
-                borderRadius: '6px',
-                padding: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#F5ECD7',
-                outline: 'none',
-              }}
-            />
+            <input type="text" value={profile?.name || ''} onChange={(e) => setProfile({ ...profile, name: e.target.value })} style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#F5ECD7', outline: 'none', width: '100%' }} />
           </div>
-          
-          {/* Email (disabled) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#F5ECD7',
-            }}>
+          <div>
+            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
               Email
             </label>
-            <input
-              type="email"
-              value={profile?.email || ''}
-              disabled
-              style={{
-                background: '#2E1A0E',
-                border: '1px solid #3D2215',
-                borderRadius: '6px',
-                padding: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#666666',
-                outline: 'none',
-                cursor: 'not-allowed',
-              }}
-            />
+            <input type="email" value={profile?.email || ''} disabled style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#666666', outline: 'none', width: '100%', cursor: 'not-allowed' }} />
           </div>
-          
-          {/* WhatsApp */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#F5ECD7',
-            }}>
+          <div>
+            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
               WhatsApp
             </label>
-            <input
-              type="text"
-              value={profile?.phone || ''}
-              onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
-              style={{
-                background: '#2E1A0E',
-                border: '1px solid #3D2215',
-                borderRadius: '6px',
-                padding: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#F5ECD7',
-                outline: 'none',
-              }}
-            />
+            <input type="text" value={profile?.phone || ''} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#F5ECD7', outline: 'none', width: '100%' }} />
           </div>
-          
-          {/* Company */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#F5ECD7',
-            }}>
+          <div>
+            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
               Company
             </label>
-            <input
-              type="text"
-              value={profile?.company || ''}
-              onChange={(e) => setProfile(prev => prev ? { ...prev, company: e.target.value } : null)}
-              style={{
-                background: '#2E1A0E',
-                border: '1px solid #3D2215',
-                borderRadius: '6px',
-                padding: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#F5ECD7',
-                outline: 'none',
-              }}
-            />
+            <input type="text" value={profile?.company || ''} onChange={(e) => setProfile({ ...profile, company: e.target.value })} style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#F5ECD7', outline: 'none', width: '100%' }} />
           </div>
         </div>
-        
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
-          {saveSuccess && (
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#5AB87A',
-            }}>
-              ✓ Saved
-            </span>
-          )}
-          <button
-            onClick={handleSaveProfile}
-            disabled={saving}
-            style={{
-              background: '#C8813A',
-              color: '#120A06',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '10px 20px',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              opacity: saving ? 0.7 : 1,
-            }}
-            onMouseEnter={(e) => !saving && (e.currentTarget.style.background = '#D4A030')}
-            onMouseLeave={(e) => !saving && (e.currentTarget.style.background = '#C8813A')}
-          >
+          {saveSuccess && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#5AB87A' }}>✓ Saved</span>}
+          <button onClick={handleSaveProfile} disabled={saving} style={{ background: '#C8813A', color: '#120A06', border: 'none', borderRadius: '6px', padding: '10px 20px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? 'Saving...' : 'Save profile'}
           </button>
         </div>
       </div>
 
-      {/* ========== SECTION 2: MAYA ========== */}
-      <div style={{
-        background: '#3D2215',
-        borderRadius: '8px',
-        padding: '24px',
-      }}>
+      {/* MAYA */}
+      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <h2 style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '20px',
-            color: '#F5ECD7',
-            margin: 0,
-          }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', margin: 0 }}>
             Maya
           </h2>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            color: '#D4A030',
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#D4A030',
-            }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#D4A030' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4A030' }} />
             Setting up
           </div>
         </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Auto-reply toggle */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#F5ECD7',
-                }}>
-                  Auto-reply to new messages
-                </span>
-                <span style={{
-                  background: '#2E1A0E',
-                  color: '#C9B99A',
-                  fontSize: '10px',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontFamily: 'DM Sans, sans-serif',
-                }}>
-                  Coming soon
-                </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {[
+            { key: 'autoReply', label: 'Auto-reply to new messages', desc: 'Maya will respond to client WhatsApp messages automatically' },
+            { key: 'coverageGapDetection', label: 'Flag missing coverage', desc: 'Maya will identify and flag coverage gaps during conversations' },
+            { key: 'renewalReminders', label: 'Send renewal reminders', desc: 'Maya will remind clients about upcoming renewals via WhatsApp' },
+            { key: 'birthdayGreetings', label: 'Birthday messages', desc: 'Maya will send birthday greetings to clients automatically' }
+          ].map((item) => (
+            <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
+                    {item.label}
+                  </span>
+                  <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'DM Sans, sans-serif' }}>
+                    Coming soon
+                  </span>
+                </div>
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C9B99A', margin: 0, lineHeight: 1.5 }}>
+                  {item.desc}
+                </p>
               </div>
-              <p style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#C9B99A',
-                margin: 0,
-                lineHeight: 1.5,
-              }}>
-                Maya will respond to client WhatsApp messages automatically
-              </p>
-            </div>
-            <div
-              onClick={() => handleMayaToggle('autoReply')}
-              style={{
-                width: '44px',
-                height: '24px',
-                borderRadius: '12px',
-                background: mayaSettings.autoReply ? '#C8813A' : '#2E1A0E',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                flexShrink: 0,
-              }}
-            >
-              <div style={{
-                position: 'absolute',
-                top: '2px',
-                left: mayaSettings.autoReply ? '22px' : '2px',
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                background: '#F5ECD7',
-                transition: 'all 0.2s',
-              }} />
-            </div>
-          </div>
-          
-          {/* Working hours */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#F5ECD7',
-                }}>
-                  Active hours
-                </span>
-                <span style={{
-                  background: '#2E1A0E',
-                  color: '#C9B99A',
-                  fontSize: '10px',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontFamily: 'DM Sans, sans-serif',
-                }}>
-                  Coming soon
-                </span>
+              <div onClick={() => handleMayaToggle(item.key)} style={{ width: '44px', height: '24px', borderRadius: '12px', background: mayaSettings[item.key as keyof typeof mayaSettings] ? '#C8813A' : '#2E1A0E', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: '2px', left: mayaSettings[item.key as keyof typeof mayaSettings] ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', background: '#F5ECD7', transition: 'all 0.2s' }} />
               </div>
-              <p style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#C9B99A',
-                margin: 0,
-                lineHeight: 1.5,
-              }}>
-                Maya only replies during these hours
-              </p>
             </div>
-            <div style={{
-              background: '#2E1A0E',
-              border: '1px solid #3D2215',
-              borderRadius: '6px',
-              padding: '10px 12px',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#666666',
-              cursor: 'not-allowed',
-              flexShrink: 0,
-            }}>
-              {mayaSettings.workingHours}
-            </div>
-          </div>
-          
-          {/* Greeting message */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                color: '#F5ECD7',
-              }}>
-                Welcome message
+          ))}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
+                Active hours
               </span>
-              <span style={{
-                background: '#2E1A0E',
-                color: '#C9B99A',
-                fontSize: '10px',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontFamily: 'DM Sans, sans-serif',
-              }}>
+              <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'DM Sans, sans-serif' }}>
                 Coming soon
               </span>
             </div>
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              margin: '0 0 8px 0',
-              lineHeight: 1.5,
-            }}>
-              Maya sends this when a new client messages for the first time
-            </p>
-            <textarea
-              value={mayaSettings.greetingMessage}
-              onChange={(e) => handleGreetingMessageChange(e.target.value)}
-              rows={3}
-              style={{
-                background: '#2E1A0E',
-                border: '1px solid #3D2215',
-                borderRadius: '6px',
-                padding: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#F5ECD7',
-                outline: 'none',
-                resize: 'vertical',
-                minHeight: '80px',
-              }}
-            />
-          </div>
-          
-          {/* Coverage gap detection toggle */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#F5ECD7',
-                }}>
-                  Flag missing coverage
-                </span>
-                <span style={{
-                  background: '#2E1A0E',
-                  color: '#C9B99A',
-                  fontSize: '10px',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontFamily: 'DM Sans, sans-serif',
-                }}>
-                  Coming soon
-                </span>
-              </div>
-              <p style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '13px',
-                color: '#C9B99A',
-                margin: 0,
-                lineHeight: 1.5,
-              }}>
-                Maya will identify and flag coverage gaps during conversations
-              </p>
+            <div style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '10px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#666666', cursor: 'not-allowed' }}>
+              9:00 AM — 6:00 PM
             </div>
-            <div
-              onClick={() => handleMayaToggle('coverageGapDetection')}
-              style={{
-                width
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', color: '#F5ECD7' }}>
+                Welcome message
+              </span>
+              <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontFamily: 'DM Sans, sans-serif' }}>
+                Coming soon
+              </span>
+            </div>
+            <textarea rows={3} value="Hi! I'm Maya, your insurance advisor's assistant. How can I help you today?" style={{ background: '#2E1A0E', border: '1px solid #3D2215', borderRadius: '6px', padding: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#F5ECD7', outline: 'none', width: '100%', resize: 'vertical' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* PLAN & BILLING */}
+      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '24px' }}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', margin: '0 0 20px 0' }}>
+          Plan & billing
+        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', fontWeight: 'bold', padding: '4px 12px', borderRadius: '100px', background: 'rgba(200, 129, 58, 0.2)', color: '#C8813A', border: '1px solid #C8813A' }}>
+            Solo
+          </span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '24px', fontWeight: 'bold', color: '#F5ECD7' }}>
+            $29/month
+          </span>
+        </div>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#D4A030', marginBottom: '16px' }}>
+          Trial · 14 days remaining
+        </div>
+        <button style={{ background: 'transparent', color: '#C8813A', border: '1px solid #C8813A', borderRadius: '6px', padding: '10px 20px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>
+          Upgrade plan
+        </button>
+      </div>
+
+      {/* YOUR DATA */}
+      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '24px' }}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', margin: '0 0 20px 0' }}>
+          Your data
+        </h2>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', padding: '6px 12px', borderRadius: '100px', background: 'rgba(201, 185, 154, 0.1)', color: '#C9B99A', border: '1px solid #C9B99A' }}>
+            13 clients
+          </div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', padding: '6px 12px', borderRadius: '100px', background: 'rgba(201, 185, 154, 0.1)', color: '#C9B99A', border: '1px solid #C9B99A' }}>
+            30 policies
+          </div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', padding: '6px 12px', borderRadius: '100px', background: 'rgba(201, 185, 154, 0.1)', color: '#C9B99A', border: '1px solid #C9B99A' }}>
+            3 conversations
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link href="/dashboard/import" style={{ background: '#C8813A', color: '#120A06', border: 'none', borderRadius: '6px', padding: '10px 20px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}>
+            Import clients
+          </Link>
+          <button disabled style={{ background: 'transparent', color: '#666666', border: '1px solid #666666', borderRadius: '6px', padding: '10px 20px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', fontWeight: 'bold', cursor: 'not-allowed' }}>
+            Export data
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
