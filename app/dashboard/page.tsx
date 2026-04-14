@@ -114,8 +114,8 @@ export default async function DashboardHome() {
     supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('resolved', false),
     supabase.from('policies').select('premium, renewal_date').gte('renewal_date', today.toISOString()).lte('renewal_date', ninetyDaysFromNow.toISOString()),
     supabase.from('clients').select('birthday'),
-    supabase.from('conversations').select('*, clients(name, company)').order('last_message_at', { ascending: false }).limit(5),
-    supabase.from('alerts').select('*, clients(name)').eq('resolved', false).order('created_at', { ascending: false }).limit(5),
+    supabase.from('conversations').select('*, clients(name, company)').order('last_message_at', { ascending: false }).limit(10),
+    supabase.from('alerts').select('*, clients(name)').eq('resolved', false).order('created_at', { ascending: false }).limit(10),
   ]);
   
   // Extract counts and data
@@ -405,6 +405,7 @@ export default async function DashboardHome() {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '24px',
+          alignItems: 'stretch',
         }}>
           {/* Recent Conversations Panel */}
           <div style={{
@@ -412,6 +413,9 @@ export default async function DashboardHome() {
             border: '1px solid #2E1A0E',
             borderRadius: '8px',
             overflow: 'hidden',
+            minHeight: 'calc(100vh - 400px)',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
             <div style={{
               padding: '20px',
@@ -428,7 +432,7 @@ export default async function DashboardHome() {
               </h2>
             </div>
             
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               {recentConvos.data && recentConvos.data.length > 0 ? (
                 recentConvos.data.map((conv: any) => {
                   const client = conv.clients as any;
@@ -541,6 +545,9 @@ export default async function DashboardHome() {
             border: '1px solid #2E1A0E',
             borderRadius: '8px',
             overflow: 'hidden',
+            minHeight: 'calc(100vh - 400px)',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
             <div style={{
               padding: '20px',
@@ -557,7 +564,7 @@ export default async function DashboardHome() {
               </h2>
             </div>
             
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               {recentAlerts.data && recentAlerts.data.length > 0 ? (
                 recentAlerts.data.map((alert: any) => {
                   const client = alert.clients as any;
