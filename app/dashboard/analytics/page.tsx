@@ -124,38 +124,153 @@ export default async function AnalyticsPage() {
   });
 
   return (
-    <div style={{ maxWidth: '1200px' }}>
+    <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      padding: '0',
+      minHeight: '100vh',
+    }}>
+      <div className="px-8 py-6">
+        {/* Title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}>
+          <h1 style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '28px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>Analytics</h1>
+        </div>
 
-      {/* ========== SECTION A: ACTION REQUIRED ========== */}
-      <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', marginBottom: '16px' }}>
-        Action required
-      </h2>
+        {/* ========== SECTION A: ACTION REQUIRED ========== */}
+        <h2 style={{
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: '20px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+          marginBottom: '16px',
+        }}>
+          Action required
+        </h2>
 
-      {/* 3 Alert Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        {/* Lapsed */}
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #D06060' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#D06060', marginBottom: '8px' }}>Lapsed Policies</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '32px', color: '#F5ECD7' }}>{lapsedPolicies.length}</div>
-          <div style={{ fontSize: '12px', color: '#D06060' }}>${lapsedAmount.toLocaleString()} at risk</div>
+        {/* 3 Alert Cards - Match All Clients style */}
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          {/* Lapsed */}
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#D06060',
+              marginBottom: '4px',
+            }}>Lapsed Policies</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>{lapsedPolicies.length}</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#D06060',
+              marginTop: '4px',
+            }}>${lapsedAmount.toLocaleString()} at risk</div>
+          </div>
+          {/* Urgent Renewals */}
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#D4A030',
+              marginBottom: '4px',
+            }}>Urgent Renewals</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>{urgentRenewals.count}</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#D4A030',
+              marginTop: '4px',
+            }}>${urgentRenewals.amount.toLocaleString()} in next 30 days</div>
+          </div>
+          {/* Coverage Gaps */}
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#20A0A0',
+              marginBottom: '4px',
+            }}>Coverage Gaps</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>{totalGaps}</div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#20A0A0',
+              marginTop: '4px',
+            }}>Upsell opportunities</div>
+          </div>
         </div>
-        {/* Urgent Renewals */}
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #D4A030' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#D4A030', marginBottom: '8px' }}>Urgent Renewals</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '32px', color: '#F5ECD7' }}>{urgentRenewals.count}</div>
-          <div style={{ fontSize: '12px', color: '#D4A030' }}>${urgentRenewals.amount.toLocaleString()} in next 30 days</div>
-        </div>
-        {/* Coverage Gaps */}
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #20A0A0' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#20A0A0', marginBottom: '8px' }}>Coverage Gaps</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '32px', color: '#F5ECD7' }}>{totalGaps}</div>
-          <div style={{ fontSize: '12px', color: '#20A0A0' }}>Upsell opportunities</div>
-        </div>
-      </div>
 
       {/* Renewal Pipeline - Stacked Bar */}
-      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
-        <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '12px' }}>Renewal pipeline</div>
+      <div style={{
+        background: '#120A06',
+        border: '1px solid #2E1A0E',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: '14px',
+          fontWeight: 500,
+          color: '#F5ECD7',
+          marginBottom: '12px',
+        }}>Renewal pipeline</div>
         <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', height: '32px', marginBottom: '12px' }}>
           {renewalData.map((bucket, i) => {
             const pct = totalRenewalPipeline > 0 ? (bucket.amount / totalRenewalPipeline) * 100 : 0;
@@ -204,39 +319,156 @@ export default async function AnalyticsPage() {
       )}
 
       {/* ========== SECTION B: YOUR BOOK ========== */}
-      <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', marginBottom: '16px' }}>
+      <h2 style={{
+        fontFamily: 'DM Sans, sans-serif',
+        fontSize: '20px',
+        fontWeight: 400,
+        color: '#F5ECD7',
+        marginBottom: '16px',
+      }}>
         Your book
       </h2>
 
-      {/* 4 Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#5AB87A', marginBottom: '8px' }}>Total AUM</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>${totalPremium.toLocaleString()}</div>
-          <div style={{ fontSize: '12px', color: '#5AB87A' }}>Annual premium managed</div>
+      {/* 4 Metric Cards - Match All Clients style */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        marginBottom: '24px',
+      }}>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#5AB87A',
+            marginBottom: '4px',
+          }}>Total AUM</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>${totalPremium.toLocaleString()}</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#5AB87A',
+            marginTop: '4px',
+          }}>Annual premium managed</div>
         </div>
-        <div className="card" style={{ padding: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#C9B99A', marginBottom: '8px' }}>Avg Per Client</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>${avgPerClient.toLocaleString()}</div>
-          <div style={{ fontSize: '12px', color: '#C9B99A' }}>Average annual premium</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>Avg Per Client</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>${avgPerClient.toLocaleString()}</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#C8813A',
+            marginTop: '4px',
+          }}>Average annual premium</div>
         </div>
-        <div className="card" style={{ padding: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#C9B99A', marginBottom: '8px' }}>Total Clients</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{clientCount}</div>
-          <div style={{ fontSize: '12px', color: '#C9B99A' }}>Active clients</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>Total Clients</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>{clientCount}</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#C8813A',
+            marginTop: '4px',
+          }}>Active clients</div>
         </div>
-        <div className="card" style={{ padding: '16px' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#C9B99A', marginBottom: '8px' }}>Total Policies</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{policies.length}</div>
-          <div style={{ fontSize: '12px', color: '#C9B99A' }}>{activePolicies.length} active</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '16px',
+          flex: 1,
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#C8813A',
+            marginBottom: '4px',
+          }}>Total Policies</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            color: '#F5ECD7',
+          }}>{policies.length}</div>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#C8813A',
+            marginTop: '4px',
+          }}>{activePolicies.length} active</div>
         </div>
       </div>
 
       {/* Two columns: Insurer + Top Clients */}
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '16px', marginBottom: '40px' }}>
         {/* Premium by Insurer */}
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '16px' }}>Premium by insurer</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '20px',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>Premium by insurer</div>
           {top5Insurers.map(([insurer, amount], i) => {
             const pct = Math.round((amount / totalPremium) * 100);
             return (
@@ -254,8 +486,19 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Top 5 Clients */}
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '16px' }}>Top clients</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '20px',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>Top clients</div>
           {top5Clients.map((client, i) => (
             <Link key={i} href={`/dashboard/clients/${client.id}`} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 8px', borderRadius: '6px', marginBottom: '4px', cursor: 'pointer' }}>
@@ -277,14 +520,31 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* ========== SECTION C: CLIENT HEALTH ========== */}
-      <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '20px', color: '#F5ECD7', marginBottom: '16px' }}>
+      <h2 style={{
+        fontFamily: 'DM Sans, sans-serif',
+        fontSize: '20px',
+        fontWeight: 400,
+        color: '#F5ECD7',
+        marginBottom: '16px',
+      }}>
         Client health
       </h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         {/* By Type - Segmented Bar */}
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '16px' }}>Clients by type</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '20px',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>Clients by type</div>
           <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', height: '28px', marginBottom: '16px' }}>
             {typeData.map((t, i) => {
               const pct = (t.count / totalTypeCount) * 100;
@@ -304,8 +564,19 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* By Tier */}
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '14px', color: '#C9B99A', marginBottom: '16px' }}>Clients by tier</div>
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '20px',
+        }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#F5ECD7',
+            marginBottom: '16px',
+          }}>Clients by tier</div>
           {tierData.map((t, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -316,6 +587,7 @@ export default async function AnalyticsPage() {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -70,56 +70,335 @@ export default async function RenewalsPage() {
   const lapsedPremium = sorted.filter(p => p.status === 'lapsed').reduce((s, p) => s + (Number(p.premium) || 0), 0);
 
   return (
-    <div style={{ maxWidth: '1200px' }}>
-      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7', marginBottom: '24px' }}>
-        Renewals
-      </h1>
+    <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      padding: '0',
+      minHeight: '100vh',
+    }}>
+      <div className="px-8 py-6">
+        {/* Title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}>
+          <h1 style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '28px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>Renewals</h1>
+        </div>
 
-      {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #8B3A3A' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#8B3A3A' }}>Lapsed</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{lapsedCount}</div>
-          <div style={{ fontSize: '12px', color: '#8B3A3A' }}>${lapsedPremium.toLocaleString()} at risk</div>
+        {/* Summary Cards - Match All Clients style */}
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#8B3A3A',
+              marginBottom: '4px',
+            }}>
+              Lapsed
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>
+              {lapsedCount}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#8B3A3A',
+              marginTop: '4px',
+            }}>
+              ${lapsedPremium.toLocaleString()} at risk
+            </div>
+          </div>
+          
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#D06060',
+              marginBottom: '4px',
+            }}>
+              Urgent
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>
+              {urgentCount}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#D06060',
+              marginTop: '4px',
+            }}>
+              ${urgentPremium.toLocaleString()} in next 30 days
+            </div>
+          </div>
+          
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#D4A030',
+              marginBottom: '4px',
+            }}>
+              Action needed
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>
+              {actionCount}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#D4A030',
+              marginTop: '4px',
+            }}>
+              31–60 days
+            </div>
+          </div>
+          
+          <div style={{
+            background: '#120A06',
+            border: '1px solid #2E1A0E',
+            borderRadius: '8px',
+            padding: '16px',
+            flex: 1,
+          }}>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '11px',
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#20A0A0',
+              marginBottom: '4px',
+            }}>
+              Under review
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#F5ECD7',
+            }}>
+              {reviewCount}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#20A0A0',
+              marginTop: '4px',
+            }}>
+              61–90 days
+            </div>
+          </div>
         </div>
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #D06060' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#D06060' }}>Urgent</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{urgentCount}</div>
-          <div style={{ fontSize: '12px', color: '#D06060' }}>${urgentPremium.toLocaleString()} in next 30 days</div>
-        </div>
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #D4A030' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#D4A030' }}>Action needed</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{actionCount}</div>
-          <div style={{ fontSize: '12px', color: '#D4A030' }}>31–60 days</div>
-        </div>
-        <div style={{ background: '#3D2215', borderRadius: '8px', padding: '16px', borderLeft: '4px solid #20A0A0' }}>
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#20A0A0' }}>Under review</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{reviewCount}</div>
-          <div style={{ fontSize: '12px', color: '#20A0A0' }}>61–90 days</div>
-        </div>
-      </div>
 
-      {/* Summary text */}
-      <div style={{ background: '#3D2215', borderRadius: '8px', padding: '12px 20px', marginBottom: '24px', fontSize: '14px', color: '#C9B99A' }}>
-        {sorted.length} policies tracked · {lapsedCount > 0 && <span style={{ color: '#8B3A3A' }}>{lapsedCount} lapsed · </span>}
-        <span style={{ color: '#D06060' }}>{urgentCount} urgent</span> · <span style={{ color: '#D4A030' }}>{actionCount} action needed</span> · <span style={{ color: '#20A0A0' }}>{reviewCount} under review</span>
-      </div>
+        {/* Summary text */}
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          marginBottom: '24px',
+          fontSize: '14px',
+          color: '#C9B99A',
+        }}>
+          {sorted.length} policies tracked · {lapsedCount > 0 && <span style={{ color: '#8B3A3A' }}>{lapsedCount} lapsed · </span>}
+          <span style={{ color: '#D06060' }}>{urgentCount} urgent</span> · <span style={{ color: '#D4A030' }}>{actionCount} action needed</span> · <span style={{ color: '#20A0A0' }}>{reviewCount} under review</span>
+        </div>
 
-      {/* Renewals Table */}
-      <div style={{ background: '#3D2215', borderRadius: '8px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #2E1A0E' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Client</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Policy Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Insurer</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Premium</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Renewal</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Days</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: '#C9B99A', fontSize: '11px', textTransform: 'uppercase' }}>Action</th>
-            </tr>
-          </thead>
+        {/* Renewals Table - Match All Clients table styling */}
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 280px)',
+          }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}>
+              <thead style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                background: '#1C0F0A',
+              }}>
+                <tr>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Client
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Policy Type
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Insurer
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Premium
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Renewal
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Days
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Days
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Status
+                  </th>
+                  <th style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: '#C8813A',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid #2E1A0E',
+                  }}>
+                    Action
+                  </th>
+                </tr>
+              </thead>
           <tbody>
             {sorted.map((p, i) => {
               const client = p.clients as any;
@@ -182,13 +461,15 @@ export default async function RenewalsPage() {
             })}
           </tbody>
         </table>
-      </div>
-
-      {sorted.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
-          No policies tracked yet. Import clients to see renewals.
+          </div>
         </div>
-      )}
+
+        {sorted.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
+            No policies tracked yet. Import clients to see renewals.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

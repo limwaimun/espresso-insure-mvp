@@ -119,51 +119,74 @@ export default function ClaimsPage() {
   ];
 
   return (
-    <div style={{ width: '100%' }}>
-      <h1 style={{
-        fontFamily: 'Cormorant Garamond, serif',
-        fontSize: '28px',
-        fontWeight: 400,
-        color: '#F5ECD7',
-        margin: '0 0 20px 0',
-      }}>
-        Claims
-      </h1>
-      
-      {/* Summary Cards */}
-      <div className="metric-grid" style={{ marginBottom: '24px' }}>
-        {summaryCards.map((card) => (
-          <div key={card.id} className={`card card-${card.color}`}>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              color: '#C9B99A',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: '8px',
+    <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      padding: '0',
+      minHeight: '100vh',
+    }}>
+      <div className="px-8 py-6">
+        {/* Title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}>
+          <h1 style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '28px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>Claims</h1>
+        </div>
+
+        {/* Summary Cards - Match All Clients style */}
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          {summaryCards.map((card) => (
+            <div key={card.id} style={{
+              background: '#120A06',
+              border: '1px solid #2E1A0E',
+              borderRadius: '8px',
+              padding: '16px',
+              flex: 1,
             }}>
-              {card.title}
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: card.color === 'danger' ? '#E53E3E' : 
+                       card.color === 'ok' ? '#5AB87A' : '#C8813A',
+                marginBottom: '4px',
+              }}>
+                {card.title}
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#F5ECD7',
+              }}>
+                {card.value}
+              </div>
             </div>
-            <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: '34px',
-              fontWeight: 300,
-              color: '#F5ECD7',
-              lineHeight: 1.1,
-              marginBottom: '6px',
-            }}>
-              {card.value}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       
-      {/* Filter Tabs */}
+      {/* Filter Tabs - Match All Clients tier pill style */}
       <div style={{
         display: 'flex',
         gap: '8px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
+        paddingBottom: '16px',
+        borderBottom: '1px solid #2E1A0E',
       }}>
         {filterTabs.map((tab) => (
           <button
@@ -171,18 +194,18 @@ export default function ClaimsPage() {
             onClick={() => setFilter(tab.id as FilterType)}
             style={{
               fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              fontWeight: filter === tab.id ? 500 : 400,
-              color: filter === tab.id ? '#F5ECD7' : '#C9B99A',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '6px 12px',
+              borderRadius: '100px',
               background: filter === tab.id ? '#C8813A' : 'transparent',
+              color: filter === tab.id ? '#120A06' : '#C9B99A',
               border: filter === tab.id ? 'none' : '1px solid #2E1A0E',
-              borderRadius: '6px',
-              padding: '8px 16px',
               cursor: 'pointer',
+              transition: 'all 0.2s',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              transition: 'all 0.2s',
             }}
           >
             {tab.label}
@@ -244,13 +267,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Client
                   </th>
@@ -258,13 +280,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Description
                   </th>
@@ -272,13 +293,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Status
                   </th>
@@ -286,13 +306,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Priority
                   </th>
@@ -300,13 +319,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Filed
                   </th>
@@ -314,13 +332,12 @@ export default function ClaimsPage() {
                     fontFamily: 'DM Sans, sans-serif',
                     fontSize: '11px',
                     fontWeight: 500,
-                    color: '#C8813A',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    padding: '10px 12px',
+                    color: '#C8813A',
                     textAlign: 'left',
+                    padding: '12px 16px',
                     borderBottom: '1px solid #2E1A0E',
-                    whiteSpace: 'nowrap',
                   }}>
                     Action
                   </th>
@@ -361,7 +378,7 @@ export default function ClaimsPage() {
                         fontSize: '13px',
                         color: '#F5ECD7',
                         fontWeight: 500,
-                        padding: '10px 12px',
+                        padding: '14px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>
@@ -390,7 +407,7 @@ export default function ClaimsPage() {
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '13px',
                         color: '#C9B99A',
-                        padding: '10px 12px',
+                        padding: '14px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>
@@ -418,7 +435,7 @@ export default function ClaimsPage() {
                         fontFamily: 'DM Sans, sans-serif',
                         fontSize: '13px',
                         color: '#C9B99A',
-                        padding: '10px 12px',
+                        padding: '14px 16px',
                         verticalAlign: 'top',
                         borderBottom: '1px solid #2E1A0E',
                       }}>

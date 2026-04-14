@@ -340,53 +340,85 @@ export default async function DashboardHome() {
   })) || [];
 
   return (
-    <div style={{ width: '100%' }}>
-      {/* Greeting */}
-      <div style={{ marginBottom: '32px' }}>
-        <p style={{
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '16px',
-          color: '#C9B99A',
-          lineHeight: 1.5,
+    <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      padding: '0',
+      minHeight: '100vh',
+    }}>
+      <div className="px-8 py-6">
+        {/* Title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
         }}>
-          Here's what's happening with your clients today.
-        </p>
-      </div>
+          <h1 style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '28px',
+            fontWeight: 400,
+            color: '#F5ECD7',
+            margin: 0,
+          }}>Dashboard</h1>
+        </div>
 
-      {/* Metric Grid */}
-      <div className="metric-grid" style={{ marginBottom: '32px' }}>
-        {metricCards.map((card) => (
-          <div key={card.id} className={`card card-${card.color}`}>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              color: '#C9B99A',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: '8px',
+        {/* Greeting */}
+        <div style={{ marginBottom: '24px' }}>
+          <p style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '16px',
+            color: '#C9B99A',
+            lineHeight: 1.5,
+          }}>
+            Here's what's happening with your clients today.
+          </p>
+        </div>
+
+        {/* Metric Grid - Match All Clients style */}
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          {metricCards.map((card) => (
+            <div key={card.id} style={{
+              background: '#120A06',
+              border: '1px solid #2E1A0E',
+              borderRadius: '8px',
+              padding: '16px',
+              flex: 1,
             }}>
-              {card.title}
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#C8813A',
+                marginBottom: '4px',
+              }}>
+                {card.title}
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#F5ECD7',
+              }}>
+                {card.value}
+              </div>
+              <div style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '12px',
+                color: card.color === 'danger' ? '#E53E3E' : '#5AB87A',
+                marginTop: '4px',
+              }}>
+                {card.change}
+              </div>
             </div>
-            <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: '34px',
-              fontWeight: 300,
-              color: '#F5ECD7',
-              lineHeight: 1.1,
-              marginBottom: '6px',
-            }}>
-              {card.value}
-            </div>
-            <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: card.color === 'danger' ? '#E53E3E' : '#5AB87A',
-            }}>
-              {card.change}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
       {/* Two Column Layout */}
       <div style={{
@@ -395,13 +427,25 @@ export default async function DashboardHome() {
         gap: '24px',
       }}>
         {/* Recent Conversations */}
-        <div className="panel">
-          <div className="panel-header" style={{
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #2E1A0E',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-            <span className="panel-title">Recent conversations</span>
+            <span style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#F5ECD7',
+            }}>Recent conversations</span>
             <Link href="/dashboard/conversations" style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
@@ -411,7 +455,7 @@ export default async function DashboardHome() {
               View all →
             </Link>
           </div>
-          <div className="panel-body">
+          <div style={{ padding: '16px 20px' }}>
             {formattedConversations.length > 0 ? (
               formattedConversations.map((conv) => (
                 <Link 
@@ -498,13 +542,25 @@ export default async function DashboardHome() {
         </div>
 
         {/* Recent Alerts */}
-        <div className="panel">
-          <div className="panel-header" style={{
+        <div style={{
+          background: '#120A06',
+          border: '1px solid #2E1A0E',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #2E1A0E',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-            <span className="panel-title">Recent alerts</span>
+            <span style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#F5ECD7',
+            }}>Recent alerts</span>
             <Link href="/dashboard/alerts" style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
@@ -514,7 +570,7 @@ export default async function DashboardHome() {
               View all →
             </Link>
           </div>
-          <div className="panel-body">
+          <div style={{ padding: '16px 20px' }}>
             {formattedAlerts.length > 0 ? (
               formattedAlerts.map((alert) => (
                 <Link 
