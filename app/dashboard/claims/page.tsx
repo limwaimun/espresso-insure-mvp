@@ -632,6 +632,7 @@ export default function ClaimsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
