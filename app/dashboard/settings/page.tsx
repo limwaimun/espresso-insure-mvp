@@ -100,7 +100,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '800px' }}>
+    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
       <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7', marginBottom: '8px' }}>Settings</h1>
       <p style={{ color: '#C9B99A', fontSize: '14px', marginBottom: '32px' }}>Manage your account, Maya preferences, and billing</p>
 
