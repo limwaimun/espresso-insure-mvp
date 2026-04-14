@@ -139,7 +139,7 @@ export default async function AnalyticsPage() {
           marginBottom: '20px',
         }}>
           <h1 style={{
-            fontFamily: 'DM Sans, sans-serif',
+            fontFamily: 'Cormorant Garamond, serif',
             fontSize: '28px',
             fontWeight: 400,
             color: '#F5ECD7',
@@ -149,7 +149,7 @@ export default async function AnalyticsPage() {
 
         {/* ========== SECTION A: ACTION REQUIRED ========== */}
         <h2 style={{
-          fontFamily: 'DM Sans, sans-serif',
+          fontFamily: 'Cormorant Garamond, serif',
           fontSize: '20px',
           fontWeight: 400,
           color: '#F5ECD7',
@@ -320,7 +320,7 @@ export default async function AnalyticsPage() {
 
       {/* ========== SECTION B: YOUR BOOK ========== */}
       <h2 style={{
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'Cormorant Garamond, serif',
         fontSize: '20px',
         fontWeight: 400,
         color: '#F5ECD7',
@@ -521,7 +521,7 @@ export default async function AnalyticsPage() {
 
       {/* ========== SECTION C: CLIENT HEALTH ========== */}
       <h2 style={{
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'Cormorant Garamond, serif',
         fontSize: '20px',
         fontWeight: 400,
         color: '#F5ECD7',

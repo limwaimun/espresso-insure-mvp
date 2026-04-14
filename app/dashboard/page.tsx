@@ -36,7 +36,7 @@ export default async function DashboardHome() {
         <div style={{ marginBottom: '32px' }}>
           <h1 style={{
             fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '32px',
+            fontSize: '28px',
             fontWeight: 400,
             color: '#F5ECD7',
             margin: '0 0 8px 0',
@@ -94,44 +94,49 @@ export default async function DashboardHome() {
   
   // ========== FETCH DATA FOR DASHBOARD ==========
   
-  // Fetch clients count by type
-  const { data: clientsByType } = await supabase
-    .from('clients')
-    .select('type');
+  // Fetch clients count by type - optimized with separate count queries
+  const [
+    { count: individualCount },
+    { count: smeCount },
+    { count: corporateCount }
+  ] = await Promise.all([
+    supabase.from('clients').select('*', { count: 'exact', head: true }).eq('type', 'individual'),
+    supabase.from('clients').select('*', { count: 'exact', head: true }).eq('type', 'sme'),
+    supabase.from('clients').select('*', { count: 'exact', head: true }).eq('type', 'corporate')
+  ]);
   
-  const individualCount = clientsByType?.filter(c => c.type === 'individual').length || 0;
-  const smeCount = clientsByType?.filter(c => c.type === 'sme').length || 0;
-  const corporateCount = clientsByType?.filter(c => c.type === 'corporate').length || 0;
+  // Fetch policies - optimized with count queries
+  const [
+    { count: policyCount },
+    { data: activePolicies },
+    { data: premiumPolicies }
+  ] = await Promise.all([
+    supabase.from('policies').select('*', { count: 'exact', head: true }),
+    supabase.from('policies').select('premium').eq('status', 'active'),
+    supabase.from('policies').select('premium')
+  ]);
   
-  // Fetch policies
-  const { data: policies } = await supabase
-    .from('policies')
-    .select('*');
+  const activePolicyCount = activePolicies?.length || 0;
+  const totalPremium = premiumPolicies?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
   
-  const policyCount = policies?.length || 0;
-  const activePolicyCount = policies?.filter(p => p.status === 'active').length || 0;
-  const totalPremium = policies?.reduce((sum, p) => sum + (Number(p.premium) || 0), 0) || 0;
-  
-  // Fetch renewals for urgent count
-  const { data: renewals } = await supabase
-    .from('policies')
-    .select('renewal_date')
-    .not('renewal_date', 'is', null);
-  
+  // Fetch urgent renewals count - optimized
   const today = new Date();
-  const urgentRenewals = renewals?.filter(r => {
-    if (!r.renewal_date) return false;
-    const renewalDate = new Date(r.renewal_date);
-    const diffDays = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays >= 0;
-  }).length || 0;
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
   
-  // Fetch claims
-  const { data: claims } = await supabase
-    .from('claims')
-    .select('*');
+  const { count: urgentRenewals } = await supabase
+    .from('policies')
+    .select('*', { count: 'exact', head: true })
+    .not('renewal_date', 'is', null)
+    .gte('renewal_date', today.toISOString().split('T')[0])
+    .lte('renewal_date', thirtyDaysFromNow.toISOString().split('T')[0]);
   
-  const openClaims = claims?.filter(c => !c.resolved).length || 0;
+  // Fetch open claims count - optimized
+  const { count: openClaims } = await supabase
+    .from('alerts')
+    .select('*', { count: 'exact', head: true })
+    .eq('type', 'claim')
+    .eq('resolved', false);
   
   // Fetch recent conversations (last 5)
   const { data: recentConversations } = await supabase

@@ -25,7 +25,7 @@ export default async function ConversationsPage() {
       }}>
         <h1 style={{
           fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '32px',
+          fontSize: '28px',
           fontWeight: 400,
           color: '#F5ECD7',
           margin: 0,

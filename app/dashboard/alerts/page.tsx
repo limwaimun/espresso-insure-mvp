@@ -144,7 +144,7 @@ export default function AlertsPage() {
   return (
     <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '32px', fontWeight: 400, color: '#F5ECD7', margin: 0 }}>
+        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', fontWeight: 400, color: '#F5ECD7', margin: 0 }}>
           Alerts
         </h1>
       </div>

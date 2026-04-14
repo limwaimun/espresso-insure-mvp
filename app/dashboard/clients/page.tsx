@@ -210,7 +210,7 @@ export default function ClientsPage() {
             marginBottom: '20px',
           }}>
             <h1 style={{
-              fontFamily: 'DM Sans, sans-serif',
+              fontFamily: 'Cormorant Garamond, serif',
               fontSize: '28px',
               fontWeight: 400,
               color: '#F5ECD7',
