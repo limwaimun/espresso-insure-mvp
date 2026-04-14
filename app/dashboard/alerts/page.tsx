@@ -1,15 +1,153 @@
-import { createClient } from '@/lib/supabase/server';
+'use client';
 
-export default async function AlertsPage() {
-  const supabase = await createClient();
-  
-  // Fetch real alerts with client names
-  const { data: alerts } = await supabase
-    .from('alerts')
-    .select('*, clients(name)')
-    .order('created_at', { ascending: false });
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 
-  const filters = ['all', 'unresolved', 'high', 'medium', 'low'];
+type AlertType = 'all' | 'renewal' | 'claim' | 'payment' | 'birthday' | 'resolved';
+
+interface Alert {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  priority: 'high' | 'medium' | 'info';
+  resolved: boolean;
+  created_at: string;
+  clients: {
+    id: string;
+    name: string;
+    company: string;
+    whatsapp: string;
+  } | null;
+}
+
+export default function AlertsPage() {
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<AlertType>('all');
+  const supabase = createClient();
+
+  // Fetch alerts on mount
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const fetchAlerts = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('alerts')
+      .select('*, clients(id, name, company, whatsapp)')
+      .order('created_at', { ascending: false });
+    
+    setAlerts(data || []);
+    setLoading(false);
+  };
+
+  // Calculate summary counts
+  const totalUnresolved = alerts.filter(a => !a.resolved).length;
+  const renewalCount = alerts.filter(a => a.type === 'renewal' && !a.resolved).length;
+  const claimCount = alerts.filter(a => a.type === 'claim' && !a.resolved).length;
+  const otherCount = alerts.filter(a => 
+    !a.resolved && 
+    a.type !== 'renewal' && 
+    a.type !== 'claim'
+  ).length;
+
+  // Filter alerts based on active tab
+  const filteredAlerts = alerts.filter(alert => {
+    if (activeTab === 'all') return !alert.resolved;
+    if (activeTab === 'renewal') return alert.type === 'renewal' && !alert.resolved;
+    if (activeTab === 'claim') return alert.type === 'claim' && !alert.resolved;
+    if (activeTab === 'payment') return alert.type === 'payment' && !alert.resolved;
+    if (activeTab === 'birthday') return alert.type === 'document' && !alert.resolved;
+    if (activeTab === 'resolved') return alert.resolved;
+    return true;
+  });
+
+  // Sort: unresolved first, then by priority, then by date
+  const sortedAlerts = [...filteredAlerts].sort((a, b) => {
+    // Unresolved first
+    if (a.resolved !== b.resolved) return a.resolved ? 1 : -1;
+    
+    // Priority: high > medium > info
+    const priorityOrder = { high: 0, medium: 1, info: 2 };
+    if (a.priority !== b.priority) {
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+    
+    // Newest first
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  // Tab definitions with counts
+  const tabs: { id: AlertType; label: string; count: number }[] = [
+    { id: 'all', label: 'All', count: alerts.filter(a => !a.resolved).length },
+    { id: 'renewal', label: 'Renewals', count: renewalCount },
+    { id: 'claim', label: 'Claims', count: claimCount },
+    { id: 'payment', label: 'Lapsed', count: alerts.filter(a => a.type === 'payment' && !a.resolved).length },
+    { id: 'birthday', label: 'Birthdays', count: alerts.filter(a => a.type === 'document' && !a.resolved).length },
+    { id: 'resolved', label: 'Resolved', count: alerts.filter(a => a.resolved).length },
+  ];
+
+  // Mark alert as resolved
+  const markResolved = async (alertId: string) => {
+    await supabase.from('alerts').update({ resolved: true }).eq('id', alertId);
+    
+    // Update local state
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId ? { ...alert, resolved: true } : alert
+    ));
+    
+    // Show feedback (simple alert for now)
+    alert('Alert resolved');
+  };
+
+  // Format relative time
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Get priority pill color
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return { bg: 'rgba(208, 96, 96, 0.2)', text: '#D06060', border: '#D06060' };
+      case 'medium': return { bg: 'rgba(212, 160, 48, 0.2)', text: '#D4A030', border: '#D4A030' };
+      default: return { bg: 'rgba(201, 185, 154, 0.2)', text: '#C9B99A', border: '#C9B99A' };
+    }
+  };
+
+  // Get type pill color
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'renewal': return { bg: 'rgba(212, 160, 48, 0.2)', text: '#D4A030', border: '#D4A030' };
+      case 'claim': return { bg: 'rgba(208, 96, 96, 0.2)', text: '#D06060', border: '#D06060' };
+      case 'payment': return { bg: 'rgba(139, 101, 51, 0.2)', text: '#8B6533', border: '#8B6533' };
+      case 'document': return { bg: 'rgba(90, 184, 122, 0.2)', text: '#5AB87A', border: '#5AB87A' };
+      default: return { bg: 'rgba(32, 160, 160, 0.2)', text: '#20A0A0', border: '#20A0A0' };
+    }
+  };
+
+  // Get left border color based on priority
+  const getBorderColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return '#D06060';
+      case 'medium': return '#D4A030';
+      default: return '#C9B99A';
+    }
+  };
 
   return (
     <div style={{ width: '100%' }}>
@@ -29,38 +167,21 @@ export default async function AlertsPage() {
         }}>
           Alerts
         </h1>
-        
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-        }}>
-          <button className="btn-secondary" style={{
-            fontSize: '13px',
-            padding: '8px 16px',
-          }}>
-            Filter
-          </button>
-          <button className="btn-primary" style={{
-            fontSize: '13px',
-            padding: '8px 16px',
-          }}>
-            Mark all as read
-          </button>
-        </div>
       </div>
 
-      {/* Stats Bar */}
+      {/* ========== SUMMARY CARDS ========== */}
       <div style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '16px',
-        marginBottom: '24px',
+        marginBottom: '32px',
       }}>
+        {/* Total Unresolved */}
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           padding: '16px',
-          flex: 1,
         }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -68,10 +189,10 @@ export default async function AlertsPage() {
             fontWeight: 500,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#C8813A',
+            color: totalUnresolved > 0 ? '#D06060' : '#C8813A',
             marginBottom: '4px',
           }}>
-            Total
+            Total Unresolved
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -79,16 +200,16 @@ export default async function AlertsPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            {alerts?.length || 0}
+            {totalUnresolved}
           </div>
         </div>
-        
+
+        {/* Renewals */}
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           padding: '16px',
-          flex: 1,
         }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -99,7 +220,7 @@ export default async function AlertsPage() {
             color: '#C8813A',
             marginBottom: '4px',
           }}>
-            Unresolved
+            Renewals
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -107,16 +228,16 @@ export default async function AlertsPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            {alerts?.filter(a => !a.resolved).length || 0}
+            {renewalCount}
           </div>
         </div>
-        
+
+        {/* Claims */}
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           padding: '16px',
-          flex: 1,
         }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -127,7 +248,7 @@ export default async function AlertsPage() {
             color: '#C8813A',
             marginBottom: '4px',
           }}>
-            High priority
+            Claims
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -135,16 +256,16 @@ export default async function AlertsPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            {alerts?.filter(a => a.priority === 'high').length || 0}
+            {claimCount}
           </div>
         </div>
-        
+
+        {/* Other */}
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
           padding: '16px',
-          flex: 1,
         }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -155,7 +276,7 @@ export default async function AlertsPage() {
             color: '#C8813A',
             marginBottom: '4px',
           }}>
-            This week
+            Other
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
@@ -163,177 +284,77 @@ export default async function AlertsPage() {
             fontWeight: 600,
             color: '#F5ECD7',
           }}>
-            {alerts?.filter(a => {
-              const alertDate = new Date(a.created_at);
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              return alertDate >= weekAgo;
-            }).length || 0}
+            {otherCount}
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* ========== FILTER TABS ========== */}
       <div style={{
         display: 'flex',
         gap: '8px',
         marginBottom: '24px',
         paddingBottom: '16px',
         borderBottom: '1px solid #2E1A0E',
+        flexWrap: 'wrap',
       }}>
-        {filters.map((filter) => (
+        {tabs.map((tab) => (
           <button
-            key={filter}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             style={{
               fontFamily: 'DM Sans, sans-serif',
               fontSize: '12px',
               fontWeight: 500,
               padding: '6px 12px',
               borderRadius: '100px',
-              background: filter === 'all' ? '#C8813A' : 'transparent',
-              color: filter === 'all' ? '#120A06' : '#C9B99A',
-              border: filter === 'all' ? 'none' : '1px solid #2E1A0E',
+              background: activeTab === tab.id ? '#C8813A' : 'transparent',
+              color: activeTab === tab.id ? '#120A06' : '#C9B99A',
+              border: activeTab === tab.id ? 'none' : '1px solid #2E1A0E',
               cursor: 'pointer',
-              textTransform: 'capitalize',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s',
             }}
           >
-            {filter}
+            {tab.label}
+            {tab.count > 0 && (
+              <span style={{
+                background: activeTab === tab.id ? '#120A06' : '#2E1A0E',
+                color: activeTab === tab.id ? '#C8813A' : '#C9B99A',
+                fontSize: '10px',
+                fontWeight: 500,
+                padding: '1px 6px',
+                borderRadius: '100px',
+                minWidth: '18px',
+                textAlign: 'center',
+              }}>
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Alerts List */}
-      {alerts && alerts.length > 0 ? (
+      {/* ========== ALERT CARDS ========== */}
+      {loading ? (
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
           borderRadius: '8px',
-          overflow: 'hidden',
+          padding: '60px 40px',
+          textAlign: 'center',
         }}>
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              style={{
-                padding: '20px',
-                borderBottom: '1px solid #2E1A0E',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '16px',
-              }}
-            >
-              {/* Priority Dot */}
-              <div style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                background: alert.priority === 'high' ? '#E53E3E' : 
-                           alert.priority === 'medium' ? '#C8813A' : '#38A169',
-                flexShrink: 0,
-                marginTop: '4px',
-              }} />
-              
-              {/* Content */}
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                }}>
-                  <div>
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      color: '#F5ECD7',
-                      marginBottom: '4px',
-                    }}>
-                      {alert.title}
-                    </div>
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '12px',
-                      color: '#C9B99A',
-                    }}>
-                      {alert.clients?.name || 'Client'} · {alert.type || 'Alert'}
-                    </div>
-                  </div>
-                  
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}>
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '11px',
-                      color: '#C9B99A',
-                    }}>
-                      {formatTimeAgo(alert.created_at)}
-                    </div>
-                    
-                    <span style={{
-                      display: 'inline-block',
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '11px',
-                      fontWeight: 500,
-                      padding: '4px 8px',
-                      borderRadius: '100px',
-                      background: alert.priority === 'high' ? 'rgba(229, 62, 62, 0.2)' : 
-                                 alert.priority === 'medium' ? 'rgba(200, 129, 58, 0.2)' : 'rgba(56, 161, 105, 0.2)',
-                      color: alert.priority === 'high' ? '#E53E3E' : 
-                             alert.priority === 'medium' ? '#C8813A' : '#38A169',
-                      border: `1px solid ${alert.priority === 'high' ? '#E53E3E' : 
-                                            alert.priority === 'medium' ? '#C8813A' : '#38A169'}`,
-                      textTransform: 'capitalize',
-                    }}>
-                      {alert.priority || 'low'}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#C9B99A',
-                  lineHeight: 1.5,
-                  marginBottom: '12px',
-                }}>
-                  {alert.body || 'No description available.'}
-                </div>
-                
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                  <div style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '11px',
-                    color: '#C8813A',
-                    cursor: 'pointer',
-                  }}>
-                    {alert.resolved ? 'Resolved' : 'Mark as resolved →'}
-                  </div>
-                  
-                  {alert.policy && (
-                    <div style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: '11px',
-                      color: '#C9B99A',
-                      background: 'rgba(201, 185, 154, 0.1)',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                    }}>
-                      {alert.policy}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            color: '#C9B99A',
+          }}>
+            Loading alerts...
+          </div>
         </div>
-      ) : (
+      ) : sortedAlerts.length === 0 ? (
         <div style={{
           background: '#120A06',
           border: '1px solid #2E1A0E',
@@ -357,27 +378,103 @@ export default async function AlertsPage() {
             maxWidth: '400px',
             margin: '0 auto',
           }}>
-            You're all caught up.
+            {activeTab === 'resolved' 
+              ? 'No resolved alerts yet.' 
+              : 'You\'re all caught up.'}
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-// Helper function to format time ago
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {sortedAlerts.map((alert) => {
+            const priorityColor = getPriorityColor(alert.priority);
+            const typeColor = getTypeColor(alert.type);
+            const borderColor = getBorderColor(alert.priority);
+            const isResolved = alert.resolved;
+            
+            return (
+              <div
+                key={alert.id}
+                style={{
+                  background: '#120A06',
+                  borderLeft: `4px solid ${borderColor}`,
+                  borderRight: '1px solid #2E1A0E',
+                  borderTop: '1px solid #2E1A0E',
+                  borderBottom: '1px solid #2E1A0E',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  opacity: isResolved ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {/* Top row: Priority, Type, Time */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {/* Priority Pill */}
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      borderRadius: '100px',
+                      background: priorityColor.bg,
+                      color: priorityColor.text,
+                      border: `1px solid ${priorityColor.border}`,
+                      textTransform: 'capitalize',
+                    }}>
+                      {alert.priority}
+                    </span>
+                    
+                    {/* Type Pill */}
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: '11px',
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      borderRadius: '100px',
+                      background: typeColor.bg,
+                      color: typeColor.text,
+                      border: `1px solid ${typeColor.border}`,
+                      textTransform: 'capitalize',
+                    }}>
+                      {alert.type === 'document' ? 'Birthday' : alert.type}
+                    </span>
+                  </div>
+                  
+                  {/* Time */}
+                  <div style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '11px',
+                    color: '#C9B99A',
+                  }}>
+                    {formatTimeAgo(alert.created_at)}
+                  </div>
+                </div>
+                
+                {/* Title */}
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#F5ECD7',
+                  marginBottom: '8px',
+                }}>
+                  {alert.title}
+                </div>
+                
+                {/* Body (truncated) */}
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#C9B99A',
+                  lineHeight: 1.5,
+                  marginBottom: '16px',
+                  maxWidth: '800px',
+                }}>
+                  {alert.body.length > 120 ? `${
