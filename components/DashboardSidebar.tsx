@@ -29,7 +29,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     { id: 'renewals', label: 'Renewals', icon: '📅', active: pathname?.includes('renewals'), badge: counts?.renewals || 0 },
     { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: counts?.claims || 0, badgeUrgent: (counts?.claims || 0) > 0 },
     { id: 'analytics', label: 'Analytics', icon: '📊', active: pathname?.includes('analytics'), badge: null },
-    { id: 'products', label: 'Products', icon: '📚', active: pathname?.includes('products'), badge: null },
+    { id: 'library', label: 'Library', icon: '📚', active: pathname?.includes('library'), badge: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
   ];
 
