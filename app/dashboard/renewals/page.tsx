@@ -115,38 +115,20 @@ export default async function RenewalsPage() {
       </div>
 
       {/* Table */}
-      <div style={{
-        background: '#120A06',
-        border: '1px solid #2E1A0E',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        minHeight: 'calc(100vh - 380px)',
-      }}>
-        <div style={{
-          overflowY: 'auto',
-          maxHeight: 'calc(100vh - 380px)',
-        }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-          }}>
-            <thead style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 10,
-              background: '#1C0F0A',
-            }}>
-              <tr>
-                <th style={thStyle}>Client</th>
-                <th style={thStyle}>Policy Type</th>
-                <th style={thStyle}>Insurer</th>
-                <th style={thStyle}>Premium</th>
-                <th style={thStyle}>Renewal</th>
-                <th style={thStyle}>Days</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Action</th>
-              </tr>
-            </thead>
+      <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={thStyle}>Client</th>
+              <th style={thStyle}>Policy Type</th>
+              <th style={thStyle}>Insurer</th>
+              <th style={thStyle}>Premium</th>
+              <th style={thStyle}>Renewal</th>
+              <th style={thStyle}>Days</th>
+              <th style={thStyle}>Status</th>
+              <th style={thStyle}>Action</th>
+            </tr>
+          </thead>
           <tbody>
             {sorted.map((p, i) => {
               const client = p.clients as any;
@@ -200,7 +182,6 @@ export default async function RenewalsPage() {
             })}
           </tbody>
         </table>
-        </div>
       </div>
 
       {sorted.length === 0 && (
