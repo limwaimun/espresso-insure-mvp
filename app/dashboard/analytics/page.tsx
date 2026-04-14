@@ -72,11 +72,8 @@ export default async function AnalyticsPage() {
   });
   const insurerData = Object.entries(insurerMap)
     .sort((a, b) => b[1] - a[1]);
-  const top5Insurers = insurerData.slice(0, 5);
-  const othersAmount = insurerData.slice(5).reduce((sum, [, amt]) => sum + amt, 0);
-  if (othersAmount > 0) top5Insurers.push(['Others', othersAmount]);
-  const maxInsurerAmount = Math.max(...top5Insurers.map(([, amt]) => amt), 1);
-  const insurerColors = ['#C8813A', '#E8A55A', '#A0703A', '#D4A030', '#8B6533', '#6B4423'];
+  const maxInsurerAmount = Math.max(...insurerData.map(([, amt]) => amt), 1);
+  const insurerColors = ['#C8813A', '#E8A55A', '#A0703A', '#D4A030', '#8B6533', '#6B4423', '#C8813A', '#E8A55A', '#A0703A', '#D4A030']; // Extended colors for more insurers
 
   // Top 5 clients by premium
   const clientPremiumMap: Record<string, { id: string; name: string; company: string; type: string; premium: number; policyCount: number }> = {};
@@ -469,13 +466,13 @@ export default async function AnalyticsPage() {
             color: '#F5ECD7',
             marginBottom: '16px',
           }}>Premium by insurer</div>
-          {top5Insurers.map(([insurer, amount], i) => {
+          {insurerData.map(([insurer, amount], i) => {
             const pct = Math.round((amount / totalPremium) * 100);
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                <div style={{ width: '100px', fontSize: '13px', color: '#C9B99A', flexShrink: 0 }}>{insurer}</div>
-                <div style={{ flex: 1, background: '#2E1A0E', borderRadius: '4px', height: '22px', position: 'relative' }}>
-                  <div style={{ width: `${pct}%`, background: insurerColors[i] || '#C8813A', borderRadius: '4px', height: '22px', minWidth: '2px' }} />
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                <div style={{ width: '140px', fontSize: '13px', color: '#C9B99A', flexShrink: 0 }}>{insurer}</div>
+                <div style={{ flex: 1, background: '#2E1A0E', borderRadius: '4px', height: '28px', position: 'relative' }}>
+                  <div style={{ width: `${pct}%`, background: insurerColors[i % insurerColors.length] || '#C8813A', borderRadius: '4px', height: '28px', minWidth: '2px' }} />
                 </div>
                 <div style={{ width: '110px', textAlign: 'right', fontSize: '13px', color: '#F5ECD7', flexShrink: 0 }}>
                   ${amount.toLocaleString()} ({pct}%)
