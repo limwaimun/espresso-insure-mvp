@@ -119,7 +119,7 @@ export default async function DashboardHome() {
   ]);
   
   // Extract counts and data
-  const clientCount = clientResult.count || 0;
+  const totalClientCount = clientResult.count || 0;
   const policyCount = policyResult.count || 0;
   const conversationCount = conversationResult.count || 0;
   const alertCount = alertResult.count || 0;
@@ -255,7 +255,7 @@ export default async function DashboardHome() {
               fontWeight: 600,
               color: '#F5ECD7',
             }}>
-              {clientCount || 0}
+              {totalClientCount || 0}
             </div>
           </div>
           
