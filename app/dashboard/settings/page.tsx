@@ -12,6 +12,15 @@ interface Profile {
   company: string | null;
 }
 
+interface MayaSettings {
+  autoReply: boolean;
+  workingHours: string;
+  greetingMessage: string;
+  coverageGapDetection: boolean;
+  renewalReminders: boolean;
+  birthdayGreetings: boolean;
+}
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,13 +28,31 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Maya settings state
-  const [mayaSettings, setMayaSettings] = useState({
+  const [mayaSettings, setMayaSettings] = useState<MayaSettings>({
     autoReply: false,
     workingHours: '9:00 AM — 6:00 PM',
     greetingMessage: 'Hi! I\'m Maya, your insurance advisor\'s assistant. How can I help you today?',
     coverageGapDetection: false,
     renewalReminders: false,
     birthdayGreetings: false,
+  });
+  
+  // Trial state
+  const [trialStatus, setTrialStatus] = useState<{
+    active: boolean;
+    daysRemaining: number;
+    expired: boolean;
+  }>({
+    active: true,
+    daysRemaining: 14,
+    expired: false,
+  });
+  
+  // Data metrics
+  const [metrics, setMetrics] = useState({
+    clients: 13,
+    policies: 30,
+    conversations: 3,
   });
   
   const supabase = createClient();
@@ -38,6 +65,7 @@ export default function SettingsPage() {
     setLoading(true);
     
     try {
+      // Fetch user profile
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profileData } = await supabase
@@ -50,6 +78,10 @@ export default function SettingsPage() {
           setProfile(profileData);
         }
       }
+      
+      // In a real app, we would fetch Maya settings, trial status, and metrics from API
+      // For now, we use the default/placeholder values
+      
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -82,10 +114,19 @@ export default function SettingsPage() {
     }
   };
 
-  const handleMayaToggle = (setting: string) => {
+  const handleMayaToggle = (setting: keyof MayaSettings) => {
+    if (typeof mayaSettings[setting] === 'boolean') {
+      setMayaSettings(prev => ({
+        ...prev,
+        [setting]: !prev[setting]
+      }));
+    }
+  };
+
+  const handleGreetingMessageChange = (value: string) => {
     setMayaSettings(prev => ({
       ...prev,
-      [setting]: !prev[setting as keyof typeof prev]
+      greetingMessage: value
     }));
   };
 
@@ -287,4 +328,231 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* =
+      {/* ========== SECTION 2: MAYA ========== */}
+      <div style={{
+        background: '#3D2215',
+        borderRadius: '8px',
+        padding: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <h2 style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: '20px',
+            color: '#F5ECD7',
+            margin: 0,
+          }}>
+            Maya
+          </h2>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px',
+            color: '#D4A030',
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: '#D4A030',
+            }} />
+            Setting up
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Auto-reply toggle */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: '#F5ECD7',
+                }}>
+                  Auto-reply to new messages
+                </span>
+                <span style={{
+                  background: '#2E1A0E',
+                  color: '#C9B99A',
+                  fontSize: '10px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  Coming soon
+                </span>
+              </div>
+              <p style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#C9B99A',
+                margin: 0,
+                lineHeight: 1.5,
+              }}>
+                Maya will respond to client WhatsApp messages automatically
+              </p>
+            </div>
+            <div
+              onClick={() => handleMayaToggle('autoReply')}
+              style={{
+                width: '44px',
+                height: '24px',
+                borderRadius: '12px',
+                background: mayaSettings.autoReply ? '#C8813A' : '#2E1A0E',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                flexShrink: 0,
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                left: mayaSettings.autoReply ? '22px' : '2px',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: '#F5ECD7',
+                transition: 'all 0.2s',
+              }} />
+            </div>
+          </div>
+          
+          {/* Working hours */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: '#F5ECD7',
+                }}>
+                  Active hours
+                </span>
+                <span style={{
+                  background: '#2E1A0E',
+                  color: '#C9B99A',
+                  fontSize: '10px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  Coming soon
+                </span>
+              </div>
+              <p style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#C9B99A',
+                margin: 0,
+                lineHeight: 1.5,
+              }}>
+                Maya only replies during these hours
+              </p>
+            </div>
+            <div style={{
+              background: '#2E1A0E',
+              border: '1px solid #3D2215',
+              borderRadius: '6px',
+              padding: '10px 12px',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#666666',
+              cursor: 'not-allowed',
+              flexShrink: 0,
+            }}>
+              {mayaSettings.workingHours}
+            </div>
+          </div>
+          
+          {/* Greeting message */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                color: '#F5ECD7',
+              }}>
+                Welcome message
+              </span>
+              <span style={{
+                background: '#2E1A0E',
+                color: '#C9B99A',
+                fontSize: '10px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontFamily: 'DM Sans, sans-serif',
+              }}>
+                Coming soon
+              </span>
+            </div>
+            <p style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C9B99A',
+              margin: '0 0 8px 0',
+              lineHeight: 1.5,
+            }}>
+              Maya sends this when a new client messages for the first time
+            </p>
+            <textarea
+              value={mayaSettings.greetingMessage}
+              onChange={(e) => handleGreetingMessageChange(e.target.value)}
+              rows={3}
+              style={{
+                background: '#2E1A0E',
+                border: '1px solid #3D2215',
+                borderRadius: '6px',
+                padding: '12px',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#F5ECD7',
+                outline: 'none',
+                resize: 'vertical',
+                minHeight: '80px',
+              }}
+            />
+          </div>
+          
+          {/* Coverage gap detection toggle */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: '#F5ECD7',
+                }}>
+                  Flag missing coverage
+                </span>
+                <span style={{
+                  background: '#2E1A0E',
+                  color: '#C9B99A',
+                  fontSize: '10px',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  Coming soon
+                </span>
+              </div>
+              <p style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#C9B99A',
+                margin: 0,
+                lineHeight: 1.5,
+              }}>
+                Maya will identify and flag coverage gaps during conversations
+              </p>
+            </div>
+            <div
+              onClick={() => handleMayaToggle('coverageGapDetection')}
+              style={{
+                width
