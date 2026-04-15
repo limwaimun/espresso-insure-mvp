@@ -1000,18 +1000,36 @@
 
   @media (max-width: 768px) {
     nav { padding: 16px 24px; }
-    .nav-links { display: none; }
-    section { padding: 72px 24px; }
-    .hero { padding: 120px 24px 60px; }
+    .nav-links { gap: 16px; }
+    .nav-links li:nth-child(1),
+    .nav-links li:nth-child(2),
+    .nav-links li:nth-child(3),
+    .nav-links li:nth-child(4) { display: none; }
+    section { padding: 60px 20px; }
+    .hero { padding: 100px 20px 60px; }
+    .display { font-size: 36px; }
+    .hero-sub { font-size: 16px; }
+    .hero-stat-row { flex-wrap: wrap; gap: 24px; }
+    .hero-visual { display: none; }
     .problem-grid { grid-template-columns: 1fr; }
     .steps-row { grid-template-columns: 1fr; }
     .step-arrow { display: none; }
+    .section-title { font-size: 32px; }
     .features-header { grid-template-columns: 1fr; gap: 32px; }
     .feature-grid { grid-template-columns: 1fr; }
     .pricing-grid { grid-template-columns: 1fr; }
     .setup-grid { grid-template-columns: 1fr; }
     footer { flex-direction: column; gap: 24px; text-align: center; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+
+  @media (max-width: 480px) {
+    .nav-links li:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    .hero-stat-row { grid-template-columns: 1fr 1fr; display: grid; gap: 16px; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .btn-primary { text-align: center; }
+    .pricing-card { padding: 28px 20px; }
+    .setup-callout { position: static; }
   }
 </style>
 </head>
