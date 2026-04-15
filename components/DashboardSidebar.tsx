@@ -30,6 +30,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     { id: 'claims', label: 'Claims', icon: '📄', active: pathname?.includes('claims'), badge: counts?.claims || 0, badgeUrgent: (counts?.claims || 0) > 0 },
     { id: 'analytics', label: 'Analytics', icon: '📊', active: pathname?.includes('analytics'), badge: null },
     { id: 'library', label: 'Library', icon: '📚', active: pathname?.includes('library'), badge: null },
+    { id: 'maya-playground', label: 'Maya Playground', icon: '🤖', active: pathname?.includes('maya-playground'), badge: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
   ];
 
