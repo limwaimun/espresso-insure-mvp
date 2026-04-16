@@ -71,6 +71,7 @@ export default function MayaPlaygroundPage() {
   const [systemPrompt, setSystemPrompt] = useState('')
   const [ifaName, setIfaName] = useState('Your Advisor')
   const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [preferredInsurers, setPreferredInsurers] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -98,8 +99,12 @@ export default function MayaPlaygroundPage() {
   async function loadIfaProfile() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase.from('profiles').select('name, company').eq('id', user.id).single()
+    const { data } = await supabase.from('profiles').select('name, company, preferred_insurers').eq('id', user.id).single()
     if (data?.name) setIfaName(data.name)
+    // preferred_insurers is a text[] column — falls back to empty array until Settings feature is built
+    if (data?.preferred_insurers && Array.isArray(data.preferred_insurers)) {
+      setPreferredInsurers(data.preferred_insurers)
+    }
   }
 
   async function loadClients() {
@@ -188,6 +193,7 @@ export default function MayaPlaygroundPage() {
           client: selectedClient,
           policies,
           ifaName,
+          preferredInsurers,
           messages: [...messages, userMessage].map(m => ({
             role: m.role,
             content: m.content,
