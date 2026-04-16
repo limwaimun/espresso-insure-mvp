@@ -57,7 +57,7 @@ export default function LandingPage() {
     --amber-light: #E8A55A;
     --warm-mid: #352012;
     --warm-border: #3A2416;
-    --light-bg: #F7F0E4;
+    --light-bg: #FAF6EF;
     --light-card: #FFFFFF;
     --light-text: #2A1A10;
     --light-muted: #7A6A58;
@@ -1061,6 +1061,35 @@ export default function LandingPage() {
     color: #5C4030;
   }
 
+
+  /* iPhone-style phone mockup */
+  .phone-pair { display:flex; justify-content:center; gap:48px; margin-top:56px; }
+  .phone-wrap { display:flex; flex-direction:column; align-items:center; }
+  .phone-device {
+    width:280px; background:#1A1A1A; border-radius:44px; padding:14px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.05);
+    position:relative; transition:transform 0.3s ease;
+  }
+  .phone-device:hover { transform:translateY(-6px); }
+  .phone-device::before {
+    content:''; position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:80px; height:24px; background:#1A1A1A; border-radius:0 0 14px 14px; z-index:10;
+  }
+  .phone-screen { background:#0B141A; border-radius:32px; overflow:hidden; }
+  .phone-screen-pad { padding-top:32px; }
+  .phone-home { width:100px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:8px auto 6px; }
+  .phone-label { text-align:center; margin-top:24px; font-size:15px; font-weight:500; color:#2A1A10; }
+  .phone-label span { color:#7A6A58; font-weight:300; display:block; font-size:13px; margin-top:4px; }
+
+  @media(max-width:768px) {
+    .phone-pair { flex-direction:column; align-items:center; gap:40px; }
+    .phone-device { width:260px; }
+  }
+  @media(max-width:480px) {
+    .phone-device { width:240px; padding:10px; border-radius:36px; }
+    .phone-screen { border-radius:28px; }
+  }
+
   /* RESPONSIVE */
   /* ===== RESPONSIVE ===== */
   @media (max-width: 1100px) {
@@ -1281,22 +1310,24 @@ export default function LandingPage() {
     
     <div className="phone-pair">
       {/* Phone 1: New client intake */}
-      <div>
-        <div className="phone-frame">
-          <div className="phone-notch"></div>
+      <div className="phone-wrap">
+        <div className="phone-device">
           <div className="phone-screen">
-            <div className="wa-header">
-              <div className="wa-avatar">M</div>
-              <div className="wa-header-info">
-                <div className="wa-name">Sarah · Café owner</div>
-                <div className="wa-status">Maya + David Tan</div>
+            <div className="phone-screen-pad">
+              <div className="wa-header">
+                <div className="wa-avatar">M</div>
+                <div className="wa-header-info">
+                  <div className="wa-name">Sarah · Café owner</div>
+                  <div className="wa-status">Maya + David Tan</div>
+                </div>
               </div>
-            </div>
-            <div className="wa-messages" style={{"minHeight":"260px","padding":"12px 10px"}}>
-              <div className="wa-msg received"><div>I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
-              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! How many staff do you have?</div><div className="wa-time">9:47 AM</div></div>
-              <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:48 AM</div></div>
-              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Got it. I\'ll prepare a brief for David with recommendations. Expect a call today!</div><div className="wa-time">9:48 AM</div></div>
+              <div className="wa-messages" style={{"minHeight":"280px","padding":"12px 10px"}}>
+                <div className="wa-msg received"><div>I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
+                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! How many staff do you have?</div><div className="wa-time">9:47 AM</div></div>
+                <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:48 AM</div></div>
+                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Got it. I\'ll prepare a brief for David. Expect a call today!</div><div className="wa-time">9:48 AM</div></div>
+              </div>
+              <div className="phone-home"></div>
             </div>
           </div>
         </div>
@@ -1304,22 +1335,24 @@ export default function LandingPage() {
       </div>
 
       {/* Phone 2: Renewal follow-up */}
-      <div>
-        <div className="phone-frame">
-          <div className="phone-notch"></div>
+      <div className="phone-wrap">
+        <div className="phone-device">
           <div className="phone-screen">
-            <div className="wa-header">
-              <div className="wa-avatar">M</div>
-              <div className="wa-header-info">
-                <div className="wa-name">Kevin · Policy holder</div>
-                <div className="wa-status">Maya + David Tan</div>
+            <div className="phone-screen-pad">
+              <div className="wa-header">
+                <div className="wa-avatar">M</div>
+                <div className="wa-header-info">
+                  <div className="wa-name">Kevin · Policy holder</div>
+                  <div className="wa-status">Maya + David Tan</div>
+                </div>
               </div>
-            </div>
-            <div className="wa-messages" style={{"minHeight":"260px","padding":"12px 10px"}}>
-              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Kevin! Your health plan renews on May 10. Want me to prepare renewal options?</div><div className="wa-time">10:00 AM</div></div>
-              <div className="wa-msg received"><div>Yes please! Any better rates?</div><div className="wa-time">10:05 AM</div></div>
-              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>I\'ll compare 3 plans and send you a summary by end of day.</div><div className="wa-time">10:05 AM</div></div>
-              <div className="wa-typing"><span></span><span></span><span></span></div>
+              <div className="wa-messages" style={{"minHeight":"280px","padding":"12px 10px"}}>
+                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Kevin! Your health plan renews May 10. Want renewal options?</div><div className="wa-time">10:00 AM</div></div>
+                <div className="wa-msg received"><div>Yes please! Any better rates?</div><div className="wa-time">10:05 AM</div></div>
+                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>I\'ll compare 3 plans and send a summary today.</div><div className="wa-time">10:05 AM</div></div>
+                <div className="wa-typing"><span></span><span></span><span></span></div>
+              </div>
+              <div className="phone-home"></div>
             </div>
           </div>
         </div>
