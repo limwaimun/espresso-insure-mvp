@@ -57,6 +57,11 @@ export default function LandingPage() {
     --amber-light: #E8A55A;
     --warm-mid: #352012;
     --warm-border: #3A2416;
+    --light-bg: #F7F0E4;
+    --light-card: #FFFFFF;
+    --light-text: #2A1A10;
+    --light-muted: #7A6A58;
+    --light-border: #E5DACE;
     --white: #FDFAF5;
   }
 
@@ -296,7 +301,7 @@ export default function LandingPage() {
   }
 
   /* WHATSAPP MOCKUP */
-  .hero-visual {
+  .hero-visual { display:none;
     position: absolute;
     right: 48px;
     top: 50%;
@@ -1037,7 +1042,7 @@ export default function LandingPage() {
   /* RESPONSIVE */
   /* ===== RESPONSIVE ===== */
   @media (max-width: 1100px) {
-    .hero-visual { display: none; }
+    .hero-visual { display:none; display: none; }
     .pricing-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
@@ -1050,7 +1055,7 @@ export default function LandingPage() {
     .nav-links li:nth-child(4) { display: none; }
     section { padding: 60px 20px; }
     .hero { padding: 100px 20px 60px; min-height: auto; }
-    .hero-visual { display: none; }
+    .hero-visual { display:none; display: none; }
     .display { font-size: 36px; }
     .hero-sub { font-size: 16px; }
     .hero-stat-row { flex-wrap: wrap; gap: 24px; }
@@ -1121,7 +1126,7 @@ export default function LandingPage() {
   </h1>
 
   <p className="hero-sub">
-    Maya handles intake, renewals, claims, and client service — 24/7, inside the WhatsApp groups you already use.
+    Maya handles intake, renewals, and claims — 24/7, inside WhatsApp.
   </p>
 
   <div className="hero-actions">
@@ -1192,7 +1197,7 @@ export default function LandingPage() {
 <div className="divider"></div>
 
 {/* PROBLEM */}
-<section className="problem" id="problem">
+<section className="problem section-light" id="problem">
   <div className="section-tag">The problem</div>
   <h2 className="section-title">You're running a<br/><em>500-client business</em> on WhatsApp and Excel.</h2>
   <p className="section-sub">Your best hours are going to admin that doesn't earn you a cent.</p>
@@ -1200,7 +1205,7 @@ export default function LandingPage() {
   <div className="problem-grid">
     <div className="problem-item">
       <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h4>New enquiries go cold</h4>
-      <p>A prospect messages while you're busy. By the time you respond, they've moved on.</p>
+      <p>Prospects message while you're busy. By the time you respond, they've moved on.</p>
     </div>
     <div className="problem-item">
       <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><h4>Renewals sneak up on you</h4>
@@ -1244,6 +1249,35 @@ export default function LandingPage() {
   </div>
 </section>
 
+
+{/* WHATSAPP DEMO — standalone section */}
+<section className="wa-demo section-light">
+  <div style={{"maxWidth":"1200px","margin":"0 auto","padding":"0 48px"}}>
+    <div className="section-tag">See Maya in action</div>
+    <h2 className="section-title" style={{"textAlign":"center","marginBottom":"12px"}}>Maya handles the conversation.<br/><em>You close the deal.</em></h2>
+    <p style={{"textAlign":"center","color":"var(--light-muted)","marginBottom":"48px","maxWidth":"480px","margin":"0 auto 48px"}}>Watch Maya qualify a new lead in under 2 minutes — right inside WhatsApp.</p>
+    <div className="wa-demo-inner">
+      <div className="wa-phone">
+        <div className="wa-header">
+          <div className="wa-avatar">M</div>
+          <div className="wa-header-info">
+            <div className="wa-name">Maya · Espresso</div>
+            <div className="wa-status">AI assistant to David Tan</div>
+          </div>
+        </div>
+        <div className="wa-messages">
+          <div className="wa-msg received"><div>Hi! I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
+          <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! I'm Maya, David's assistant. I'll help get your café sorted. A few quick questions?</div><div className="wa-time">9:47 AM</div></div>
+          <div className="wa-msg received"><div>Sure!</div><div className="wa-time">9:48 AM</div></div>
+          <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>How many staff do you have?</div><div className="wa-time">9:48 AM</div></div>
+          <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:49 AM</div></div>
+          <div className="wa-typing"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <div className="divider"></div>
 
 {/* FEATURES */}
@@ -1258,40 +1292,40 @@ export default function LandingPage() {
 
   <div className="feature-grid">
     <div className="feature-card">
-            <div className="feature-icon">🎯</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <h4>Maya — Client intake</h4>
-      <p>Maya handles every new enquiry 24/7 in WhatsApp. Structured discovery, complete brief, sent to your dashboard — while you sleep.</p>
+      <p>Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.</p>
     </div>
     <div className="feature-card">
-            <div className="feature-icon">🗓</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
       <h4>Renewal management</h4>
-      <p>Maya tracks every policy and manages renewals automatically — 90, 60, 30, 14, and 7 days out. Never lose a client to a missed follow-up.</p>
+      <p>Every policy tracked. Renewals managed at 90, 60, 30, 14, and 7 days out. Never miss a follow-up.</p>
     </div>
     <div className="feature-card">
-            <div className="feature-icon">💬</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
       <h4>Policy advisory</h4>
-      <p>Client asks a coverage question? Maya pulls the answer from their policy data instantly — accurate, specific, plain English.</p>
+      <p>Clients ask coverage questions. Maya answers from their policy data — accurate, specific, instant.</p>
     </div>
     <div className="feature-card">
-            <div className="feature-icon">🚨</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
       <h4>Claims support</h4>
-      <p>Client has a claim? Maya guides them through the process in real time, at any hour. You get an alert and full report.</p>
+      <p>Maya guides clients through claims in real time, at any hour. You get an alert and full report.</p>
     </div>
     <div className="feature-card">
-            <div className="feature-icon">📄</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <h4>Document management</h4>
-      <p>Policy summaries, certificates, endorsements — Maya keeps every document complete and instantly retrievable.</p>
+      <p>Summaries, certificates, endorsements — always complete, always retrievable.</p>
     </div>
     <div className="feature-card">
-            <div className="feature-icon">📊</div>
+            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
       <h4>Quote comparison</h4>
-      <p>Maya aggregates quotes, ranks by quality (not just price), and prepares a clear comparison — saving hours of portal work.</p>
+      <p>Quotes aggregated, ranked by quality, presented as a clear comparison. Hours of portal work — gone.</p>
     </div>
   </div>
 </section>
 
 {/* PRICING */}
-<section id="pricing">
+<section className="section-light" id="pricing">
   <div className="section-tag">Pricing</div>
   <h2 className="section-title">Simple pricing.<br/><em>No hidden fees.</em></h2>
   <p className="section-sub">Start free for 14 days. No credit card required. Cancel anytime.</p>
@@ -1303,7 +1337,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Solo</div>
       <div className="pricing-price"><sup>$</sup>29</div>
       <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">For IFAs getting started. Intake and renewals handled around the clock.</div>
+      <div className="pricing-desc">Intake and renewals, around the clock.</div>
       <ul className="pricing-features">
         <li>24/7 client intake in WhatsApp groups</li>
         <li>Full renewal management</li>
@@ -1322,7 +1356,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Pro</div>
       <div className="pricing-price"><sup>$</sup>79</div>
       <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">The full experience. Unlimited clients, claims support, and a portal that makes you look enterprise.</div>
+      <div className="pricing-desc">Everything. Unlimited clients. Claims. Documents. Quotes.</div>
       <ul className="pricing-features">
         <li>Everything in Solo</li>
         <li>Unlimited clients</li>
@@ -1342,7 +1376,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Team</div>
       <div className="pricing-price"><sup>$</sup>199</div>
       <div className="pricing-period">SGD per month · up to 5 agents</div>
-      <div className="pricing-desc">Share a book, a dashboard, and the full suite across up to 5 advisors.</div>
+      <div className="pricing-desc">Full suite shared across up to 5 advisors.</div>
       <ul className="pricing-features">
         <li>Everything in Pro</li>
         <li>Up to 5 IFA seats</li>
@@ -1360,7 +1394,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Agency</div>
       <div className="pricing-price" style={{"fontSize":"36px","paddingTop":"8px"}}>Custom</div>
       <div className="pricing-period">Tailored for your agency</div>
-      <div className="pricing-desc">White-label branding, API access, and enterprise support for 20+ advisors.</div>
+      <div className="pricing-desc">White-label. API access. Enterprise support.</div>
       <ul className="pricing-features">
         <li>Everything in Team</li>
         <li>Unlimited IFA seats</li>
@@ -1385,7 +1419,7 @@ export default function LandingPage() {
 <section className="setup" id="setup">
   <div className="section-tag">Setup guide</div>
   <h2 className="section-title">From sign-up to<br/><em>first client</em> in 30 minutes.</h2>
-  <p className="section-sub">If you can use WhatsApp, you can use Espresso.</p>
+  <p className="section-sub">If you use WhatsApp, you can use Espresso.</p>
 
   <div className="setup-grid">
     <div className="setup-steps">
@@ -1453,7 +1487,7 @@ export default function LandingPage() {
       </ul>
 
       <div className="setup-time">
-        <div className="setup-time-icon">⏱</div>
+        <div className="setup-time-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
         <div className="setup-time-text">
           <strong>Under 30 minutes</strong>
           From account creation to your first live Maya conversation
@@ -1470,7 +1504,7 @@ export default function LandingPage() {
 </section>
 
 {/* FAQ */}
-<section id="faq">
+<section className="section-light" id="faq">
   <div className="section-tag">FAQs</div>
   <h2 className="section-title">Common questions<br/>from <em>IFAs like you.</em></h2>
 
@@ -1517,7 +1551,7 @@ export default function LandingPage() {
 {/* CTA */}
 <section className="cta-section">
   <h2>Stop doing admin.<br/><em>Start building your book.</em></h2>
-  <p>14-day free trial. No credit card. Set up in 30 minutes. Maya could handle your next enquiry tonight.</p>
+  <p>14-day free trial. No credit card. Set up in 30 minutes. Maya starts working tonight.</p>
   <a href="/trial" className="btn-primary" style={{"fontSize":"16px","padding":"18px 44px"}}>Start your free trial</a>
   <p style={{"marginTop":"20px","fontSize":"13px","color":"var(--cream-dim)"}}>Already on a plan? <a href="/login" style={{"color":"var(--amber-light)","textDecoration":"none"}}>Sign in →</a></p>
 </section>
