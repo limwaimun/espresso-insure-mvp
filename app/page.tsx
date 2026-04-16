@@ -78,17 +78,20 @@ export default function LandingPage() {
 
       {/* ── FEATURES — LIGHT ── */}
       <section id="features" style={{ background: '#FDFAF5', padding: '72px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
-          <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
-          What Espresso does
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+            What Espresso does
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A', marginBottom: 12 }}>
+            Everything you need.<br />
+            <em style={{ fontStyle: 'italic', color: '#C8813A' }}>Nothing you don't.</em>
+          </h2>
+          <p style={{ fontSize: 15, color: '#7A6050', lineHeight: 1.7, margin: '0 auto' }}>
+            Built for the Financial Advisor who works alone but needs to perform like a full team.
+          </p>
         </div>
-        <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A', marginBottom: 6 }}>
-          Everything you need.<br />
-          <em style={{ fontStyle: 'italic', color: '#C8813A' }}>Nothing you don't.</em>
-        </h2>
-        <p style={{ fontSize: 15, color: '#7A6050', maxWidth: 480, lineHeight: 1.7, marginBottom: 40 }}>
-          Built for the Financial Advisor who works alone but needs to perform like a full team.
-        </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
 
           {/* Card 1 */}
@@ -159,14 +162,17 @@ export default function LandingPage() {
 
       {/* ── HOW IT WORKS — CREAM ── */}
       <section id="how" style={{ background: '#F5ECD7', padding: '72px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
-          <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
-          How it works
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+            How it works
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A' }}>
+            Up and running<br />
+            <em style={{ fontStyle: 'italic', color: '#C8813A' }}>in minutes.</em>
+          </h2>
         </div>
-        <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A', marginBottom: 40 }}>
-          Up and running<br />
-          <em style={{ fontStyle: 'italic', color: '#C8813A' }}>in minutes.</em>
-        </h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
           <div>
             {[
@@ -219,21 +225,24 @@ export default function LandingPage() {
 
       {/* ── MAYA — DARK ── */}
       <section style={{ background: '#1C0F0A', padding: '72px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
-          <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
-          Meet Maya
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+            Meet Maya
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, fontWeight: 300, lineHeight: 1, color: '#F5ECD7' }}>
+            Your AI assistant,<br />
+            <em style={{ fontStyle: 'italic', color: '#E8A55A' }}>inside WhatsApp.</em>
+          </h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, fontWeight: 300, lineHeight: 1, color: '#F5ECD7', marginBottom: 16 }}>
-              Your AI assistant,<br />
-              <em style={{ fontStyle: 'italic', color: '#E8A55A' }}>inside WhatsApp.</em>
-            </h2>
             <p style={{ fontSize: 15, color: '#C9B99A', lineHeight: 1.75, marginBottom: 28 }}>
               Maya lives in a WhatsApp group with you and each client. She speaks in your voice, works your hours, and never makes a move without your approval.
             </p>
             {[
-              { title: 'Always in your voice', desc: 'Clients feel they\'re talking to your team, not a chatbot.' },
+              { title: 'Always in your voice', desc: "Clients feel they're talking to your team, not a chatbot." },
               { title: 'You stay in control', desc: 'Maya supports. You advise. Every decision stays with you.' },
               { title: 'Configurable to your practice', desc: 'Set her hours, welcome message, and which insurers she favours.' },
             ].map(item => (
@@ -248,8 +257,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-
-          {/* Maya settings card */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{ background: '#3D2215', border: '1px solid rgba(200,129,58,0.25)', borderRadius: 16, padding: 28, maxWidth: 280, width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #2E1A0E' }}>
@@ -274,15 +281,18 @@ export default function LandingPage() {
 
       {/* ── PRICING — LIGHT ── */}
       <section id="pricing" style={{ background: '#FDFAF5', padding: '72px 48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
-          <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
-          Pricing
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#C8813A', marginBottom: 14 }}>
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+            Pricing
+            <span style={{ width: 24, height: 1, background: '#C8813A', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A', marginBottom: 12 }}>
+            Simple pricing.<br />
+            <em style={{ fontStyle: 'italic', color: '#C8813A' }}>No surprises.</em>
+          </h2>
+          <p style={{ fontSize: 15, color: '#7A6050' }}>14-day free trial on all plans. No credit card required.</p>
         </div>
-        <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 44, fontWeight: 300, lineHeight: 1, color: '#1C0F0A', marginBottom: 6 }}>
-          Simple pricing.<br />
-          <em style={{ fontStyle: 'italic', color: '#C8813A' }}>No surprises.</em>
-        </h2>
-        <p style={{ fontSize: 15, color: '#7A6050', marginBottom: 40 }}>14-day free trial on all plans. No credit card required.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {[
             {
