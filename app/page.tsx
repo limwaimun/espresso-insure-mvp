@@ -486,14 +486,7 @@ export default function LandingPage() {
     position: relative;
   }
 
-  .problem-item::before {
-    content: '✕';
-    position: absolute;
-    top: 32px; right: 36px;
-    color: #5C2E1A;
-    font-size: 14px;
-    font-weight: 300;
-  }
+
 
   .problem-item h4 {
     font-family: 'Cormorant Garamond', serif;
@@ -1128,7 +1121,7 @@ export default function LandingPage() {
   </h1>
 
   <p className="hero-sub">
-    Espresso gives every insurance agent and IFA the power of a full brokerage back-office — handling intake, renewals, claims, and client service 24/7, inside the WhatsApp groups you already use.
+    Maya handles intake, renewals, claims, and client service — 24/7, inside the WhatsApp groups you already use.
   </p>
 
   <div className="hero-actions">
@@ -1201,25 +1194,25 @@ export default function LandingPage() {
 {/* PROBLEM */}
 <section className="problem" id="problem">
   <div className="section-tag">The problem</div>
-  <h2 className="section-title">Most IFAs are running a<br/><em>500-client business</em> on WhatsApp and Excel.</h2>
-  <p className="section-sub">You know insurance. But you're spending your best hours on admin that doesn't earn you a cent.</p>
+  <h2 className="section-title">You're running a<br/><em>500-client business</em> on WhatsApp and Excel.</h2>
+  <p className="section-sub">Your best hours are going to admin that doesn't earn you a cent.</p>
 
   <div className="problem-grid">
     <div className="problem-item">
-      <h4>New enquiries go cold</h4>
-      <p>A prospect messages you while you're with another client. By the time you respond, they've already spoken to someone else.</p>
+      <div style={{"fontSize":"28px","marginBottom":"12px"}}>⏰</div><h4>New enquiries go cold</h4>
+      <p>A prospect messages while you're busy. By the time you respond, they've moved on.</p>
     </div>
     <div className="problem-item">
-      <h4>Renewals sneak up on you</h4>
-      <p>You track renewals in a spreadsheet, a calendar, or your memory. One missed renewal is a client lost — and you don't always know until it's too late.</p>
+      <div style={{"fontSize":"28px","marginBottom":"12px"}}>📉</div><h4>Renewals sneak up on you</h4>
+      <p>You track renewals in spreadsheets and memory. One missed renewal is a client lost.</p>
     </div>
     <div className="problem-item">
-      <h4>Claims catch you off guard</h4>
-      <p>A client calls in a panic at 9pm. You scramble to find the policy, remember the insurer's number, and walk them through the process from scratch.</p>
+      <div style={{"fontSize":"28px","marginBottom":"12px"}}>🚨</div><h4>Claims catch you off guard</h4>
+      <p>A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.</p>
     </div>
     <div className="problem-item">
-      <h4>Evenings lost to admin</h4>
-      <p>Writing follow-up messages, preparing recommendations, filling in forms — all after hours, all unpaid, all keeping you from building your business.</p>
+      <div style={{"fontSize":"28px","marginBottom":"12px"}}>😩</div><h4>Evenings lost to admin</h4>
+      <p>Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.</p>
     </div>
   </div>
 </section>
@@ -1228,25 +1221,25 @@ export default function LandingPage() {
 <section id="how-it-works">
   <div className="section-tag">How it works</div>
   <h2 className="section-title">Three steps.<br/><em>30 minutes.</em> You're live.</h2>
-  <p className="section-sub">No app for your clients to download. No new platform to learn. Everything happens inside WhatsApp.</p>
+  <p className="section-sub">No app to download. No platform to learn. Just WhatsApp.</p>
 
   <div className="steps-row">
     <div className="step">
       <div className="step-num">01</div>
       <h3>Sign up and connect</h3>
-      <p>Create your Espresso account, add Maya's number to your phone as a contact, and upload your existing client policies. Takes under 30 minutes.</p>
+      <p>Create your account, add Maya's number, upload your client list. Under 30 minutes.</p>
       <div className="step-arrow">→</div>
     </div>
     <div className="step">
       <div className="step-num">02</div>
       <h3>Add Maya to any client group</h3>
-      <p>Create a WhatsApp group with your client and add Maya. She introduces herself as your AI assistant and handles everything from there — intake, follow-ups, renewals, and more.</p>
+      <p>Create a WhatsApp group with your client and add Maya. She handles intake, follow-ups, and renewals from there.</p>
       <div className="step-arrow">→</div>
     </div>
     <div className="step">
       <div className="step-num">03</div>
       <h3>Check your dashboard, close deals</h3>
-      <p>Log into your Espresso dashboard to review Maya's client briefs, upcoming renewals, and any alerts needing your attention. You focus on relationships. Maya handles the rest.</p>
+      <p>Review client briefs, renewals, and alerts in your dashboard. You sell. Maya handles the rest.</p>
     </div>
   </div>
 </section>
@@ -1267,32 +1260,32 @@ export default function LandingPage() {
     <div className="feature-card">
             <div className="feature-icon">🎯</div>
       <h4>Maya — Client intake</h4>
-      <p>Maya handles every new client enquiry 24/7 inside your WhatsApp group. She runs structured discovery, produces a complete client brief, and sends it to your dashboard — while you sleep.</p>
+      <p>Maya handles every new enquiry 24/7 in WhatsApp. Structured discovery, complete brief, sent to your dashboard — while you sleep.</p>
     </div>
     <div className="feature-card">
             <div className="feature-icon">🗓</div>
       <h4>Renewal management</h4>
-      <p>Maya tracks every policy in your book and manages the full renewal timeline automatically — 90, 60, 30, 14, and 7 days out. Your clients get timely, professional renewal communication. You never lose another client to a missed follow-up.</p>
+      <p>Maya tracks every policy and manages renewals automatically — 90, 60, 30, 14, and 7 days out. Never lose a client to a missed follow-up.</p>
     </div>
     <div className="feature-card">
             <div className="feature-icon">💬</div>
       <h4>Policy advisory</h4>
-      <p>When a client asks a coverage question in the group, Maya pulls the answer from their actual policy data and delivers it through Maya instantly — accurate, specific, and in plain English.</p>
+      <p>Client asks a coverage question? Maya pulls the answer from their policy data instantly — accurate, specific, plain English.</p>
     </div>
     <div className="feature-card">
             <div className="feature-icon">🚨</div>
       <h4>Claims support</h4>
-      <p>When a client has a claim, Maya guides them through the entire FNOL process in real time, inside the group — at any hour. You get an immediate dashboard alert and a full incident report.</p>
+      <p>Client has a claim? Maya guides them through the process in real time, at any hour. You get an alert and full report.</p>
     </div>
     <div className="feature-card">
             <div className="feature-icon">📄</div>
       <h4>Document management</h4>
-      <p>Certificates of insurance, policy summaries, endorsement requests — Maya handles all document operations and keeps every client file complete, compliant, and instantly retrievable.</p>
+      <p>Policy summaries, certificates, endorsements — Maya keeps every document complete and instantly retrievable.</p>
     </div>
     <div className="feature-card">
             <div className="feature-icon">📊</div>
       <h4>Quote comparison</h4>
-      <p>Maya aggregates market quotes for each coverage type, ranks them by coverage quality (not just price), and prepares a clear comparison for you to present — saving hours of manual insurer portal work.</p>
+      <p>Maya aggregates quotes, ranks by quality (not just price), and prepares a clear comparison — saving hours of portal work.</p>
     </div>
   </div>
 </section>
@@ -1310,7 +1303,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Solo</div>
       <div className="pricing-price"><sup>$</sup>29</div>
       <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">Perfect for IFAs just getting started with Espresso. Maya handles your intake and renewals around the clock.</div>
+      <div className="pricing-desc">For IFAs getting started. Intake and renewals handled around the clock.</div>
       <ul className="pricing-features">
         <li>24/7 client intake in WhatsApp groups</li>
         <li>Full renewal management</li>
@@ -1329,7 +1322,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Pro</div>
       <div className="pricing-price"><sup>$</sup>79</div>
       <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">The full Espresso experience. Unlimited clients, and a client-facing portal that makes you look like a top-tier firm.</div>
+      <div className="pricing-desc">The full experience. Unlimited clients, claims support, and a portal that makes you look enterprise.</div>
       <ul className="pricing-features">
         <li>Everything in Solo</li>
         <li>Unlimited clients</li>
@@ -1349,7 +1342,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Team</div>
       <div className="pricing-price"><sup>$</sup>199</div>
       <div className="pricing-period">SGD per month · up to 5 agents</div>
-      <div className="pricing-desc">For IFAs working with a small team. Share a book of business, a dashboard, and the full Espresso suite across up to 5 advisors.</div>
+      <div className="pricing-desc">Share a book, a dashboard, and the full suite across up to 5 advisors.</div>
       <ul className="pricing-features">
         <li>Everything in Pro</li>
         <li>Up to 5 IFA seats</li>
@@ -1367,7 +1360,7 @@ export default function LandingPage() {
       <div className="pricing-tier">Agency</div>
       <div className="pricing-price" style={{"fontSize":"36px","paddingTop":"8px"}}>Custom</div>
       <div className="pricing-period">Tailored for your agency</div>
-      <div className="pricing-desc">For agencies with 20+ advisors who need white-label branding, API access, and enterprise-grade support.</div>
+      <div className="pricing-desc">White-label branding, API access, and enterprise support for 20+ advisors.</div>
       <ul className="pricing-features">
         <li>Everything in Team</li>
         <li>Unlimited IFA seats</li>
@@ -1392,7 +1385,7 @@ export default function LandingPage() {
 <section className="setup" id="setup">
   <div className="section-tag">Setup guide</div>
   <h2 className="section-title">From sign-up to<br/><em>first client</em> in 30 minutes.</h2>
-  <p className="section-sub">No technical knowledge needed. If you can use WhatsApp, you can use Espresso.</p>
+  <p className="section-sub">If you can use WhatsApp, you can use Espresso.</p>
 
   <div className="setup-grid">
     <div className="setup-steps">
@@ -1485,12 +1478,12 @@ export default function LandingPage() {
 
     <div className="faq-item">
       <button className="faq-q">Do my clients know they're talking to an AI?</button>
-      <div className="faq-a">Maya introduces herself as your AI assistant — not as a robot or a chatbot. She is warm, conversational, and helpful. Most clients simply experience her as a responsive, knowledgeable assistant who works for you. You are always in the WhatsApp group and can jump in at any point.</div>
+      <div className="faq-a">Maya introduces herself as your AI assistant. She's warm, conversational, and helpful. Clients experience her as a responsive assistant who works for you. You're always in the group and can jump in anytime.</div>
     </div>
 
     <div className="faq-item">
       <button className="faq-q">Do I need to ask my clients to download anything?</button>
-      <div className="faq-a">No. Everything runs inside WhatsApp — a tool your clients already use every day. You simply add Maya's number to a group you create with your client. No app download, no new account, no friction for the client whatsoever.</div>
+      <div className="faq-a">No. Everything runs inside WhatsApp. You add Maya to a group with your client. No app, no account, no friction.</div>
     </div>
 
     <div className="faq-item">
@@ -1500,7 +1493,7 @@ export default function LandingPage() {
 
     <div className="faq-item">
       <button className="faq-q">What happens if Maya says something wrong to my client?</button>
-      <div className="faq-a">You are always in the group and can see every message Maya sends in real time. If you ever need to step in, type "Maya pause" and she will go silent immediately while you handle the conversation. Maya is also trained never to make product recommendations without your review or commit to any financial terms on your behalf.</div>
+      <div className="faq-a">You see every message in real time. Type "Maya pause" and she goes silent. Maya never makes product recommendations or commits to financial terms without your review.</div>
     </div>
 
     <div className="faq-item">
@@ -1524,7 +1517,7 @@ export default function LandingPage() {
 {/* CTA */}
 <section className="cta-section">
   <h2>Stop doing admin.<br/><em>Start building your book.</em></h2>
-  <p>14-day free trial. No credit card. Set up in under 30 minutes. Your next client enquiry could be handled by Maya tonight.</p>
+  <p>14-day free trial. No credit card. Set up in 30 minutes. Maya could handle your next enquiry tonight.</p>
   <a href="/trial" className="btn-primary" style={{"fontSize":"16px","padding":"18px 44px"}}>Start your free trial</a>
   <p style={{"marginTop":"20px","fontSize":"13px","color":"var(--cream-dim)"}}>Already on a plan? <a href="/login" style={{"color":"var(--amber-light)","textDecoration":"none"}}>Sign in →</a></p>
 </section>
