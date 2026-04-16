@@ -300,6 +300,28 @@ export default function LandingPage() {
     to { opacity: 1; transform: translateY(0); }
   }
 
+
+  /* Centered hero */
+  .hero {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
+  .hero-content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .hero-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .hero-stat-row {
+    justify-content: center;
+  }
+
   /* WHATSAPP MOCKUP */
   .hero-visual { display:none;
     position: absolute;
@@ -1223,7 +1245,7 @@ export default function LandingPage() {
 </section>
 
 {/* HOW IT WORKS */}
-<section id="how-it-works">
+<section className="section-light" id="how-it-works">
   <div className="section-tag">How it works</div>
   <h2 className="section-title">Three steps.<br/><em>30 minutes.</em> You're live.</h2>
   <p className="section-sub">No app to download. No platform to learn. Just WhatsApp.</p>
@@ -1250,29 +1272,58 @@ export default function LandingPage() {
 </section>
 
 
-{/* WHATSAPP DEMO — standalone section */}
-<section className="wa-demo section-light">
+{/* WHATSAPP DEMO */}
+<section className="wa-demo section-light" style={{"borderTop":"1px solid var(--light-border)"}}>
   <div style={{"maxWidth":"1200px","margin":"0 auto","padding":"0 48px"}}>
-    <div className="section-tag">See Maya in action</div>
+    <div className="section-tag" style={{"justifyContent":"center"}}>See Maya in action</div>
     <h2 className="section-title" style={{"textAlign":"center","marginBottom":"12px"}}>Maya handles the conversation.<br/><em>You close the deal.</em></h2>
-    <p style={{"textAlign":"center","color":"var(--light-muted)","marginBottom":"48px","maxWidth":"480px","margin":"0 auto 48px"}}>Watch Maya qualify a new lead in under 2 minutes — right inside WhatsApp.</p>
-    <div className="wa-demo-inner">
-      <div className="wa-phone">
-        <div className="wa-header">
-          <div className="wa-avatar">M</div>
-          <div className="wa-header-info">
-            <div className="wa-name">Maya · Espresso</div>
-            <div className="wa-status">AI assistant to David Tan</div>
+    <p style={{"textAlign":"center","color":"var(--light-muted)","maxWidth":"480px","margin":"0 auto"}}>Watch Maya qualify a lead and manage a renewal — right inside WhatsApp.</p>
+    
+    <div className="phone-pair">
+      {/* Phone 1: New client intake */}
+      <div>
+        <div className="phone-frame">
+          <div className="phone-notch"></div>
+          <div className="phone-screen">
+            <div className="wa-header">
+              <div className="wa-avatar">M</div>
+              <div className="wa-header-info">
+                <div className="wa-name">Sarah · Café owner</div>
+                <div className="wa-status">Maya + David Tan</div>
+              </div>
+            </div>
+            <div className="wa-messages" style={{"minHeight":"260px","padding":"12px 10px"}}>
+              <div className="wa-msg received"><div>I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
+              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! How many staff do you have?</div><div className="wa-time">9:47 AM</div></div>
+              <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:48 AM</div></div>
+              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Got it. I\'ll prepare a brief for David with recommendations. Expect a call today!</div><div className="wa-time">9:48 AM</div></div>
+            </div>
           </div>
         </div>
-        <div className="wa-messages">
-          <div className="wa-msg received"><div>Hi! I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
-          <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! I'm Maya, David's assistant. I'll help get your café sorted. A few quick questions?</div><div className="wa-time">9:47 AM</div></div>
-          <div className="wa-msg received"><div>Sure!</div><div className="wa-time">9:48 AM</div></div>
-          <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>How many staff do you have?</div><div className="wa-time">9:48 AM</div></div>
-          <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:49 AM</div></div>
-          <div className="wa-typing"><span></span><span></span><span></span></div>
+        <div className="phone-label">New client intake<span>Maya qualifies leads 24/7</span></div>
+      </div>
+
+      {/* Phone 2: Renewal follow-up */}
+      <div>
+        <div className="phone-frame">
+          <div className="phone-notch"></div>
+          <div className="phone-screen">
+            <div className="wa-header">
+              <div className="wa-avatar">M</div>
+              <div className="wa-header-info">
+                <div className="wa-name">Kevin · Policy holder</div>
+                <div className="wa-status">Maya + David Tan</div>
+              </div>
+            </div>
+            <div className="wa-messages" style={{"minHeight":"260px","padding":"12px 10px"}}>
+              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Kevin! Your health plan renews on May 10. Want me to prepare renewal options?</div><div className="wa-time">10:00 AM</div></div>
+              <div className="wa-msg received"><div>Yes please! Any better rates?</div><div className="wa-time">10:05 AM</div></div>
+              <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>I\'ll compare 3 plans and send you a summary by end of day.</div><div className="wa-time">10:05 AM</div></div>
+              <div className="wa-typing"><span></span><span></span><span></span></div>
+            </div>
+          </div>
         </div>
+        <div className="phone-label">Renewal follow-up<span>Never miss a renewal again</span></div>
       </div>
     </div>
   </div>
@@ -1281,7 +1332,7 @@ export default function LandingPage() {
 <div className="divider"></div>
 
 {/* FEATURES */}
-<section className="features" id="features">
+<section className="features section-light" id="features">
   <div className="features-header">
     <div>
       <div className="section-tag">What Espresso does</div>
@@ -1416,7 +1467,7 @@ export default function LandingPage() {
 <div className="divider"></div>
 
 {/* SETUP GUIDE */}
-<section className="setup" id="setup">
+<section className="setup section-light" id="setup">
   <div className="section-tag">Setup guide</div>
   <h2 className="section-title">From sign-up to<br/><em>first client</em> in 30 minutes.</h2>
   <p className="section-sub">If you use WhatsApp, you can use Espresso.</p>
