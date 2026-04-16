@@ -1116,6 +1116,62 @@ export default function LandingPage() {
 
   .section-light .faq-item { border-bottom-color: #E0D5C8 !important; }
 
+
+  /* === NUCLEAR OVERRIDES — fix light section backgrounds === */
+  section.section-light { background: #F5F0E8 !important; color: #2A1A10 !important; }
+  section.problem.section-light { background: #F5F0E8 !important; }
+  section.features.section-light { background: #F5F0E8 !important; }
+  section.setup.section-light { background: #F5F0E8 !important; }
+  section.wa-demo.section-light { background: #F5F0E8 !important; }
+  
+  /* Fix ALL text in light sections */
+  .section-light h2 { color: #2A1A10 !important; }
+  .section-light h2 em { color: #C8813A !important; }
+  .section-light h3 { color: #2A1A10 !important; }
+  .section-light h4 { color: #2A1A10 !important; }
+  .section-light p { color: #7A6A58 !important; }
+  .section-light .section-tag { color: #C8813A !important; }
+  .section-light .section-sub { color: #7A6A58 !important; }
+  
+  /* Fix card text in light sections */
+  .section-light .problem-item h4 { color: #2A1A10 !important; }
+  .section-light .problem-item p { color: #7A6A58 !important; }
+  .section-light .feature-card h4 { color: #2A1A10 !important; }
+  .section-light .feature-card p { color: #7A6A58 !important; }
+  .section-light .step h3 { color: #2A1A10 !important; }
+  .section-light .step p { color: #7A6A58 !important; }
+  .section-light .step-num { color: rgba(200,129,58,0.3) !important; }
+  
+  /* Fix pricing text */
+  .section-light .pricing-tier { color: #C8813A !important; }
+  .section-light .pricing-price { color: #2A1A10 !important; }
+  .section-light .pricing-period { color: #7A6A58 !important; }
+  .section-light .pricing-desc { color: #7A6A58 !important; }
+  .section-light .pricing-features li { color: #7A6A58 !important; }
+  .section-light .pricing-features li::before { color: #C8813A !important; }
+  .section-light .pricing-note { color: #7A6A58 !important; }
+  .section-light .price-badge { color: #2A1A10 !important; }
+  
+  /* Fix FAQ text */
+  .section-light .faq-q { color: #2A1A10 !important; }
+  .section-light .faq-q::after { color: #C8813A !important; }
+  .section-light .faq-a { color: #7A6A58 !important; }
+  
+  /* Fix setup text */
+  .section-light .setup-step h4 { color: #2A1A10 !important; }
+  .section-light .setup-step p { color: #7A6A58 !important; }
+  .section-light .setup-callout h3 { color: #2A1A10 !important; }
+  .section-light .setup-callout p { color: #7A6A58 !important; }
+  .section-light .requirement-list li { color: #7A6A58 !important; }
+  .section-light .req-list li { color: #7A6A58 !important; }
+  
+  /* Fix WhatsApp demo text */
+  .section-light .phone-label { color: #2A1A10 !important; }
+  .section-light .phone-label span { color: #7A6A58 !important; }
+
+  /* Fix dividers between light sections */
+  .section-light + .section-light { border-top: 1px solid #E0D5C8 !important; }
+
   /* RESPONSIVE */
   /* ===== RESPONSIVE ===== */
   @media (max-width: 1100px) {
