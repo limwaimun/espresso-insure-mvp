@@ -57,11 +57,11 @@ export default function LandingPage() {
     --amber-light: #E8A55A;
     --warm-mid: #352012;
     --warm-border: #3A2416;
-    --light-bg: #FAF6EF;
+    --light-bg: #F5F0E8;
     --light-card: #FFFFFF;
     --light-text: #2A1A10;
     --light-muted: #7A6A58;
-    --light-border: #E5DACE;
+    --light-border: #E0D5C8;
     --white: #FDFAF5;
   }
 
@@ -400,7 +400,7 @@ export default function LandingPage() {
 
   .wa-msg.maya {
     background: linear-gradient(135deg, #1A3A2A 0%, #0D2B1F 100%);
-    border: 1px solid rgba(200,129,58,0.2);
+    border: none;
     color: #E9EDEF;
     align-self: flex-start;
     border-radius: 0 8px 8px 8px;
@@ -612,8 +612,8 @@ export default function LandingPage() {
 
   .feature-icon {
     width: 44px; height: 44px;
-    background: rgba(200,129,58,0.12);
-    border: 1px solid rgba(200,129,58,0.2);
+    background: #2A1A10;
+    border: none;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -851,8 +851,8 @@ export default function LandingPage() {
   }
 
   .setup-step-content code {
-    background: rgba(200,129,58,0.12);
-    border: 1px solid rgba(200,129,58,0.2);
+    background: #2A1A10;
+    border: none;
     color: var(--amber-light);
     padding: 2px 8px;
     border-radius: 4px;
@@ -888,7 +888,7 @@ export default function LandingPage() {
     align-items: center;
     gap: 12px;
     background: rgba(200,129,58,0.1);
-    border: 1px solid rgba(200,129,58,0.2);
+    border: none;
     border-radius: 10px;
     padding: 14px 18px;
     margin-top: 24px;
@@ -1090,6 +1090,32 @@ export default function LandingPage() {
     .phone-screen { border-radius:28px; }
   }
 
+
+  /* Light section card overrides - matching reference design */
+  .section-light .problem-grid { background: transparent !important; border: none !important; gap: 16px !important; display: grid; }
+  .section-light .problem-item { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
+
+  .section-light .feature-grid { background: transparent !important; border: none !important; gap: 16px !important; }
+  .section-light .feature-card { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
+  .section-light .feature-card:hover { background: #FDF8F2 !important; }
+  .section-light .feature-icon { background: #2A1A10 !important; border: none !important; border-radius: 12px !important; }
+
+  .section-light .pricing-card { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
+  .section-light .pricing-card:hover { border-color: #C8813A !important; }
+  .section-light .pricing-card.featured { background: linear-gradient(145deg, #FFF8EE, #FFF3E0) !important; border: 2px solid #C8813A !important; }
+  .section-light .pricing-desc { border-bottom-color: #E0D5C8 !important; }
+  .section-light .btn-outline { border-color: #C8813A !important; color: #C8813A !important; }
+  .section-light .btn-outline:hover { background: rgba(200,129,58,0.08) !important; }
+
+  .section-light .step { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
+  .section-light .step:hover { background: #FDF8F2 !important; }
+
+  .section-light .setup-callout { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
+  .section-light .setup-step { border-bottom-color: #E0D5C8 !important; }
+  .section-light .setup-time { background: rgba(200,129,58,0.06) !important; border-color: #E0D5C8 !important; }
+
+  .section-light .faq-item { border-bottom-color: #E0D5C8 !important; }
+
   /* RESPONSIVE */
   /* ===== RESPONSIVE ===== */
   @media (max-width: 1100px) {
@@ -1255,19 +1281,19 @@ export default function LandingPage() {
 
   <div className="problem-grid">
     <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h4>New enquiries go cold</h4>
+      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h4>New enquiries go cold</h4>
       <p>Prospects message while you're busy. By the time you respond, they've moved on.</p>
     </div>
     <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><h4>Renewals sneak up on you</h4>
+      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><h4>Renewals sneak up on you</h4>
       <p>You track renewals in spreadsheets and memory. One missed renewal is a client lost.</p>
     </div>
     <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><h4>Claims catch you off guard</h4>
+      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><h4>Claims catch you off guard</h4>
       <p>A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.</p>
     </div>
     <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"rgba(200,129,58,0.12)","border":"1px solid rgba(200,129,58,0.2)","borderRadius":"10px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div><h4>Evenings lost to admin</h4>
+      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div><h4>Evenings lost to admin</h4>
       <p>Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.</p>
     </div>
   </div>
@@ -1369,9 +1395,9 @@ export default function LandingPage() {
   <div className="features-header">
     <div>
       <div className="section-tag">What Espresso does</div>
-      <h2 className="section-title">One assistant.<br/><em>Everything</em><br/>handled.</h2>
+      <h2 className="section-title">Everything you need.<br/><em>Nothing you don't.</em></h2>
     </div>
-    <p className="section-sub">Your clients see Maya — warm, knowledgeable, always available. She handles every part of the insurance journey seamlessly.</p>
+    <p className="section-sub">Built for the IFA who works alone but needs to perform like a full team.</p>
   </div>
 
   <div className="feature-grid">
