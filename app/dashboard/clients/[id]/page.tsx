@@ -1,138 +1,91 @@
-'use client';
-
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import PolicyDocCell from '../components/PolicyDocCell';
-import AddPolicyModal from '../components/AddPolicyModal';
-import EditClientModal from '../components/EditClientModal';
-import WhatsAppSetupButton from '../components/WhatsAppSetupButton';
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function ClientProfilePage({ params }: PageProps) {
-  const { id } = params;
-  const [client, setClient] = useState<any>(null);
-  const [policies, setPolicies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddPolicy, setShowAddPolicy] = useState(false);
-  const [showEditClient, setShowEditClient] = useState(false);
-  const [ifaId, setIfaId] = useState<string>('');
-  const [conversations, setConversations] = useState<any>(null);
-  const [claims, setClaims] = useState<any[]>([]);
-  const [allAlerts, setAllAlerts] = useState<any[]>([]);
-  const [clientMessages, setClientMessages] = useState<any[]>([]);
-  const supabase = createClient();
+export default async function ClientProfilePage({ params }: PageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
   
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setIfaId(user.id);
-      
-      // Fetch client by ID
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      // Fetch their policies, ordered by renewal date
-      const { data: policiesData } = await supabase
-        .from('policies')
-        .select('*')
-        .eq('client_id', id)
-        .order('renewal_date', { ascending: true });
-      
-      // Fetch alerts for this client
-      const { data: alertsData } = await supabase
-        .from('alerts')
-        .select('*')
-        .eq('client_id', id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      // Fetch conversations for this client
-      const { data: clientConvos } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('client_id', id);
-      
-      // Fetch messages for these conversations
-      let fetchedClientMessages: any[] = [];
-      if (clientConvos && clientConvos.length > 0) {
-        const convoIds = clientConvos.map((c: any) => c.id);
-        const { data: msgs } = await supabase
-          .from('messages')
-          .select('*')
-          .in('conversation_id', convoIds)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        fetchedClientMessages = msgs || [];
-      }
-      
-      // Determine conversation status
-      let conversations = null;
-      if (clientConvos && clientConvos.length > 0) {
-        conversations = {
-          id: clientConvos[0].id,
-          status: fetchedClientMessages.length > 0 ? 'active' : 'waiting',
-          messages: fetchedClientMessages,
-        };
-      }
-      
-      setClientMessages(fetchedClientMessages);
-      
-      setClient(clientData);
-      setPolicies(policiesData || []);
-      setLoading(false);
-    }
-    
-    fetchData();
-  }, [id]);
+  // Fetch client by ID
+  const { data: client } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .single();
   
-  // Fetch additional data in a separate effect
-  useEffect(() => {
-    async function fetchAdditionalData() {
-      if (!client) return;
-      
-      // Fetch conversations with messages for WhatsApp section
-      const { data: conversationsData } = await supabase
-        .from('conversations')
-        .select('*, messages(id, role, content, created_at)')
-        .eq('client_id', id)
-        .order('last_message_at', { ascending: false })
-        .limit(1);
-      
-      const convos = conversationsData && conversationsData.length > 0 ? conversationsData[0] : null;
-      
-      // Fetch claims for this client
-      const { data: claimsData } = await supabase
-        .from('alerts')
-        .select('*')
-        .eq('client_id', id)
-        .eq('type', 'claim')
-        .order('created_at', { ascending: false });
-      
-      // Fetch all alerts for this client (for timeline)
-      const { data: alertsData } = await supabase
-        .from('alerts')
-        .select('*')
-        .eq('client_id', id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      setConversations(convos);
-      setClaims(claimsData || []);
-      setAllAlerts(alertsData || []);
-    }
-    
-    fetchAdditionalData();
-  }, [client, id]);
+  // Fetch their policies, ordered by renewal date
+  const { data: policies } = await supabase
+    .from('policies')
+    .select('*')
+    .eq('client_id', id)
+    .order('renewal_date', { ascending: true });
+  
+  // Fetch their conversations with messages for WhatsApp section
+  const { data: conversationsData } = await supabase
+    .from('conversations')
+    .select('*, messages(id, role, content, created_at)')
+    .eq('client_id', id)
+    .order('last_message_at', { ascending: false })
+    .limit(1);
+  
+  const conversations = conversationsData && conversationsData.length > 0 ? conversationsData[0] : null;
+  
+  // Fetch claims for this client
+  const { data: claims } = await supabase
+    .from('alerts')
+    .select('*')
+    .eq('client_id', id)
+    .eq('type', 'claim')
+    .order('created_at', { ascending: false });
+  
+  // Fetch all alerts for this client (for timeline)
+  const { data: allAlerts } = await supabase
+    .from('alerts')
+    .select('*')
+    .eq('client_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  
+  // Fetch conversations for this client
+  const { data: clientConvos } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('client_id', id);
+  
+  // Fetch messages for these conversations
+  let clientMessages: any[] = [];
+  if (clientConvos && clientConvos.length > 0) {
+    const convoIds = clientConvos.map((c: any) => c.id);
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('*')
+      .in('conversation_id', convoIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    clientMessages = msgs || [];
+  }
+  
+  // If client doesn't exist, show 404
+  if (!client) {
+    return (
+      <div style={{ width: '100%', textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '24px', color: '#F5ECD7', marginBottom: '16px' }}>
+          Client not found
+        </div>
+        <Link href="/dashboard/clients" style={{
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: '14px',
+          color: '#C8813A',
+          textDecoration: 'none',
+        }}>
+          ← Back to all clients
+        </Link>
+      </div>
+    );
+  }
   
   // Calculate metrics
   const activePolicies = policies?.filter(p => p.status === 'active').length || 0;
@@ -320,22 +273,6 @@ export default function ClientProfilePage({ params }: PageProps) {
     };
   });
   
-  if (loading) {
-    return (
-      <div style={{ width: '100%', textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
-        Loading client details...
-      </div>
-    );
-  }
-
-  if (!client) {
-    return (
-      <div style={{ width: '100%', textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
-        Client not found
-      </div>
-    );
-  }
-  
   return (
     <div style={{ width: '100%' }}>
       <div style={{ marginBottom: '16px' }}>
@@ -480,25 +417,20 @@ export default function ClientProfilePage({ params }: PageProps) {
               <span>📱</span> No WhatsApp
             </button>
           )}
-          <button 
-            onClick={() => setShowEditClient(true)}
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C8813A',
-              textDecoration: 'none',
-              padding: '8px 16px',
-              border: '1px solid #C8813A',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'none',
-              cursor: 'pointer',
-            }}
-          >
+          <Link href={`/dashboard/clients/${id}/edit`} style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px',
+            color: '#C8813A',
+            textDecoration: 'none',
+            padding: '8px 16px',
+            border: '1px solid #C8813A',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
             <span>✏️</span> Edit
-          </button>
+          </Link>
         </div>
       </div>
       
@@ -705,12 +637,38 @@ export default function ClientProfilePage({ params }: PageProps) {
               }}>
                 This client is not yet connected to Maya on WhatsApp.
               </div>
-              <WhatsAppSetupButton 
-                clientName={client.name}
-                clientWhatsApp={client.whatsapp}
-                ifaName={ifaId}
-                connectionStatus={conversations?.status || 'not_connected'}
-              />
+              {client.whatsapp ? (
+                <a 
+                  href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(client.name.split(' ')[0])}!%20I've%20set%20up%20Maya%2C%20my%20AI%20assistant%2C%20to%20help%20manage%20your%20insurance%20policies.%20She'll%20be%20in%20touch!`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '13px',
+                    color: '#120A06',
+                    textDecoration: 'none',
+                    padding: '10px 20px',
+                    background: '#C8813A',
+                    borderRadius: '4px',
+                    display: 'inline-block',
+                    fontWeight: 500,
+                  }}
+                >
+                  Invite to WhatsApp
+                </a>
+              ) : (
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '13px',
+                  color: '#C9B99A',
+                  padding: '10px 20px',
+                  background: 'rgba(200,129,58,0.1)',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                }}>
+                  No WhatsApp number available
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -720,21 +678,14 @@ export default function ClientProfilePage({ params }: PageProps) {
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button 
-            onClick={() => setShowAddPolicy(true)}
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#C8813A',
-              textDecoration: 'none',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
+          <Link href="#" style={{
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '12px',
+            color: '#C8813A',
+            textDecoration: 'none',
+          }}>
             + Add policy
-          </button>
+          </Link>
         </div>
         <div className="panel-body">
           {policies && policies.length > 0 ? (
@@ -747,7 +698,6 @@ export default function ClientProfilePage({ params }: PageProps) {
                     <th>Premium</th>
                     <th>Renewal Date</th>
                     <th>Status</th>
-                    <th>POLICY DOC</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -780,14 +730,6 @@ export default function ClientProfilePage({ params }: PageProps) {
                         <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
-                        <td>
-                          <PolicyDocCell 
-                            policyId={policy.id}
-                            ifaId={ifaId}
-                            existingFileName={policy.document_name}
-                            existingFileUrl={policy.document_url}
-                          />
-                        </td>
                       </tr>
                     );
                   })}
@@ -970,42 +912,6 @@ export default function ClientProfilePage({ params }: PageProps) {
           )}
         </div>
       </div>
-
-      {/* Modals */}
-      {showAddPolicy && (
-        <AddPolicyModal
-          clientId={id}
-          ifaId={ifaId}
-          onClose={() => setShowAddPolicy(false)}
-          onAdded={() => {
-            // Refresh policies
-            supabase
-              .from('policies')
-              .select('*')
-              .eq('client_id', id)
-              .order('renewal_date', { ascending: true })
-              .then(({ data }) => setPolicies(data || []));
-            setShowAddPolicy(false);
-          }}
-        />
-      )}
-
-      {showEditClient && client && (
-        <EditClientModal
-          client={client}
-          onClose={() => setShowEditClient(false)}
-          onSaved={() => {
-            // Refresh client data
-            supabase
-              .from('clients')
-              .select('*')
-              .eq('id', id)
-              .single()
-              .then(({ data }) => setClient(data));
-            setShowEditClient(false);
-          }}
-        />
-      )}
     </div>
   );
 }
