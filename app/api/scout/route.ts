@@ -1,0 +1,143 @@
+import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+// Scout — Espresso's internal product intelligence agent
+// Reads product PDFs forwarded by the IFA, extracts structured data
+// Also surfaces market insights and sentiment for Maya to use
+// Never speaks to clients directly
+
+export async function POST(request: NextRequest) {
+  try {
+    const contentType = request.headers.get('content-type') ?? ''
+
+    // ── Mode 1: Process a product PDF ─────────────────────────────────────
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const file = formData.get('file') as File
+      const ifaId = formData.get('ifaId') as string
+
+      if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+
+      const bytes = await file.arrayBuffer()
+      const base64 = Buffer.from(bytes).toString('base64')
+
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+              } as Anthropic.ContentBlockParam,
+              {
+                type: 'text',
+                text: `You are Scout, a product intelligence agent for Espresso, an insurance platform in Singapore.
+
+Extract structured product data from this insurance product brochure or document. Return ONLY valid JSON with no other text.
+
+{
+  "insurer": "insurance company name",
+  "productName": "full product name",
+  "type": "Life | Health | Critical Illness | Disability | Motor | Travel | Property | Group Health | Group Life | Fire | PI | BI | Keyman | D&O | Cyber | Workers Comp | Public Liability | Marine",
+  "targetMarket": "individual | sme | corporate | all",
+  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],
+  "premiumRange": "e.g. $X–$Y/month depending on age and health",
+  "availableRiders": ["rider 1", "rider 2"],
+  "exclusions": ["exclusion 1", "exclusion 2"],
+  "minSumAssured": number or null,
+  "maxSumAssured": number or null,
+  "entryAgeMin": number or null,
+  "entryAgeMaxe": number or null,
+  "standoutFeatures": ["what makes this product distinctive"],
+  "status": "active"
+}
+
+Use null for any fields not found in the document.`,
+              },
+            ],
+          },
+        ],
+      })
+
+      const rawText = response.content.find(b => b.type === 'text')?.text ?? ''
+
+      let product
+      try {
+        product = JSON.parse(rawText.replace(/```json|```/g, '').trim())
+      } catch {
+        return NextResponse.json({
+          error: 'Scout could not extract product data from this PDF',
+        }, { status: 422 })
+      }
+
+      return NextResponse.json({ success: true, product, mode: 'pdf_extraction' })
+    }
+
+    // ── Mode 2: Market intelligence query ─────────────────────────────────
+    const { query, coverageType, insurer, clientType } = await request.json() as {
+      query: string
+      coverageType?: string
+      insurer?: string
+      clientType?: string
+    }
+
+    if (!query) return NextResponse.json({ error: 'query is required' }, { status: 400 })
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 800,
+      messages: [
+        {
+          role: 'user',
+          content: `You are Scout, a product intelligence agent for Espresso, an insurance platform in Singapore.
+
+Your job is to give Maya (the client-facing agent) market intelligence about insurance products so she can make better recommendations.
+
+QUERY: ${query}
+${coverageType ? `COVERAGE TYPE: ${coverageType}` : ''}
+${insurer ? `INSURER IN QUESTION: ${insurer}` : ''}
+${clientType ? `CLIENT TYPE: ${clientType}` : ''}
+
+Based on your knowledge of the Singapore insurance market, provide useful intelligence. Focus on:
+- Product quality and reputation
+- Common client complaints or praise
+- How this product compares to alternatives
+- Any recent changes or news about this insurer/product
+- Recommendation on whether to push this product
+
+Respond in this exact JSON format:
+{
+  "summary": "2-3 sentence market intelligence summary",
+  "sentiment": "positive | neutral | negative | mixed",
+  "clientFeedback": ["key feedback point 1", "key feedback point 2"],
+  "alternatives": ["alternative product/insurer 1", "alternative product/insurer 2"],
+  "recommendation": "push | neutral | caution",
+  "recommendationReason": "one sentence reason",
+  "mayaTip": "specific tip for Maya on how to position this in conversation"
+}`,
+        },
+      ],
+    })
+
+    const rawText = response.content.find(b => b.type === 'text')?.text ?? ''
+
+    let intelligence
+    try {
+      intelligence = JSON.parse(rawText.replace(/```json|```/g, '').trim())
+    } catch {
+      return NextResponse.json({
+        error: 'Scout could not generate market intelligence for this query',
+      }, { status: 422 })
+    }
+
+    return NextResponse.json({ success: true, intelligence, mode: 'market_intelligence' })
+  } catch (err) {
+    console.error('[scout] error:', err)
+    return NextResponse.json({ error: 'Scout failed to respond' }, { status: 500 })
+  }
+}

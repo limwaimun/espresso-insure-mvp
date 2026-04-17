@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import PolicyUpload from './components/PolicyUpload';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -675,6 +676,8 @@ export default async function ClientProfilePage({ params }: PageProps) {
       </div>
       
       {/* == SECTION 4: POLICIES TABLE == */}
+      <PolicyUpload clientId={id} />
+      
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>

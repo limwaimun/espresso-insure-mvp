@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import PreferredInsurersSection from './components/PreferredInsurersSection';
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -222,6 +223,10 @@ export default function SettingsPage() {
             disabled
           />
         </div>
+
+        {/* Preferred Insurers */}
+        <PreferredInsurersSection profile={profile} />
+
       </div>
 
       {/* PLAN & BILLING */}
