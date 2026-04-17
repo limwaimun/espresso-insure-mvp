@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Upload, Check, X, Loader } from 'lucide-react'
-import { createClient } from '../../../lib/supabase/client'
+import { createClient } from '../../../../lib/supabase/client'
 
 interface PolicyUploadProps {
   clientId: string
