@@ -166,16 +166,27 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
   }
 
   async function handleDownload() {
-    const res = await fetch(`/api/policy-doc?policyId=${policyId}`)
-    const data = await res.json()
-    if (data.downloadUrl) {
+    try {
+      // Get the signed URL from our API
+      const res = await fetch(`/api/policy-doc?policyId=${policyId}`)
+      const data = await res.json()
+      if (!data.downloadUrl) return
+
+      // Fetch the actual file as a blob (bypasses cross-origin download restrictions)
+      const fileRes = await fetch(data.downloadUrl)
+      const blob = await fileRes.blob()
+
+      // Create a local blob URL and trigger download
+      const blobUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = data.downloadUrl
+      a.href = blobUrl
       a.download = data.fileName || 'policy.pdf'
-      a.target = '_blank'
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      console.error('Download failed')
     }
   }
 
