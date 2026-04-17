@@ -133,12 +133,6 @@ export default function ClientProfilePage({ params }: PageProps) {
     
     fetchAdditionalData();
   }, [client, id]);
-        }}>
-          ← Back to all clients
-        </Link>
-      </div>
-    );
-  }
   
   // Calculate metrics
   const activePolicies = policies?.filter(p => p.status === 'active').length || 0;
