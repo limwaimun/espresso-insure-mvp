@@ -23,6 +23,7 @@ export default function ClientProfilePage({ params }: PageProps) {
   const [conversations, setConversations] = useState<any>(null);
   const [claims, setClaims] = useState<any[]>([]);
   const [allAlerts, setAllAlerts] = useState<any[]>([]);
+  const [clientMessages, setClientMessages] = useState<any[]>([]);
   const supabase = createClient();
   
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         .eq('client_id', id);
       
       // Fetch messages for these conversations
-      let clientMessages: any[] = [];
+      let fetchedClientMessages: any[] = [];
       if (clientConvos && clientConvos.length > 0) {
         const convoIds = clientConvos.map((c: any) => c.id);
         const { data: msgs } = await supabase
@@ -71,7 +72,7 @@ export default function ClientProfilePage({ params }: PageProps) {
           .in('conversation_id', convoIds)
           .order('created_at', { ascending: false })
           .limit(10);
-        clientMessages = msgs || [];
+        fetchedClientMessages = msgs || [];
       }
       
       // Determine conversation status
@@ -79,10 +80,12 @@ export default function ClientProfilePage({ params }: PageProps) {
       if (clientConvos && clientConvos.length > 0) {
         conversations = {
           id: clientConvos[0].id,
-          status: clientMessages.length > 0 ? 'active' : 'waiting',
-          messages: clientMessages,
+          status: fetchedClientMessages.length > 0 ? 'active' : 'waiting',
+          messages: fetchedClientMessages,
         };
       }
+      
+      setClientMessages(fetchedClientMessages);
       
       setClient(clientData);
       setPolicies(policiesData || []);
