@@ -265,7 +265,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Interactive buttons — Edit + WhatsApp handled by client component */}
+        {/* Interactive buttons + policies table + modals — all in client component */}
         <ClientDetailInteractive
           clientId={id}
           clientName={client.name}
@@ -278,25 +278,30 @@ export default async function ClientProfilePage({ params }: PageProps) {
           ifaId={user?.id ?? ''}
           ifaName={ifaName}
           connectionStatus={connectionStatus}
-          policiesWithDocs={(policies ?? []).map(p => ({
+          policies={(policies ?? []).map(p => ({
             id: p.id,
-            documentName: p.document_name ?? null,
-            documentUrl: p.document_url ?? null,
+            insurer: p.insurer,
+            type: p.type,
+            premium: p.premium,
+            renewal_date: p.renewal_date,
+            status: p.status,
+            document_name: p.document_name ?? null,
+            document_url: p.document_url ?? null,
           }))}
         />
       </div>
 
       {/* == SECTION 2: METRIC CARDS == */}
-      <div className="metric-grid" style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {metrics.map((m, i) => (
-          <div key={i} className="card">
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#C9B99A', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '6px' }}>
+          <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '20px 24px' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#C9B99A', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '8px' }}>
               {m.label}
             </div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', fontWeight: 300, color: '#F5ECD7' }}>
+            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', fontWeight: 300, color: '#F5ECD7', lineHeight: 1 }}>
               {m.value}
             </div>
-            {m.subtitle && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#C9B99A', marginTop: '2px' }}>{m.subtitle}</div>}
+            {m.subtitle && <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '11px', color: '#C9B99A', marginTop: '6px' }}>{m.subtitle}</div>}
           </div>
         ))}
       </div>
@@ -355,63 +360,6 @@ export default async function ClientProfilePage({ params }: PageProps) {
                 This client is not yet connected to Maya on WhatsApp.
               </div>
               {/* WhatsApp setup button rendered by ClientDetailInteractive below */}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* == SECTION 4: POLICIES TABLE == */}
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="panel-title">Policies</span>
-          {/* Add Policy button rendered by ClientDetailInteractive */}
-          <span id="add-policy-trigger" />
-        </div>
-        <div className="panel-body">
-          {policies && policies.length > 0 ? (
-            <div className="table">
-              <table style={{ width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th>Insurer</th>
-                    <th>Type</th>
-                    <th>Premium</th>
-                    <th>Renewal Date</th>
-                    <th>Policy Doc</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(policies ?? []).map((policy: any) => {
-                    let pillClass = 'pill-ok';
-                    let statusText = 'Active';
-                    if (policy.renewal_date) {
-                      const today = new Date(); today.setHours(0, 0, 0, 0);
-                      const rd = new Date(policy.renewal_date); rd.setHours(0, 0, 0, 0);
-                      const days = Math.ceil((rd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                      if (days <= 30) { pillClass = 'pill-danger'; statusText = `Due in ${days} days`; }
-                      else if (days <= 90) { pillClass = 'pill-amber'; statusText = `Renews in ${days} days`; }
-                    }
-                    return (
-                      <tr key={policy.id}>
-                        <td>{policy.insurer || '—'}</td>
-                        <td>{policy.type || '—'}</td>
-                        <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
-                        <td>{formatDate(policy.renewal_date)}</td>
-                        <td>
-                          {/* PolicyDocCell rendered inline by ClientDetailInteractive via data attribute */}
-                          <span data-policy-doc={policy.id} data-doc-name={policy.document_name ?? ''} />
-                        </td>
-                        <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C9B99A' }}>
-              No policies tracked yet.
             </div>
           )}
         </div>
