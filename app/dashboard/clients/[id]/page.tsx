@@ -130,34 +130,6 @@ export default function ClientProfilePage({ params }: PageProps) {
     
     fetchAdditionalData();
   }, [client, id]);
-    .select('id')
-    .eq('client_id', id);
-  
-  // Fetch messages for these conversations
-  let clientMessages: any[] = [];
-  if (clientConvos && clientConvos.length > 0) {
-    const convoIds = clientConvos.map((c: any) => c.id);
-    const { data: msgs } = await supabase
-      .from('messages')
-      .select('*')
-      .in('conversation_id', convoIds)
-      .order('created_at', { ascending: false })
-      .limit(10);
-    clientMessages = msgs || [];
-  }
-  
-  // If client doesn't exist, show 404
-  if (!client) {
-    return (
-      <div style={{ width: '100%', textAlign: 'center', padding: '60px 20px' }}>
-        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '24px', color: '#F5ECD7', marginBottom: '16px' }}>
-          Client not found
-        </div>
-        <Link href="/dashboard/clients" style={{
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: '14px',
-          color: '#C8813A',
-          textDecoration: 'none',
         }}>
           ← Back to all clients
         </Link>
