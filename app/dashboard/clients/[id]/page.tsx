@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import PolicyUpload from './components/PolicyUpload';
+import PolicyUpload from '../components/PolicyUpload';
 
 interface PageProps {
   params: Promise<{ id: string }>;
