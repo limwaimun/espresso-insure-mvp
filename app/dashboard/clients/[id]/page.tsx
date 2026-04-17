@@ -20,6 +20,9 @@ export default function ClientProfilePage({ params }: PageProps) {
   const [showAddPolicy, setShowAddPolicy] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [ifaId, setIfaId] = useState<string>('');
+  const [conversations, setConversations] = useState<any>(null);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [allAlerts, setAllAlerts] = useState<any[]>([]);
   const supabase = createClient();
   
   useEffect(() => {
@@ -44,6 +47,43 @@ export default function ClientProfilePage({ params }: PageProps) {
         .eq('client_id', id)
         .order('renewal_date', { ascending: true });
       
+      // Fetch alerts for this client
+      const { data: alertsData } = await supabase
+        .from('alerts')
+        .select('*')
+        .eq('client_id', id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      // Fetch conversations for this client
+      const { data: clientConvos } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('client_id', id);
+      
+      // Fetch messages for these conversations
+      let clientMessages: any[] = [];
+      if (clientConvos && clientConvos.length > 0) {
+        const convoIds = clientConvos.map((c: any) => c.id);
+        const { data: msgs } = await supabase
+          .from('messages')
+          .select('*')
+          .in('conversation_id', convoIds)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        clientMessages = msgs || [];
+      }
+      
+      // Determine conversation status
+      let conversations = null;
+      if (clientConvos && clientConvos.length > 0) {
+        conversations = {
+          id: clientConvos[0].id,
+          status: clientMessages.length > 0 ? 'active' : 'waiting',
+          messages: clientMessages,
+        };
+      }
+      
       setClient(clientData);
       setPolicies(policiesData || []);
       setLoading(false);
@@ -52,35 +92,44 @@ export default function ClientProfilePage({ params }: PageProps) {
     fetchData();
   }, [id]);
   
-  // Fetch their conversations with messages for WhatsApp section
-  const { data: conversationsData } = await supabase
-    .from('conversations')
-    .select('*, messages(id, role, content, created_at)')
-    .eq('client_id', id)
-    .order('last_message_at', { ascending: false })
-    .limit(1);
-  
-  const conversations = conversationsData && conversationsData.length > 0 ? conversationsData[0] : null;
-  
-  // Fetch claims for this client
-  const { data: claims } = await supabase
-    .from('alerts')
-    .select('*')
-    .eq('client_id', id)
-    .eq('type', 'claim')
-    .order('created_at', { ascending: false });
-  
-  // Fetch all alerts for this client (for timeline)
-  const { data: allAlerts } = await supabase
-    .from('alerts')
-    .select('*')
-    .eq('client_id', id)
-    .order('created_at', { ascending: false })
-    .limit(10);
-  
-  // Fetch conversations for this client
-  const { data: clientConvos } = await supabase
-    .from('conversations')
+  // Fetch additional data in a separate effect
+  useEffect(() => {
+    async function fetchAdditionalData() {
+      if (!client) return;
+      
+      // Fetch conversations with messages for WhatsApp section
+      const { data: conversationsData } = await supabase
+        .from('conversations')
+        .select('*, messages(id, role, content, created_at)')
+        .eq('client_id', id)
+        .order('last_message_at', { ascending: false })
+        .limit(1);
+      
+      const convos = conversationsData && conversationsData.length > 0 ? conversationsData[0] : null;
+      
+      // Fetch claims for this client
+      const { data: claimsData } = await supabase
+        .from('alerts')
+        .select('*')
+        .eq('client_id', id)
+        .eq('type', 'claim')
+        .order('created_at', { ascending: false });
+      
+      // Fetch all alerts for this client (for timeline)
+      const { data: alertsData } = await supabase
+        .from('alerts')
+        .select('*')
+        .eq('client_id', id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      setConversations(convos);
+      setClaims(claimsData || []);
+      setAllAlerts(alertsData || []);
+    }
+    
+    fetchAdditionalData();
+  }, [client, id]);
     .select('id')
     .eq('client_id', id);
   
