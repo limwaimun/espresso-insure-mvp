@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2 } from 'lucide-react'
+import { createClient } from '../../../../lib/supabase/client'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -167,7 +168,15 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
   async function handleDownload() {
     const res = await fetch(`/api/policy-doc?policyId=${policyId}`)
     const data = await res.json()
-    if (data.downloadUrl) window.open(data.downloadUrl, '_blank')
+    if (data.downloadUrl) {
+      const a = document.createElement('a')
+      a.href = data.downloadUrl
+      a.download = data.fileName || 'policy.pdf'
+      a.target = '_blank'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
   }
 
   return (
@@ -220,6 +229,16 @@ export default function ClientDetailPage({
   coverageAnalysis, timeline, connectionStatus, calculatedTier, ifaId, ifaName,
 }: Props) {
   const router = useRouter()
+  const supabase = createClient()
+
+  // Fetch ifaId client-side — more reliable than server prop in this architecture
+  const [resolvedIfaId, setResolvedIfaId] = useState(ifaId)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.id) setResolvedIfaId(data.user.id)
+    })
+  }, [])
+
   const [showEdit, setShowEdit] = useState(false)
   const [showAddPolicy, setShowAddPolicy] = useState(false)
   const [showWAInstructions, setShowWAInstructions] = useState(false)
@@ -247,7 +266,7 @@ export default function ClientDetailPage({
     if (!editForm.name.trim()) { setEditError('Name is required'); return }
     setEditSaving(true)
     try {
-      const res = await fetch('/api/client-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId, ...editForm }) })
+      const res = await fetch('/api/client-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...editForm }) })
       if (!res.ok) { const d = await res.json(); setEditError(d.error ?? 'Failed'); setEditSaving(false); return }
       setShowEdit(false); router.refresh()
     } catch { setEditError('Something went wrong'); setEditSaving(false) }
@@ -255,12 +274,13 @@ export default function ClientDetailPage({
 
   async function savePolicy() {
     if (!policyForm.insurer || !policyForm.type || !policyForm.premium || !policyForm.renewal_date) { setPolicyError('Please fill in all fields'); return }
+    if (!resolvedIfaId) { setPolicyError('Session error — please refresh the page'); return }
     setPolicySaving(true)
     try {
-      const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId, ...policyForm, premium: parseFloat(policyForm.premium) }) })
+      const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...policyForm, premium: parseFloat(policyForm.premium) }) })
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
       setShowAddPolicy(false); router.refresh()
-    } catch { setPolicyError('Something went wrong'); setPolicySaving(false) }
+    } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
   }
 
   async function deletePolicy(policyId: string) {
@@ -268,7 +288,7 @@ export default function ClientDetailPage({
     try {
       await fetch('/api/policy-delete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policyId, ifaId }),
+        body: JSON.stringify({ policyId, ifaId: resolvedIfaId }),
       })
       setConfirmDeleteId(null); router.refresh()
     } catch { console.error('Delete failed') }
