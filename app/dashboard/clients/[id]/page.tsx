@@ -9,35 +9,36 @@ export default async function ClientProfilePage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: client } = await supabase.from('clients').select('*').eq('id', id).single();
+  // Run all independent queries in parallel — much faster than sequential awaits
+  const [
+    { data: client },
+    { data: policies },
+    { data: conversationsData },
+    { data: claims },
+    { data: allAlerts },
+    { data: clientConvos },
+    { data: { user } },
+  ] = await Promise.all([
+    supabase.from('clients').select('*').eq('id', id).single(),
+    supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true }),
+    supabase.from('conversations').select('*, messages(id, role, content, created_at)').eq('client_id', id).order('last_message_at', { ascending: false }).limit(1),
+    supabase.from('alerts').select('*').eq('client_id', id).eq('type', 'claim').order('created_at', { ascending: false }),
+    supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
+    supabase.from('conversations').select('id').eq('client_id', id),
+    supabase.auth.getUser(),
+  ])
 
-  const { data: policies } = await supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true });
+  const conversations = conversationsData?.[0] ?? null
 
-  const { data: conversationsData } = await supabase
-    .from('conversations')
-    .select('*, messages(id, role, content, created_at)')
-    .eq('client_id', id)
-    .order('last_message_at', { ascending: false })
-    .limit(1);
+  // Second round — depends on first round results, but run in parallel with each other
+  const [clientMessages, profileResult] = await Promise.all([
+    clientConvos && clientConvos.length > 0
+      ? supabase.from('messages').select('*').in('conversation_id', clientConvos.map((c: any) => c.id)).order('created_at', { ascending: false }).limit(10).then(r => r.data || [])
+      : Promise.resolve([]),
+    supabase.from('profiles').select('name').eq('id', user?.id ?? '').single(),
+  ])
 
-  const conversations = conversationsData?.[0] ?? null;
-
-  const { data: claims } = await supabase.from('alerts').select('*').eq('client_id', id).eq('type', 'claim').order('created_at', { ascending: false });
-
-  const { data: allAlerts } = await supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10);
-
-  const { data: clientConvos } = await supabase.from('conversations').select('id').eq('client_id', id);
-
-  let clientMessages: any[] = [];
-  if (clientConvos && clientConvos.length > 0) {
-    const convoIds = clientConvos.map((c: any) => c.id);
-    const { data: msgs } = await supabase.from('messages').select('*').in('conversation_id', convoIds).order('created_at', { ascending: false }).limit(10);
-    clientMessages = msgs || [];
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from('profiles').select('name').eq('id', user?.id ?? '').single();
-  const ifaName = profile?.name ?? 'Your Advisor';
+  const ifaName = profileResult.data?.name ?? 'Your Advisor'
 
   if (!client) {
     return (
