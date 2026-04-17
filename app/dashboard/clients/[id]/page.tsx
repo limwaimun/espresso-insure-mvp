@@ -1,28 +1,56 @@
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import PolicyUpload from '../components/PolicyUpload';
+import { useState, useEffect } from 'react';
+import PolicyDocCell from '../components/PolicyDocCell';
+import AddPolicyModal from '../components/AddPolicyModal';
+import EditClientModal from '../components/EditClientModal';
+import WhatsAppSetupButton from '../components/WhatsAppSetupButton';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
-export default async function ClientProfilePage({ params }: PageProps) {
-  const { id } = await params;
-  const supabase = await createClient();
+export default function ClientProfilePage({ params }: PageProps) {
+  const { id } = params;
+  const [client, setClient] = useState<any>(null);
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddPolicy, setShowAddPolicy] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [ifaId, setIfaId] = useState<string>('');
+  const supabase = createClient();
   
-  // Fetch client by ID
-  const { data: client } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  // Fetch their policies, ordered by renewal date
-  const { data: policies } = await supabase
-    .from('policies')
-    .select('*')
-    .eq('client_id', id)
-    .order('renewal_date', { ascending: true });
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setIfaId(user.id);
+      
+      // Fetch client by ID
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      // Fetch their policies, ordered by renewal date
+      const { data: policiesData } = await supabase
+        .from('policies')
+        .select('*')
+        .eq('client_id', id)
+        .order('renewal_date', { ascending: true });
+      
+      setClient(clientData);
+      setPolicies(policiesData || []);
+      setLoading(false);
+    }
+    
+    fetchData();
+  }, [id]);
   
   // Fetch their conversations with messages for WhatsApp section
   const { data: conversationsData } = await supabase
@@ -274,6 +302,22 @@ export default async function ClientProfilePage({ params }: PageProps) {
     };
   });
   
+  if (loading) {
+    return (
+      <div style={{ width: '100%', textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
+        Loading client details...
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div style={{ width: '100%', textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
+        Client not found
+      </div>
+    );
+  }
+  
   return (
     <div style={{ width: '100%' }}>
       <div style={{ marginBottom: '16px' }}>
@@ -418,20 +462,25 @@ export default async function ClientProfilePage({ params }: PageProps) {
               <span>📱</span> No WhatsApp
             </button>
           )}
-          <Link href={`/dashboard/clients/${id}/edit`} style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            color: '#C8813A',
-            textDecoration: 'none',
-            padding: '8px 16px',
-            border: '1px solid #C8813A',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}>
+          <button 
+            onClick={() => setShowEditClient(true)}
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
+              color: '#C8813A',
+              textDecoration: 'none',
+              padding: '8px 16px',
+              border: '1px solid #C8813A',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'none',
+              cursor: 'pointer',
+            }}
+          >
             <span>✏️</span> Edit
-          </Link>
+          </button>
         </div>
       </div>
       
@@ -638,57 +687,36 @@ export default async function ClientProfilePage({ params }: PageProps) {
               }}>
                 This client is not yet connected to Maya on WhatsApp.
               </div>
-              {client.whatsapp ? (
-                <a 
-                  href={`https://wa.me/${client.whatsapp.replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(client.name.split(' ')[0])}!%20I've%20set%20up%20Maya%2C%20my%20AI%20assistant%2C%20to%20help%20manage%20your%20insurance%20policies.%20She'll%20be%20in%20touch!`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '13px',
-                    color: '#120A06',
-                    textDecoration: 'none',
-                    padding: '10px 20px',
-                    background: '#C8813A',
-                    borderRadius: '4px',
-                    display: 'inline-block',
-                    fontWeight: 500,
-                  }}
-                >
-                  Invite to WhatsApp
-                </a>
-              ) : (
-                <div style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#C9B99A',
-                  padding: '10px 20px',
-                  background: 'rgba(200,129,58,0.1)',
-                  borderRadius: '4px',
-                  display: 'inline-block',
-                }}>
-                  No WhatsApp number available
-                </div>
-              )}
+              <WhatsAppSetupButton 
+                clientName={client.name}
+                clientWhatsApp={client.whatsapp}
+                ifaName={ifaId}
+                connectionStatus={conversations?.status || 'not_connected'}
+              />
             </div>
           )}
         </div>
       </div>
       
       {/* == SECTION 4: POLICIES TABLE == */}
-      <PolicyUpload clientId={id} />
-      
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <Link href="#" style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '12px',
-            color: '#C8813A',
-            textDecoration: 'none',
-          }}>
+          <button 
+            onClick={() => setShowAddPolicy(true)}
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              color: '#C8813A',
+              textDecoration: 'none',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
             + Add policy
-          </Link>
+          </button>
         </div>
         <div className="panel-body">
           {policies && policies.length > 0 ? (
@@ -701,6 +729,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
                     <th>Premium</th>
                     <th>Renewal Date</th>
                     <th>Status</th>
+                    <th>POLICY DOC</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -733,6 +762,14 @@ export default async function ClientProfilePage({ params }: PageProps) {
                         <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
+                        <td>
+                          <PolicyDocCell 
+                            policyId={policy.id}
+                            ifaId={ifaId}
+                            existingFileName={policy.document_name}
+                            existingFileUrl={policy.document_url}
+                          />
+                        </td>
                       </tr>
                     );
                   })}
@@ -915,6 +952,42 @@ export default async function ClientProfilePage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      {showAddPolicy && (
+        <AddPolicyModal
+          clientId={id}
+          ifaId={ifaId}
+          onClose={() => setShowAddPolicy(false)}
+          onAdded={() => {
+            // Refresh policies
+            supabase
+              .from('policies')
+              .select('*')
+              .eq('client_id', id)
+              .order('renewal_date', { ascending: true })
+              .then(({ data }) => setPolicies(data || []));
+            setShowAddPolicy(false);
+          }}
+        />
+      )}
+
+      {showEditClient && client && (
+        <EditClientModal
+          client={client}
+          onClose={() => setShowEditClient(false)}
+          onSaved={() => {
+            // Refresh client data
+            supabase
+              .from('clients')
+              .select('*')
+              .eq('id', id)
+              .single()
+              .then(({ data }) => setClient(data));
+            setShowEditClient(false);
+          }}
+        />
+      )}
     </div>
   );
 }
