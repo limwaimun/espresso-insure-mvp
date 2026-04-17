@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy } from 'lucide-react'
+import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -236,6 +236,8 @@ export default function ClientDetailPage({
   const [policyForm, setPolicyForm] = useState({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' })
   const [policySaving, setPolicySaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
@@ -259,6 +261,18 @@ export default function ClientDetailPage({
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
       setShowAddPolicy(false); router.refresh()
     } catch { setPolicyError('Something went wrong'); setPolicySaving(false) }
+  }
+
+  async function deletePolicy(policyId: string) {
+    setDeleting(true)
+    try {
+      await fetch('/api/policy-delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policyId, ifaId }),
+      })
+      setConfirmDeleteId(null); router.refresh()
+    } catch { console.error('Delete failed') }
+    setDeleting(false)
   }
 
   return (
@@ -380,7 +394,7 @@ export default function ClientDetailPage({
               <table style={{ width: '100%' }}>
                 <thead>
                   <tr>
-                    <th>Insurer</th><th>Type</th><th>Premium</th><th>Renewal Date</th><th>Policy Doc</th><th>Status</th>
+                    <th>Insurer</th><th>Type</th><th>Premium</th><th>Renewal Date</th><th>Policy Doc</th><th>Status</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,6 +408,7 @@ export default function ClientDetailPage({
                       else if (days <= 30) { pillClass = 'pill-danger'; statusText = `Due in ${days} days` }
                       else if (days <= 90) { pillClass = 'pill-amber'; statusText = `Renews in ${days} days` }
                     }
+                    const isConfirming = confirmDeleteId === policy.id
                     return (
                       <tr key={policy.id}>
                         <td>{policy.insurer || '—'}</td>
@@ -402,6 +417,26 @@ export default function ClientDetailPage({
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} /></td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
+                        <td>
+                          {isConfirming ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <button onClick={() => deletePolicy(policy.id)} disabled={deleting}
+                                style={{ fontSize: 11, color: '#D06060', background: 'rgba(208,96,96,0.1)', border: '1px solid #D06060', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                                {deleting ? '…' : 'Confirm'}
+                              </button>
+                              <button onClick={() => setConfirmDeleteId(null)}
+                                style={{ fontSize: 11, color: '#C9B99A', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setConfirmDeleteId(policy.id)}
+                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.4, display: 'flex', alignItems: 'center' }}
+                              title="Delete policy">
+                              <Trash2 size={13} color="#D06060" />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
