@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Upload, FileText, Check, X, Loader } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, Check, X, Loader } from 'lucide-react'
+import { createClient } from '../../lib/supabase/client'
 
 interface PolicyUploadProps {
   clientId: string
@@ -14,7 +15,15 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
   const [state, setState] = useState<UploadState>('idle')
   const [message, setMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
+  const [ifaId, setIfaId] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setIfaId(user.id)
+    })
+  }, [])
 
   async function handleFile(file: File) {
     if (file.type !== 'application/pdf') {
@@ -29,6 +38,7 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
     const formData = new FormData()
     formData.append('file', file)
     formData.append('clientId', clientId)
+    formData.append('ifaId', ifaId)
 
     try {
       const res = await fetch('/api/policy-upload', {
@@ -71,18 +81,13 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const borderColor = dragOver
-    ? '#C8813A'
-    : state === 'success'
-    ? '#5AB87A'
-    : state === 'error'
-    ? '#D06060'
+  const borderColor = dragOver ? '#C8813A'
+    : state === 'success' ? '#5AB87A'
+    : state === 'error' ? '#D06060'
     : '#2E1A0E'
 
-  const bgColor = dragOver ? '#3D2215' : '#120A06'
-
   return (
-    <div>
+    <div style={{ marginBottom: 16 }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -90,7 +95,6 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
         onChange={handleInputChange}
         style={{ display: 'none' }}
       />
-
       <div
         onClick={() => state === 'idle' && fileInputRef.current?.click()}
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
@@ -99,9 +103,9 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
         style={{
           border: `1px dashed ${borderColor}`,
           borderRadius: 10,
-          padding: '20px 16px',
+          padding: '18px 16px',
           cursor: state === 'idle' ? 'pointer' : 'default',
-          background: bgColor,
+          background: dragOver ? '#3D2215' : '#120A06',
           transition: 'all 0.15s ease',
           display: 'flex',
           flexDirection: 'column',
@@ -112,35 +116,32 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
       >
         {state === 'idle' && (
           <>
-            <Upload size={20} color="#C8813A" />
+            <Upload size={18} color="#C8813A" />
             <div>
               <p style={{ fontSize: 13, color: '#F5ECD7', margin: 0, fontWeight: 500 }}>
                 Upload policy PDF
               </p>
               <p style={{ fontSize: 11, color: '#C9B99A', margin: '3px 0 0' }}>
-                Maya will read and extract all policy details automatically
+                Maya reads and extracts all policy details automatically
               </p>
             </div>
           </>
         )}
-
         {state === 'uploading' && (
           <>
-            <Loader size={20} color="#C8813A" style={{ animation: 'spin 1s linear infinite' }} />
+            <Loader size={18} color="#C8813A" style={{ animation: 'spin 1s linear infinite' }} />
             <p style={{ fontSize: 13, color: '#C9B99A', margin: 0 }}>{message}</p>
           </>
         )}
-
         {state === 'success' && (
           <>
-            <Check size={20} color="#5AB87A" />
+            <Check size={18} color="#5AB87A" />
             <p style={{ fontSize: 13, color: '#5AB87A', margin: 0, fontWeight: 500 }}>{message}</p>
           </>
         )}
-
         {state === 'error' && (
           <>
-            <X size={20} color="#D06060" />
+            <X size={18} color="#D06060" />
             <p style={{ fontSize: 13, color: '#D06060', margin: 0 }}>{message}</p>
             <button
               onClick={e => { e.stopPropagation(); setState('idle'); setMessage('') }}
@@ -156,7 +157,6 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
           </>
         )}
       </div>
-
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
