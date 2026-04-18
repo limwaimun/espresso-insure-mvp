@@ -66,18 +66,23 @@ export default function ClaimsPage() {
   async function createClaim() {
     if (!newForm.client_id || !newForm.title) return
     setSaving(true)
-    await supabase.from('alerts').insert({
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const { error } = await supabase.from('alerts').insert({
       client_id: newForm.client_id,
+      ifa_id: user.id,
       title: newForm.title,
       body: newForm.body,
       priority: newForm.priority,
       resolved: false,
       type: 'claim',
     })
-    setNewForm({ client_id: '', title: '', body: '', priority: 'medium' })
-    setShowNew(false)
+    if (!error) {
+      setNewForm({ client_id: '', title: '', body: '', priority: 'medium' })
+      setShowNew(false)
+      load()
+    }
     setSaving(false)
-    load()
   }
 
   function openMayaModal(claim: Claim) {
