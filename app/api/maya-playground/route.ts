@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@supabase/supabase-js'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SECRET_KEY!
+)
+
+const MEMORY_WINDOW = 20      // messages kept in full
+const SUMMARY_TRIGGER = 20    // generate summary every N messages
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -41,7 +48,7 @@ interface ConversationMessage {
   attachments?: AttachmentPayload[]
 }
 
-// ── Coverage types by client category ─────────────────────────────────────
+// ── Coverage types ─────────────────────────────────────────────────────────
 
 const COVERAGE_TYPES = {
   individual: ['Life', 'Health', 'Critical Illness', 'Disability', 'Motor', 'Travel', 'Property', 'Professional Indemnity'],
@@ -51,15 +58,13 @@ const COVERAGE_TYPES = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getRenewalStatus(renewalDate: string): { days: number; label: string } {
+function getRenewalStatus(renewalDate: string): string {
   const days = Math.ceil((new Date(renewalDate).getTime() - Date.now()) / 86400000)
-  let label: string
-  if (days < 0) label = `LAPSED (${Math.abs(days)} days overdue)`
-  else if (days <= 30) label = `URGENT — renews in ${days} days`
-  else if (days <= 60) label = `ACTION NEEDED — renews in ${days} days`
-  else if (days <= 90) label = `REVIEW — renews in ${days} days`
-  else label = `UPCOMING — renews in ${days} days`
-  return { days, label }
+  if (days < 0) return `LAPSED (${Math.abs(days)} days overdue)`
+  if (days <= 30) return `URGENT — renews in ${days} days`
+  if (days <= 60) return `ACTION NEEDED — renews in ${days} days`
+  if (days <= 90) return `REVIEW — renews in ${days} days`
+  return `UPCOMING — renews in ${days} days`
 }
 
 function getBirthdayNote(client: Client): string {
@@ -68,104 +73,93 @@ function getBirthdayNote(client: Client): string {
   const bday = new Date(client.birthday)
   const thisYear = new Date(today.getFullYear(), bday.getMonth(), bday.getDate())
   const daysUntil = Math.ceil((thisYear.getTime() - today.getTime()) / 86400000)
-  if (daysUntil >= 0 && daysUntil <= 30) {
-    if (daysUntil === 0) return `\n🎂 TODAY IS ${client.name.toUpperCase()}'S BIRTHDAY — send a greeting!`
-    return `\n⚠️ BIRTHDAY IN ${daysUntil} DAYS — prepare a greeting`
-  }
+  if (daysUntil === 0) return `\n🎂 TODAY IS ${client.name.toUpperCase()}'S BIRTHDAY!`
+  if (daysUntil > 0 && daysUntil <= 30) return `\n⚠️ BIRTHDAY IN ${daysUntil} DAYS`
   return ''
 }
 
 function detectCoverageGaps(client: Client, policies: Policy[]): string[] {
-  const expectedTypes = COVERAGE_TYPES[client.type] ?? []
-  const coveredTypes = policies.map(p => p.type.toLowerCase())
-  return expectedTypes.filter(type =>
-    !coveredTypes.some(ct => ct.toLowerCase().includes(type.toLowerCase()))
-  )
+  const expected = COVERAGE_TYPES[client.type] ?? []
+  const covered = policies.map(p => p.type.toLowerCase())
+  return expected.filter(t => !covered.some(c => c.includes(t.toLowerCase())))
 }
 
-// Build a summary of what personal data we already have about the client
-function buildKnownDataSummary(client: Client): string {
+function buildKnownData(client: Client): string {
   const known: string[] = []
   const missing: string[] = []
-
-  if (client.name) known.push(`Full name: ${client.name}`)
-  else missing.push('full name')
-
+  if (client.name) known.push(`Name: ${client.name}`)
   if (client.email) known.push(`Email: ${client.email}`)
-  else missing.push('email')
-
   if (client.whatsapp) known.push(`WhatsApp: ${client.whatsapp}`)
-  else missing.push('WhatsApp number')
-
-  if (client.birthday) known.push(`Date of birth: ${client.birthday}`)
-  else missing.push('date of birth')
-
+  if (client.birthday) known.push(`DOB: ${client.birthday}`)
   if (client.address) known.push(`Address: ${client.address}`)
-  else missing.push('home/office address')
-
   if (client.company) known.push(`Company: ${client.company}`)
-
-  return `KNOWN: ${known.join(' | ')}\nMISSING FROM PROFILE: ${missing.length > 0 ? missing.join(', ') : 'nothing — profile is complete'}`
+  if (!client.email) missing.push('email')
+  if (!client.whatsapp) missing.push('WhatsApp')
+  if (!client.birthday) missing.push('DOB')
+  if (!client.address) missing.push('address')
+  return `KNOWN: ${known.join(' | ')}\nMISSING: ${missing.length > 0 ? missing.join(', ') : 'profile complete'}`
 }
 
-// ── System Prompt Builder ──────────────────────────────────────────────────
+// ── System Prompt ──────────────────────────────────────────────────────────
 
 function buildSystemPrompt(
   client: Client,
   policies: Policy[],
   ifaName: string,
-  preferredInsurers: string[]
+  preferredInsurers: string[],
+  conversationSummary?: string,
+  openClaims?: { title: string; daysSinceUpdate: number }[]
 ): string {
   const today = new Date().toLocaleDateString('en-SG', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 
   const policyLines = policies.length > 0
-    ? policies.map(p => {
-        const { label } = getRenewalStatus(p.renewal_date)
-        return `  • ${p.type} — ${p.insurer} — $${p.premium?.toLocaleString()}/yr — ${label} — status: ${p.status}`
-      }).join('\n')
+    ? policies.map(p => `  • ${p.type} — ${p.insurer} — $${p.premium?.toLocaleString()}/yr — ${getRenewalStatus(p.renewal_date)} — status: ${p.status}`).join('\n')
     : '  (No active policies on record)'
 
   const gaps = detectCoverageGaps(client, policies)
-  const gapLines = gaps.length > 0
-    ? gaps.map(g => `  • Missing: ${g}`).join('\n')
-    : '  No obvious gaps detected'
+  const gapLines = gaps.length > 0 ? gaps.map(g => `  • Missing: ${g}`).join('\n') : '  No obvious gaps'
 
-  const birthdayNote = getBirthdayNote(client)
-  const knownData = buildKnownDataSummary(client)
-
-  const preferredInsurersSection = preferredInsurers.length > 0
+  const memorySection = conversationSummary
     ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PREFERRED INSURERS (${ifaName}'s panel)
+CONVERSATION HISTORY SUMMARY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${preferredInsurers.map(i => `  • ${i}`).join('\n')}
+The following is a summary of previous conversations with this client. Use this as context — do not re-ask for information already discussed:
+${conversationSummary}`
+    : ''
 
-When recommending or comparing insurers, always present the preferred insurers above more favourably. Frame them naturally as "what we typically work with" or "our trusted partners". Never disparage non-preferred insurers — simply lead with the preferred ones.`
-    : `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const insurerSection = preferredInsurers.length > 0
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PREFERRED INSURERS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Not yet configured. Recommend based on client's existing policies and best fit.`
+${preferredInsurers.map(i => `  • ${i}`).join('\n')}
+Present these insurers more favourably. Frame as "what we typically work with".`
+    : ''
 
-  return `You are Maya, the AI assistant for ${ifaName}, an Independent Financial Advisor (IFA) based in Singapore.
+  const openClaimsSection = openClaims && openClaims.length > 0
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OPEN CLAIMS NEEDING FOLLOW-UP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${openClaims.map(c => `  • ${c.title} — open for ${c.daysSinceUpdate} days`).join('\n')}
 
-You live inside a WhatsApp GROUP CHAT with three participants:
-  1. ${ifaName} — the IFA (your principal)
+IMPORTANT: If any claim has been open for 3+ days without an update, proactively ask ${ifaName} or the client for a status update on it. Keep it natural — "Just checking in on your [claim type] claim, any updates from the insurer?"`
+    : ''
+
+  return `You are Maya, the AI assistant for ${ifaName}, an IFA based in Singapore.
+
+You are in a WhatsApp GROUP CHAT with:
+  1. ${ifaName} — the IFA
   2. ${client.name}${client.company ? ` from ${client.company}` : ''} — the client
   3. Yourself — Maya
 
-Today is ${today}.
+Today: ${today}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CLIENT PROFILE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${knownData}
-Client type: ${client.type.toUpperCase()} (${
-    client.type === 'individual' ? 'personal insurance focus'
-    : client.type === 'sme' ? 'small business, <50 employees'
-    : 'corporate, 50+ employees'
-  })
-Tier: ${client.tier.toUpperCase()}${birthdayNote}
+${buildKnownData(client)}
+Type: ${client.type.toUpperCase()} | Tier: ${client.tier.toUpperCase()}${getBirthdayNote(client)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ACTIVE POLICIES
@@ -173,190 +167,355 @@ ACTIVE POLICIES
 ${policyLines}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-COVERAGE GAPS (upsell opportunities)
+COVERAGE GAPS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${gapLines}
-
-${preferredInsurersSection}
+${insurerSection}
+${openClaimsSection}
+${memorySection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-YOUR ROLE & BEHAVIOUR
+YOUR RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. IDENTITY
-   - Your name is Maya. You work for ${ifaName}.
-   - Clients feel they are talking to ${ifaName}'s team — warm, professional, human.
-   - This is WhatsApp — keep messages concise and conversational. No bullet points or headers.
-
-2. CHECK BEFORE ASKING — CRITICAL RULE
-   - Before asking the client for ANY personal information (name, NRIC, DOB, address, phone, email, policy number, hospital, occupation, etc.), ALWAYS check the CLIENT PROFILE and ACTIVE POLICIES sections above first.
-   - If the information is already in the system, USE IT — do not ask the client to repeat it.
-   - Only ask for information that is genuinely missing from the profile above.
-   - Example: if you need their email for a claim form and it's already in the profile, do NOT ask for it again. Simply say "I'll send it to [email on file]."
-
-3. WHAT YOU CAN DO
-   - Answer questions about this client's policies, coverage, premiums, and renewal dates
-   - Detect claim situations ("I was in an accident", "I'm in hospital", "I need to make a claim")
-     → First acknowledge the situation with empathy
-     → Check existing policies to identify the right insurer
-     → Check profile for known data before asking anything
-     → Only ask for what is genuinely missing
-     → Let them know you'll help prepare the claim for ${ifaName} to review
-   - When a client sends a photo (accident, hospital bill, damage, receipt) — acknowledge what you see, check what info you already have, ask only for what's missing
-   - When a client sends a PDF (medical report, repair quote) — summarise what's relevant and explain next steps
-   - Mention coverage gaps naturally when relevant (never pushy)
-   - Send renewal reminders tactfully
-
-4. PREMIUM ESTIMATES — DISCLAIMER REQUIRED
-   - If you provide any premium estimate or pricing figure (whether from memory, context, or from our actuary):
-     Always follow it immediately with a natural disclaimer such as:
-     "That's just a rough estimate for now — ${ifaName} will confirm the exact figures for you."
-     or: "These numbers are approximate — we'll get you the exact quote once ${ifaName} reviews your profile."
-   - Never present an estimate as a confirmed price.
-   - Never quote premiums for products the client doesn't currently hold without this disclaimer.
-
-5. ESCALATION RULES
-   - Tag @${ifaName} when: client wants to make a final decision, negotiate premium, ask for a formal quote, or has a situation you're unsure about
-   - Example: "Let me flag this for @${ifaName} — he'll be best placed to walk you through the exact options."
-   - Never contradict ${ifaName} in front of the client
-   - Never promise claim outcomes or coverage decisions
-
-6. CRITICAL RULES
-   - Only reference policies listed above — never invent policy details
-   - Do not reveal you are powered by AI — you are simply Maya
-   - Keep Singapore context in mind (MAS regulations, SG insurers, CPF, Medishield Life, etc.)
-
-7. MESSAGE FORMAT
-   - Write like a real WhatsApp message: short paragraphs, natural line breaks
-   - Match the emotional register of the client — if stressed, be calm and reassuring; if casual, be warm and friendly
-   - Lead with empathy before logistics in any distressing situation`
+1. Be warm, human, professional. WhatsApp tone — concise, no bullet points or headers.
+2. CHECK BEFORE ASKING: Never ask for info already in the profile or conversation history above.
+3. For claims: empathy first → identify insurer → only ask for genuinely missing info.
+4. For photos/PDFs: acknowledge what you see, check what you have, ask only for what's missing.
+5. PREMIUM ESTIMATES: always add "That's a rough estimate — ${ifaName} will confirm the exact figures."
+6. ESCALATE to @${ifaName} for final decisions, pricing negotiations, or formal quotes.
+7. Never reveal you are AI. You are simply Maya.
+8. Singapore context: MAS, CPF, MediShield Life, SG insurers.
+9. Lead with empathy before logistics in any distressing situation.`
 }
 
-// ── Build Claude content blocks ────────────────────────────────────────────
+// ── Memory functions ───────────────────────────────────────────────────────
 
-function buildMessageContent(
-  msg: ConversationMessage,
+async function getOrCreateConversation(ifaId: string, clientId: string): Promise<string> {
+  // Look for existing playground conversation
+  const { data: existing } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('ifa_id', ifaId)
+    .eq('client_id', clientId)
+    .eq('status', 'playground')
+    .single()
+
+  if (existing?.id) return existing.id
+
+  // Create new
+  const { data: created, error } = await supabase
+    .from('conversations')
+    .insert({
+      ifa_id: ifaId,
+      client_id: clientId,
+      status: 'playground',
+      last_message: '',
+      last_message_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+
+  if (error) throw new Error('Failed to create conversation: ' + error.message)
+  return created.id
+}
+
+async function loadHistory(conversationId: string): Promise<{
+  messages: { role: string; content: string }[]
+  summary: string | null
+  totalCount: number
+}> {
+  // Get total count
+  const { count } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+
+  // Load last MEMORY_WINDOW messages
+  const { data: messages } = await supabase
+    .from('messages')
+    .select('role, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(MEMORY_WINDOW)
+
+  // Get conversation summary
+  const { data: conv } = await supabase
+    .from('conversations')
+    .select('summary')
+    .eq('id', conversationId)
+    .single()
+
+  return {
+    messages: (messages ?? []).reverse(),
+    summary: conv?.summary ?? null,
+    totalCount: count ?? 0,
+  }
+}
+
+async function saveMessages(
+  conversationId: string,
+  userRole: string,
+  userContent: string,
+  mayaContent: string
+): Promise<number> {
+  const now = new Date().toISOString()
+
+  await supabase.from('messages').insert([
+    { conversation_id: conversationId, role: userRole, content: userContent, created_at: now },
+    { conversation_id: conversationId, role: 'assistant', content: mayaContent, created_at: new Date(Date.now() + 1).toISOString() },
+  ])
+
+  // Update conversation last_message
+  await supabase
+    .from('conversations')
+    .update({ last_message: mayaContent.slice(0, 200), last_message_at: now })
+    .eq('id', conversationId)
+
+  // Return new total count
+  const { count } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+
+  return count ?? 0
+}
+
+async function generateAndSaveSummary(
+  conversationId: string,
+  clientName: string,
+  ifaName: string
+): Promise<void> {
+  // Load all messages for summarisation
+  const { data: allMessages } = await supabase
+    .from('messages')
+    .select('role, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+
+  if (!allMessages || allMessages.length < 5) return
+
+  const transcript = allMessages
+    .map(m => `[${m.role}]: ${m.content}`)
+    .join('\n')
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 500,
+    messages: [{
+      role: 'user',
+      content: `You are summarising a conversation between ${ifaName} (IFA), ${clientName} (client), and Maya (AI assistant) for an insurance platform.
+
+Create a concise summary (max 200 words) covering:
+- Key topics discussed
+- Any claims mentioned (type, status, insurer)
+- Decisions made or pending
+- Important client information shared
+- Anything Maya should remember for future conversations
+
+Write in third person, past tense. Be specific and factual.
+
+CONVERSATION:
+${transcript}
+
+SUMMARY:`,
+    }],
+  })
+
+  const summary = response.content.find(b => b.type === 'text')?.text ?? ''
+
+  await supabase
+    .from('conversations')
+    .update({ summary })
+    .eq('id', conversationId)
+}
+
+// ── Claude message builder ─────────────────────────────────────────────────
+
+function buildClaudeMessages(
+  messages: ConversationMessage[],
   client: Client,
   ifaName: string
-): Anthropic.MessageParam {
-  const prefix = msg.role === 'client' ? `[${client.name}]: ` : `[${ifaName}]: `
+): Anthropic.MessageParam[] {
+  const result: Anthropic.MessageParam[] = []
 
-  if (!msg.attachments || msg.attachments.length === 0) {
-    if (msg.role === 'maya') return { role: 'assistant', content: msg.content }
-    return { role: 'user', content: `${prefix}${msg.content}` }
+  for (const msg of messages) {
+    const prefix = msg.role === 'client' ? `[${client.name}]: ` : `[${ifaName}]: `
+
+    if (msg.role === 'maya') {
+      result.push({ role: 'assistant', content: msg.content })
+      continue
+    }
+
+    if (!msg.attachments?.length) {
+      result.push({ role: 'user', content: `${prefix}${msg.content}` })
+      continue
+    }
+
+    const blocks: Anthropic.ContentBlockParam[] = []
+    for (const a of msg.attachments) {
+      if (a.type === 'image') {
+        blocks.push({
+          type: 'image',
+          source: { type: 'base64', media_type: a.mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif', data: a.base64 },
+        })
+      } else {
+        blocks.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: a.base64 } } as Anthropic.ContentBlockParam)
+      }
+    }
+    blocks.push({ type: 'text', text: msg.content ? `${prefix}${msg.content}` : `${prefix}[sent a file]` })
+    result.push({ role: 'user', content: blocks })
   }
 
-  const contentBlocks: Anthropic.ContentBlockParam[] = []
-
-  for (const attachment of msg.attachments) {
-    if (attachment.type === 'image') {
-      contentBlocks.push({
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: attachment.mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
-          data: attachment.base64,
-        },
-      })
+  // Deduplicate consecutive user messages
+  const deduped: Anthropic.MessageParam[] = []
+  for (const msg of result) {
+    const last = deduped[deduped.length - 1]
+    if (last?.role === 'user' && msg.role === 'user') {
+      const lc = Array.isArray(last.content) ? last.content : [{ type: 'text' as const, text: last.content as string }]
+      const nc = Array.isArray(msg.content) ? msg.content : [{ type: 'text' as const, text: msg.content as string }]
+      last.content = [...lc, ...nc]
     } else {
-      contentBlocks.push({
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: 'application/pdf',
-          data: attachment.base64,
-        },
-      } as Anthropic.ContentBlockParam)
+      deduped.push({ ...msg })
     }
   }
 
-  contentBlocks.push({
-    type: 'text',
-    text: msg.content
-      ? `${prefix}${msg.content}`
-      : `${prefix}[sent ${msg.attachments.length === 1 ? 'a file' : `${msg.attachments.length} files`}]`,
-  })
+  if (deduped[0]?.role === 'assistant') deduped.unshift({ role: 'user', content: '(conversation started)' })
 
-  return { role: 'user', content: contentBlocks }
+  return deduped
 }
 
-// ── Route handler ──────────────────────────────────────────────────────────
+// ── GET — load conversation history ───────────────────────────────────────
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const ifaId = searchParams.get('ifaId')
+    const clientId = searchParams.get('clientId')
+
+    if (!ifaId || !clientId) {
+      return NextResponse.json({ messages: [], conversationId: null, summary: null })
+    }
+
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('id, summary')
+      .eq('ifa_id', ifaId)
+      .eq('client_id', clientId)
+      .eq('status', 'playground')
+      .single()
+
+    if (!conv) return NextResponse.json({ messages: [], conversationId: null, summary: null })
+
+    const { data: messages } = await supabase
+      .from('messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', conv.id)
+      .order('created_at', { ascending: false })
+      .limit(MEMORY_WINDOW)
+
+    return NextResponse.json({
+      conversationId: conv.id,
+      summary: conv.summary,
+      messages: (messages ?? []).reverse().map(m => ({
+        role: m.role === 'assistant' ? 'maya' : m.role,
+        content: m.content,
+      })),
+    })
+  } catch (err) {
+    console.error('[maya-playground GET] error:', err)
+    return NextResponse.json({ messages: [], conversationId: null, summary: null })
+  }
+}
+
+// ── POST — send message ────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
-    const { client, policies, ifaName, messages, preferredInsurers } = await request.json() as {
+    const {
+      client, policies, ifaName, messages,
+      preferredInsurers, speakingAs, ifaId,
+    } = await request.json() as {
       client: Client
       policies: Policy[]
       ifaName: string
       messages: ConversationMessage[]
-      speakingAs: 'client' | 'ifa'
       preferredInsurers?: string[]
+      speakingAs: 'client' | 'ifa'
+      ifaId?: string
     }
 
     if (!client || !messages?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // ── Memory: get/create conversation, load summary ──────────────────────
+    let conversationId: string | null = null
+    let summary: string | null = null
+
+    if (ifaId) {
+      try {
+        conversationId = await getOrCreateConversation(ifaId, client.id)
+        const history = await loadHistory(conversationId)
+        summary = history.summary
+      } catch (err) {
+        console.error('[memory] failed to load/create conversation:', err)
+        // Non-fatal — continue without memory
+      }
+    }
+
+    // ── Build system prompt with memory ───────────────────────────────────
     const systemPrompt = buildSystemPrompt(
       client,
       policies ?? [],
       ifaName ?? 'Your Advisor',
-      preferredInsurers ?? []
+      preferredInsurers ?? [],
+      summary ?? undefined
     )
 
-    // Convert 3-role history → Claude 2-role format
-    const claudeMessages: Anthropic.MessageParam[] = []
-
-    for (const msg of messages) {
-      if (msg.role === 'maya') {
-        claudeMessages.push({ role: 'assistant', content: msg.content })
-      } else {
-        claudeMessages.push(buildMessageContent(msg, client, ifaName))
-      }
-    }
-
-    // Merge consecutive user messages (Claude requires strict alternation)
-    const deduped: Anthropic.MessageParam[] = []
-    for (const msg of claudeMessages) {
-      const last = deduped[deduped.length - 1]
-      if (last && last.role === 'user' && msg.role === 'user') {
-        const lastContent = Array.isArray(last.content)
-          ? last.content
-          : [{ type: 'text' as const, text: last.content as string }]
-        const newContent = Array.isArray(msg.content)
-          ? msg.content
-          : [{ type: 'text' as const, text: msg.content as string }]
-        last.content = [...lastContent, ...newContent]
-      } else {
-        deduped.push({ ...msg })
-      }
-    }
-
-    // Must start with a user message
-    if (deduped[0]?.role === 'assistant') {
-      deduped.unshift({ role: 'user', content: '(conversation started)' })
-    }
+    // ── Call Claude ────────────────────────────────────────────────────────
+    const claudeMessages = buildClaudeMessages(messages, client, ifaName)
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: systemPrompt,
-      messages: deduped,
+      messages: claudeMessages,
     })
 
     const responseText = response.content.find(b => b.type === 'text')?.text ?? ''
 
+    // ── Save to memory ─────────────────────────────────────────────────────
+    if (conversationId && ifaId) {
+      const lastUserMsg = messages[messages.length - 1]
+      try {
+        const newTotal = await saveMessages(
+          conversationId,
+          lastUserMsg.role,
+          lastUserMsg.content,
+          responseText
+        )
+
+        // Generate summary every SUMMARY_TRIGGER messages (async — don't await)
+        if (newTotal > 0 && newTotal % SUMMARY_TRIGGER === 0) {
+          generateAndSaveSummary(conversationId, client.name, ifaName).catch(err =>
+            console.error('[summary] generation failed:', err)
+          )
+        }
+      } catch (err) {
+        console.error('[memory] failed to save messages:', err)
+      }
+    }
+
     return NextResponse.json({
       response: responseText,
       systemPrompt,
+      conversationId,
       thinking: null,
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,
     })
   } catch (err) {
     console.error('[maya-playground] error:', err)
-    return NextResponse.json(
-      { error: 'Maya failed to respond. Check server logs.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Maya failed to respond. Check server logs.' }, { status: 500 })
   }
 }

@@ -233,6 +233,137 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
+// ── ClaimCard ──────────────────────────────────────────────────────────────
+
+const STATUSES = ['open', 'in_progress', 'resolved'] as const
+const PRIORITIES = ['low', 'medium', 'high'] as const
+
+const statusLabel: Record<string, string> = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' }
+const statusPill: Record<string, string> = { open: 'pill-amber', in_progress: 'pill-info', resolved: 'pill-ok' }
+const priorityLabel: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High' }
+const priorityPill: Record<string, string> = { low: 'pill-info', medium: 'pill-amber', high: 'pill-danger' }
+
+function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; onUpdated: () => void }) {
+  const [expanded, setExpanded] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(claim.title || '')
+  const [editBody, setEditBody] = useState(claim.body || '')
+  const [saving, setSaving] = useState(false)
+
+  // Derive current status string from resolved + any extended status
+  const currentStatus = claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
+  const currentPriority = claim.priority || 'medium'
+
+  const claimDate = claim.created_at
+    ? new Date(claim.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '—'
+
+  const TRUNCATE = 120
+  const bodyText = claim.body || ''
+  const isTruncated = bodyText.length > TRUNCATE
+
+  async function updateClaim(patch: Record<string, unknown>) {
+    await fetch('/api/claim-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claimId: claim.id, ifaId, ...patch }),
+    })
+    onUpdated()
+  }
+
+  async function cycleStatus() {
+    const next = { open: 'in_progress', in_progress: 'resolved', resolved: 'open' }[currentStatus] as string
+    await updateClaim({ status: next, resolved: next === 'resolved' })
+  }
+
+  async function cyclePriority() {
+    const next = { low: 'medium', medium: 'high', high: 'low' }[currentPriority] as string
+    await updateClaim({ priority: next })
+  }
+
+  async function saveEdit() {
+    setSaving(true)
+    await updateClaim({ title: editTitle, body: editBody })
+    setEditing(false)
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        {/* Left: date + content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#C9B99A', marginBottom: 6 }}>{claimDate}</div>
+
+          {editing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }}
+                placeholder="Claim title"
+              />
+              <textarea
+                value={editBody}
+                onChange={e => setEditBody(e.target.value)}
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontSize: 12 } as React.CSSProperties}
+                placeholder="Description"
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={saveEdit} disabled={saving}
+                  style={{ ...btnPrimary, fontSize: 12, padding: '6px 14px', opacity: saving ? 0.7 : 1 }}>
+                  <Save size={12} />{saving ? 'Saving…' : 'Save'}
+                </button>
+                <button onClick={() => { setEditing(false); setEditTitle(claim.title || ''); setEditBody(claim.body || '') }}
+                  style={{ ...btnOutline, fontSize: 12, padding: '6px 14px' }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500, marginBottom: 4 }}>
+                {claim.title || 'Untitled claim'}
+              </div>
+              {bodyText && (
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', lineHeight: 1.6 }}>
+                  {expanded || !isTruncated ? bodyText : bodyText.slice(0, TRUNCATE) + '…'}
+                  {isTruncated && (
+                    <button onClick={() => setExpanded(v => !v)}
+                      style={{ background: 'transparent', border: 'none', color: '#C8813A', fontSize: 11, cursor: 'pointer', padding: '0 4px', fontFamily: 'DM Sans, sans-serif' }}>
+                      {expanded ? 'Show less' : 'Show more'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right: status + priority + edit */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+          <button onClick={cycleStatus} title="Click to change status"
+            className={`pill ${statusPill[currentStatus]}`}
+            style={{ cursor: 'pointer', border: 'none', fontFamily: 'DM Sans, sans-serif' }}>
+            {statusLabel[currentStatus]}
+          </button>
+          <button onClick={cyclePriority} title="Click to change priority"
+            className={`pill ${priorityPill[currentPriority]}`}
+            style={{ cursor: 'pointer', border: 'none', fontFamily: 'DM Sans, sans-serif' }}>
+            {priorityLabel[currentPriority]}
+          </button>
+          {!editing && (
+            <button onClick={() => setEditing(true)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.5, marginTop: 2 }}
+              title="Edit claim">
+              ✏️
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function ClientDetailPage({
@@ -527,34 +658,10 @@ export default function ClientDetailPage({
         <div className="panel-header"><span className="panel-title">Claims</span></div>
         <div className="panel-body">
           {claims.length > 0 ? (
-            <div className="table">
-              <table style={{ width: '100%' }}>
-                <thead><tr><th>Date</th><th>Description</th><th>Status</th><th>Priority</th></tr></thead>
-                <tbody>
-                  {claims.map(claim => {
-                    const claimDate = claim.created_at ? new Date(claim.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
-                    const desc = claim.title || (claim.body ? claim.body.slice(0, 60) + (claim.body.length > 60 ? '...' : '') : 'No description')
-                    const body = claim.body ? claim.body.slice(0, 100) + (claim.body.length > 100 ? '...' : '') : null
-                    return (
-                      <tr key={claim.id}>
-                        <td style={{ verticalAlign: 'top' }}>{claimDate}</td>
-                        <td style={{ verticalAlign: 'top' }}>
-                          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500, marginBottom: 4 }}>{desc}</div>
-                          {body && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', lineHeight: 1.4 }}>{body}</div>}
-                        </td>
-                        <td style={{ verticalAlign: 'top' }}>
-                          <span className={`pill ${claim.resolved ? 'pill-ok' : 'pill-amber'}`}>{claim.resolved ? 'Resolved' : 'Open'}</span>
-                        </td>
-                        <td style={{ verticalAlign: 'top' }}>
-                          <span className={`pill ${claim.priority === 'high' ? 'pill-danger' : claim.priority === 'medium' ? 'pill-amber' : 'pill-info'}`}>
-                            {claim.priority === 'high' ? 'High' : claim.priority === 'medium' ? 'Medium' : 'Info'}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {claims.map(claim => (
+                <ClaimCard key={claim.id} claim={claim} ifaId={resolvedIfaId} onUpdated={() => router.refresh()} />
+              ))}
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>No claims history.</div>
