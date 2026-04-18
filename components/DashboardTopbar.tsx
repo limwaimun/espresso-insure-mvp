@@ -1,125 +1,48 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import React from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface DashboardTopbarProps {
-  profile?: {
-    name: string;
-  } | null;
+  profile?: { name: string; plan?: string } | null
 }
 
 const DashboardTopbar = ({ profile }: DashboardTopbarProps) => {
-  const isMobile = useIsMobile();
-  
-  // Get time-based greeting
-  const now = new Date();
-  const hours = now.getHours();
-  let greeting = 'Good morning';
-  if (hours >= 12 && hours < 17) {
-    greeting = 'Good afternoon';
-  } else if (hours >= 17) {
-    greeting = 'Good evening';
-  }
-  
+  const isMobile = useIsMobile()
+
+  const now = new Date()
+  const hours = now.getHours()
+  const greeting = hours < 12 ? 'Good morning' : hours < 17 ? 'Good afternoon' : 'Good evening'
+  const dateStr = now.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' })
+
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-    }}>
-      {/* Left side - Hamburger menu on mobile, greeting on desktop */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: isMobile ? '12px' : '0',
-      }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: 56 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 0 }}>
         {isMobile && (
-          <button style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#F5ECD7',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '4px',
-          }}>
+          <button style={{ background: 'transparent', border: 'none', color: '#6B6460', fontSize: 20, cursor: 'pointer', padding: 4 }}>
             ☰
           </button>
         )}
-        
-        {/* Left side - Greeting */}
-        <div style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: 400,
-          color: '#F5ECD7',
-        }}>
-          {greeting}, {profile?.name || 'User'}
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460' }}>
+          {greeting}, <span style={{ color: '#1A1410', fontWeight: 500 }}>{profile?.name?.split(' ')[0] || 'there'}</span>
+          {!isMobile && <span style={{ color: '#B4B2A9' }}>&nbsp;·&nbsp;{dateStr}</span>}
         </div>
       </div>
-
-      {/* Right side - Actions and status */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: isMobile ? '8px' : '16px',
-      }}>
-        {/* Maya status - hidden on mobile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
         {!isMobile && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
-            color: '#C9B99A',
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#C8813A',
-              animation: 'pulse 2s infinite',
-            }} />
-            <span>Maya setting up</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF7', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '4px 12px' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#0F6E56' }}>Maya active</span>
           </div>
         )}
-        
-        {/* Notification bell on mobile */}
         {isMobile && (
-          <button style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#F5ECD7',
-            fontSize: '18px',
-            cursor: 'pointer',
-            padding: '4px',
-            position: 'relative',
-          }}>
+          <button style={{ background: 'transparent', border: 'none', color: '#6B6460', fontSize: 18, cursor: 'pointer', padding: 4 }}>
             🔔
-            <span style={{
-              position: 'absolute',
-              top: '0',
-              right: '0',
-              background: '#E53E3E',
-              color: 'white',
-              fontSize: '9px',
-              fontWeight: 500,
-              width: '14px',
-              height: '14px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              2
-            </span>
           </button>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DashboardTopbar;
+export default DashboardTopbar

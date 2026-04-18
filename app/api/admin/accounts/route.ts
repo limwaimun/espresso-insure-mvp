@@ -39,18 +39,15 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Get client counts for each FA
-  const counts = await Promise.all(
-    (profiles || []).map(async fa => {
-      const { count } = await serviceSupabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true })
-        .eq('ifa_id', fa.id)
-      return { id: fa.id, count: count || 0 }
-    })
-  )
+  // Single query for all client counts — no N+1
+  const { data: clientCountRows } = await serviceSupabase
+    .from('clients')
+    .select('ifa_id')
 
-  const countMap = Object.fromEntries(counts.map(c => [c.id, c.count]))
+  const countMap: Record<string, number> = {}
+  for (const row of clientCountRows || []) {
+    countMap[row.ifa_id] = (countMap[row.ifa_id] || 0) + 1
+  }
 
   // Global stats for admin overview
   const [{ count: totalClients }, { count: totalPolicies }] = await Promise.all([
