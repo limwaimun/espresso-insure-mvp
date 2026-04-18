@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [profileMsg, setProfileMsg] = useState('')
   const [pwMsg, setPwMsg] = useState('')
   const [userId, setUserId] = useState('')
+  const [plan, setPlan] = useState('trial')
 
   useEffect(() => {
     async function load() {
@@ -23,8 +24,8 @@ export default function SettingsPage() {
       if (!user) return
       setUserId(user.id)
       setEmail(user.email || '')
-      const { data } = await supabase.from('profiles').select('name, phone, company').eq('id', user.id).single()
-      if (data) { setName(data.name || ''); setPhone(data.phone || ''); setCompany(data.company || '') }
+      const { data } = await supabase.from('profiles').select('name, phone, company, plan').eq('id', user.id).single()
+      if (data) { setName(data.name || ''); setPhone(data.phone || ''); setCompany(data.company || ''); setPlan(data.plan || 'trial') }
     }
     load()
   }, [])
