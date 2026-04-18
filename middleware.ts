@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// ── ADMIN USER IDs ─────────────────────────────────────────────────────────
+// Add your Supabase user ID here (Settings → Authentication → Users → your row)
+const ADMIN_USER_IDS = [
+  '1a5b902c-9e3a-44cd-970a-bb852b1cd5e4',
+]
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   
@@ -13,7 +19,38 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
   
-  // Protect /dashboard/* routes
+  // Protect /admin routes - ADMIN ONLY ACCESS
+  if (pathname.startsWith('/admin')) {
+    const cookieHeader = request.headers.get('cookie') || ''
+    const cookies = Object.fromEntries(
+      cookieHeader.split('; ').filter(Boolean).map(c => {
+        const idx = c.indexOf('=')
+        return [c.slice(0, idx), c.slice(idx + 1)]
+      })
+    )
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        cookies: {
+          getAll: () => Object.entries(cookies).map(([name, value]) => ({ name, value })),
+          setAll: () => {},
+        },
+      }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+      // Redirect non-admins to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return NextResponse.next()
+  }
+  
+  // Protect /dashboard/* routes - AUTHENTICATED USER ACCESS
   if (pathname.startsWith('/dashboard')) {
     let supabaseResponse = NextResponse.next({
       request,

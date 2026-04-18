@@ -417,6 +417,33 @@ export default function ClientDetailPage({
   const policyFileRef = useRef<HTMLInputElement>(null)
   const [localActivity, setLocalActivity] = useState<{ date: string; text: string; type: string }[]>([])
 
+  // Compass state
+  const [compassGap, setCompassGap] = useState<{ key: string; label: string } | null>(null)
+  const [compassResult, setCompassResult] = useState<any>(null)
+  const [compassLoading, setCompassLoading] = useState(false)
+
+  useEffect(() => {
+    if (!compassGap || !resolvedIfaId) return
+    setCompassResult(null)
+    setCompassLoading(true)
+    fetch('/api/compass', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ifaId: resolvedIfaId,
+        clientId: client.id,
+        client,
+        policies,
+        query: `What ${compassGap.label} coverage should ${client.name} consider?`,
+        mode: 'comparison',
+        coverageType: compassGap.label,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => { setCompassResult(data); setCompassLoading(false) })
+      .catch(() => setCompassLoading(false))
+  }, [compassGap])
+
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
   const tierColor = calculatedTier === 'platinum' ? '#E5E4E2' : calculatedTier === 'gold' ? '#C8813A' : calculatedTier === 'silver' ? '#C9B99A' : '#CD7F32'
@@ -662,21 +689,115 @@ export default function ClientDetailPage({
 
       {/* == SECTION 5: COVERAGE ANALYSIS == */}
       <div className="panel" style={{ marginBottom: 24 }}>
-        <div className="panel-header"><span className="panel-title">Coverage analysis</span></div>
+        <div className="panel-header">
+          <span className="panel-title">Coverage analysis</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>Click a gap for Compass recommendations</span>
+        </div>
         <div className="panel-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
             {coverageAnalysis.map(coverage => (
-              <div key={coverage.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 4, background: coverage.hasCoverage ? 'rgba(90,184,122,0.1)' : 'rgba(200,129,58,0.1)' }}>
+              <div
+                key={coverage.key}
+                onClick={() => !coverage.hasCoverage && setCompassGap(coverage)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 4,
+                  background: coverage.hasCoverage ? 'rgba(90,184,122,0.1)' : 'rgba(200,129,58,0.1)',
+                  cursor: coverage.hasCoverage ? 'default' : 'pointer',
+                  border: compassGap?.key === coverage.key ? '1px solid #C8813A' : '1px solid transparent',
+                  transition: 'border 0.15s',
+                }}
+              >
                 <div style={{ fontSize: 16, color: coverage.hasCoverage ? '#5AB87A' : '#C9B99A' }}>{coverage.hasCoverage ? '✓' : '—'}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>{coverage.label}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: coverage.hasCoverage ? '#5AB87A' : '#C8813A' }}>
-                    {coverage.hasCoverage ? (coverage.insurer || 'Covered') : 'Not covered'}
+                    {coverage.hasCoverage ? (coverage.insurer || 'Covered') : 'Tap for recommendations'}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Compass panel - shows inline below the grid */}
+          {compassGap && (
+            <div style={{ marginTop: 20, background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>
+                  🧭 Compass — {compassGap.label} recommendations
+                </div>
+                <button onClick={() => { setCompassGap(null); setCompassResult(null) }}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#C9B99A', fontSize: 16 }}>✕</button>
+              </div>
+              {compassLoading ? (
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A', padding: '12px 0' }}>
+                  Compass is analysing…
+                </div>
+              ) : compassResult ? (
+                <div>
+                  {/* Maya summary */}
+                  {compassResult.mayaSummary && (
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A', lineHeight: 1.6, margin: '0 0 16px' }}>
+                      {compassResult.mayaSummary}
+                    </p>
+                  )}
+                  {/* Comparison cards */}
+                  {compassResult.analysis?.comparison && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {compassResult.analysis.comparison.map((item: any, i: number) => (
+                        <div key={i} style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                            <div>
+                              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>{item.insurer}</div>
+                              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>{item.product_name}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#C8813A' }}>
+                                ${item.premium_range?.min?.toLocaleString()}–${item.premium_range?.max?.toLocaleString()}/yr
+                              </div>
+                              {item.claim_rating && (
+                                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: item.claim_rating === 'excellent' ? '#5AB87A' : '#C9B99A', textTransform: 'uppercase' }}>
+                                  {item.claim_rating} claims
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {item.key_benefits?.length > 0 && (
+                            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>
+                              {item.key_benefits.slice(0, 2).join(' · ')}
+                            </div>
+                          )}
+                          {item.verdict && (
+                            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5AB87A', marginTop: 6 }}>
+                              {item.verdict}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Gap analysis */}
+                  {compassResult.analysis?.gaps && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {compassResult.analysis.gaps.map((gap: any, i: number) => (
+                        <div key={i} style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>{gap.coverage_type}</div>
+                            <span style={{ fontSize: 10, color: gap.urgency === 'high' ? '#D06060' : gap.urgency === 'medium' ? '#D4A030' : '#C9B99A', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}>{gap.urgency}</span>
+                          </div>
+                          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', marginBottom: 6 }}>{gap.reason}</div>
+                          {gap.recommended_insurers?.length > 0 && (
+                            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C8813A' }}>
+                              Recommended: {gap.recommended_insurers.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
