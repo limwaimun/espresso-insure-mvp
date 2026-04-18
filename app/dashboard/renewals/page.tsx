@@ -58,7 +58,7 @@ export default async function RenewalsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
         {kpis.map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, lineHeight: 1, marginBottom: 4, color: k.danger ? '#A32D2D' : k.warn ? '#854F0B' : k.info ? '#185FA5' : '#1A1410' }}>{k.value}</div>
             {k.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{k.sub}</div>}
           </div>
@@ -66,19 +66,19 @@ export default async function RenewalsPage() {
       </div>
 
       {/* Summary bar */}
-      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '12px 18px', marginBottom: 20, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '12px 18px', marginBottom: 20, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
         {allPolicies.length} policies tracked
         {lapsed.length > 0 && <> · <span style={{ color: '#A32D2D' }}>{lapsed.length} lapsed</span></>}
         {urgent.length > 0 && <> · <span style={{ color: '#854F0B' }}>{urgent.length} urgent</span></>}
         {actionNeeded.length > 0 && <> · <span style={{ color: '#185FA5' }}>{actionNeeded.length} action needed</span></>}
-        {underReview.length > 0 && <> · <span style={{ color: '#6B6460' }}>{underReview.length} under review</span></>}
+        {underReview.length > 0 && <> · <span style={{ color: '#3D3532' }}>{underReview.length} under review</span></>}
       </div>
 
       {/* Table */}
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '180px 160px 140px 110px 100px 80px 120px 160px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Policy type', 'Insurer', 'Premium', 'Renewal', 'Days', 'Status', 'Action'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
@@ -94,7 +94,7 @@ export default async function RenewalsPage() {
                 {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{client.company}</div>}
               </div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{p.type}</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>{p.insurer}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>{p.insurer}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>${Number(p.premium).toLocaleString()}/yr</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: daysColor }}>
                 {p.renewal_date ? new Date(p.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' }) : '—'}

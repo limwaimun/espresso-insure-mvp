@@ -97,7 +97,7 @@ export default function ClaimsPage() {
           { label: 'High priority', value: highPriority, danger: highPriority > 0 },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: k.danger ? '#A32D2D' : k.green ? '#0F6E56' : k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
         ))}
@@ -116,7 +116,7 @@ export default function ClaimsPage() {
         {/* Header row */}
         <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 160px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Description', 'Status', 'Priority', 'Filed', 'Action'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>{h}</div>
           ))}
         </div>
 
@@ -143,7 +143,7 @@ export default function ClaimsPage() {
                 </div>
                 <div>{pill(statusLabel, statusStyle)}</div>
                 <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityStyle)}</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>{daysAgo(claim.created_at)}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3D3532' }}>{daysAgo(claim.created_at)}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <Link href={`/dashboard/clients/${claim.client_id}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
                   <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', cursor: 'pointer' }}>Ask Maya to follow up</span>

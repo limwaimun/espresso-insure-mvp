@@ -86,10 +86,10 @@ export default function ClientsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Clients</h1>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
             + Import clients
           </button>
-          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
             Export
           </button>
         </div>
@@ -104,7 +104,7 @@ export default function ClientsPage() {
           { label: 'Corporate', value: counts.corporate },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
         ))}
@@ -153,7 +153,7 @@ export default function ClientsPage() {
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '200px 100px 90px 180px 200px 130px 120px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Type', 'Tier', 'Company', 'Email', 'WhatsApp', 'Maya status'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
@@ -187,7 +187,7 @@ export default function ClientsPage() {
                   </div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.company || '—'}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>{client.whatsapp || '—'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3D3532' }}>{client.whatsapp || '—'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: hasConversation ? '#1D9E75' : isConnected ? '#BA7517' : '#D3D1C7', flexShrink: 0 }} />
                     <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: hasConversation ? '#0F6E56' : isConnected ? '#854F0B' : '#9B9088' }}>

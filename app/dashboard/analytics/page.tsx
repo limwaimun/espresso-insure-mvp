@@ -210,13 +210,13 @@ export default function AnalyticsPage() {
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: metrics.renewals.next30Days.count > 0 ? '#854F0B' : '#1D9E75' }}>
                   {metrics.renewals.next30Days.count}
                 </div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>next 30d</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>next 30d</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: '#6B6460' }}>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: '#3D3532' }}>
                   {metrics.renewals.next90Days.count}
                 </div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>next 90d</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>next 90d</div>
               </div>
             </div>
           </div>
@@ -226,13 +226,13 @@ export default function AnalyticsPage() {
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{p.client}</div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>{p.insurer} · {p.type}</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{p.insurer} · {p.type}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#BA7517' }}>
                       {new Date(p.renewalDate).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })}
                     </div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>${Number(p.premium).toLocaleString()}/yr</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>${Number(p.premium).toLocaleString()}/yr</div>
                   </div>
                 </div>
               ))}
@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <span style={{ fontSize: 10, color: c.priority === 'high' ? '#A32D2D' : c.priority === 'medium' ? '#854F0B' : '#6B6460', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}>{c.priority}</span>
-                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#6B6460' }}>{c.daysOpen}d</span>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#3D3532' }}>{c.daysOpen}d</span>
                     </div>
                   </div>
                 ))}
@@ -319,12 +319,12 @@ export default function AnalyticsPage() {
                   <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460', width: 16 }}>{i + 1}</span>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{c.name}</div>
-                    {c.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>{c.company}</div>}
+                    {c.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{c.company}</div>}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#BA7517' }}>${c.totalPremium.toLocaleString()}</div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>{c.policyCount} {c.policyCount === 1 ? 'policy' : 'policies'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{c.policyCount} {c.policyCount === 1 ? 'policy' : 'policies'}</div>
                 </div>
               </div>
             ))}

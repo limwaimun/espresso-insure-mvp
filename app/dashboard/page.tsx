@@ -1,18 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Greeting from '@/components/Greeting'
 
-
-function GreetingLine() {
-  const now = new Date()
-  const hour = now.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const dateStr = now.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' })
-  return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410' }}>
-      {greeting} &nbsp;·&nbsp; <span style={{ color: '#3D3532' }}>{dateStr}</span>
-    </div>
-  )
-}
 
 export default async function DashboardHome() {
   const supabase = await createClient()
@@ -20,6 +9,10 @@ export default async function DashboardHome() {
   const now = new Date()
   const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+  // Get IFA name for greeting
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: ifaProfile } = user ? await supabase.from('profiles').select('name').eq('id', user.id).single() : { data: null }
 
   const [
     { count: clientCount },
@@ -137,7 +130,7 @@ export default async function DashboardHome() {
 
       {/* Greeting */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <GreetingLine />
+        <Greeting name={ifaProfile?.name} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF7', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>Maya active</span>
