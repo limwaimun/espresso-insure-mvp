@@ -1,23 +1,55 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function AdminAccountsPage() {
-  const supabase = await createClient()
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-  const { data: fas } = await supabase
-    .from('profiles')
-    .select('id, name, company, phone, plan, created_at, trial_ends_at, preferred_insurers')
-    .order('created_at', { ascending: false })
+interface FAProfile {
+  id: string
+  name: string
+  company: string | null
+  phone: string | null
+  plan: string | null
+  created_at: string
+  trial_ends_at: string | null
+  preferred_insurers: string[] | null
+}
 
-  const clientCounts = await Promise.all(
-    (fas || []).map(async fa => {
-      const { count } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true })
-        .eq('ifa_id', fa.id)
-      return { id: fa.id, count: count || 0 }
-    })
+export default function AdminAccountsPage() {
+  const supabase = createClient()
+  const [fas, setFas] = useState<FAProfile[]>([])
+  const [clientCounts, setClientCounts] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, company, phone, plan, created_at, trial_ends_at, preferred_insurers')
+        .order('created_at', { ascending: false })
+
+      if (!data) { setLoading(false); return }
+      setFas(data)
+
+      // Load client counts for each FA
+      const counts: Record<string, number> = {}
+      await Promise.all(data.map(async fa => {
+        const { count } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true })
+          .eq('ifa_id', fa.id)
+        counts[fa.id] = count || 0
+      }))
+      setClientCounts(counts)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) return (
+    <div style={{ padding: 40, color: '#C9B99A', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
+      Loading accounts…
+    </div>
   )
-  const countMap = Object.fromEntries(clientCounts.map(c => [c.id, c.count]))
 
   const PLAN_COLORS: Record<string, string> = {
     platinum: '#E5E4E2', gold: '#C8813A', pro: '#4A9EBF',
@@ -25,12 +57,12 @@ export default async function AdminAccountsPage() {
   }
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1000 }}>
+    <div style={{ padding: '32px 40px', maxWidth: 1100 }}>
       <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#F5ECD7', margin: '0 0 8px' }}>
         FA Accounts
       </h1>
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A', margin: '0 0 28px' }}>
-        {fas?.length || 0} registered financial advisors
+        {fas.length} registered financial advisors
       </p>
 
       <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 12, overflow: 'hidden' }}>
@@ -45,12 +77,12 @@ export default async function AdminAccountsPage() {
             </tr>
           </thead>
           <tbody>
-            {(fas || []).map((fa, i) => {
+            {fas.map((fa, i) => {
               const trialDays = fa.trial_ends_at
                 ? Math.max(0, Math.ceil((new Date(fa.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
                 : null
               return (
-                <tr key={fa.id} style={{ borderBottom: i < (fas?.length || 0) - 1 ? '1px solid #2E1A0E' : 'none' }}>
+                <tr key={fa.id} style={{ borderBottom: i < fas.length - 1 ? '1px solid #2E1A0E' : 'none' }}>
                   <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>
                     {fa.name || '—'}
                   </td>
@@ -62,13 +94,13 @@ export default async function AdminAccountsPage() {
                       fontFamily: 'DM Sans, sans-serif', fontSize: 10, textTransform: 'capitalize',
                       padding: '2px 10px', borderRadius: 100,
                       background: 'rgba(200,129,58,0.1)', border: '1px solid #3D2215',
-                      color: PLAN_COLORS[fa.plan] || '#C9B99A',
+                      color: PLAN_COLORS[fa.plan || 'trial'] || '#C9B99A',
                     }}>
                       {fa.plan || 'trial'}
                     </span>
                   </td>
                   <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#F5ECD7', textAlign: 'center' }}>
-                    {countMap[fa.id] || 0}
+                    {clientCounts[fa.id] ?? '…'}
                   </td>
                   <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#C9B99A' }}>
                     {fa.phone || '—'}
@@ -82,6 +114,13 @@ export default async function AdminAccountsPage() {
                 </tr>
               )
             })}
+            {fas.length === 0 && (
+              <tr>
+                <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>
+                  No accounts found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
