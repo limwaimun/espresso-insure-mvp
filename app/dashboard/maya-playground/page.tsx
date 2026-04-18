@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image } from 'lucide-react'
+import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image, Zap } from 'lucide-react'
 
 interface Client {
   id: string
