@@ -52,8 +52,19 @@ export async function GET(request: NextRequest) {
 
   const countMap = Object.fromEntries(counts.map(c => [c.id, c.count]))
 
+  // Global stats for admin overview
+  const [{ count: totalClients }, { count: totalPolicies }] = await Promise.all([
+    serviceSupabase.from('clients').select('*', { count: 'exact', head: true }),
+    serviceSupabase.from('policies').select('*', { count: 'exact', head: true }),
+  ])
+
   return NextResponse.json({
     profiles,
     clientCounts: countMap,
+    stats: {
+      totalFAs: profiles?.length || 0,
+      totalClients: totalClients || 0,
+      totalPolicies: totalPolicies || 0,
+    },
   })
 }
