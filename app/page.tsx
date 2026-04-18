@@ -1236,7 +1236,7 @@ export default function LandingPage() {
 ` }} />
       {/* NAV */}
 <nav>
-  <a href="#" className="nav-logo">espresso<span>.</span>insure</a>
+  <a href="#" className="nav-logo">espresso<span>.</span></a>
   <ul className="nav-links">
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#features">Features</a></li>
@@ -1724,7 +1724,7 @@ export default function LandingPage() {
 
 {/* FOOTER */}
 <footer>
-  <div className="footer-logo">espresso<span>.</span>insure</div>
+  <div className="footer-logo">espresso<span>.</span></div>
   <ul className="footer-links">
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#pricing">Pricing</a></li>
