@@ -29,6 +29,8 @@ export default function SettingsPage() {
     load()
   }, [])
 
+  const planLabel = profile?.plan === 'solo' ? 'Solo' : profile?.plan === 'pro' ? 'Pro' : profile?.plan === 'team' ? 'Team' : 'Trial'
+
   async function saveProfile() {
     setSaving(true); setProfileMsg('')
     await supabase.from('profiles').update({ name, phone, company }).eq('id', userId)
@@ -65,7 +67,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh', maxWidth: 720 }}>
+    <div style={{ padding: '24px 40px', background: '#F7F4F0', minHeight: '100vh' }}>
       <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Settings</h1>
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 24px' }}>Manage your account and Maya preferences</p>
 
