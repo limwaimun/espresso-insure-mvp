@@ -1,785 +1,205 @@
-'use client';
+'use client'
 
-import { createClient } from '@/lib/supabase/client';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-
-type TierType = 'all' | 'platinum' | 'gold' | 'silver' | 'bronze';
-type ClientType = 'all' | 'individual' | 'sme' | 'corporate';
-type ConnectionFilter = 'all' | 'connected' | 'not-connected';
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 interface Client {
-  id: string;
-  name: string;
-  company: string | null;
-  type: string | null;
-  tier: string | null;
-  email: string | null;
-  whatsapp: string | null;
-  created_at: string;
-  conversations?: {
-    id: string;
-    status: string;
-    last_message: string | null;
-    last_message_at: string | null;
-  }[];
+  id: string
+  name: string
+  company: string | null
+  type: 'individual' | 'sme' | 'corporate'
+  tier: 'platinum' | 'gold' | 'silver' | 'bronze'
+  email: string | null
+  whatsapp: string | null
+  created_at: string
+  conversations?: { id: string }[]
+}
+
+const TIER_STYLES: Record<string, { bg: string; color: string; border: string }> = {
+  platinum: { bg: '#F1EFE8', color: '#444441', border: '#D3D1C7' },
+  gold:     { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
+  silver:   { bg: '#F1EFE8', color: '#5F5E5A', border: '#D3D1C7' },
+  bronze:   { bg: '#FAECE7', color: '#712B13', border: '#F5C4B3' },
 }
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTier, setSelectedTier] = useState<TierType>('all');
-  const [selectedType, setSelectedType] = useState<ClientType>('all');
-  const [selectedConnection, setSelectedConnection] = useState<ConnectionFilter>('all');
-  
-
+  const supabase = createClient()
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [tierFilter, setTierFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [connectionFilter, setConnectionFilter] = useState('all')
 
   useEffect(() => {
-    async function fetchClients() {
-      try {
-        setLoading(true);
-        const supabase = createClient();
-        
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id, status, last_message, last_message_at)')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error("Error fetching clients:", error);
-          throw error;
-        }
-        
-        console.log(`Fetched ${data?.length || 0} clients`);
-        setClients(data || []);
-        setFilteredClients(data || []);
-      } catch (err: any) {
-        console.error("Error in fetchClients:", err);
-        setError(err.message || 'Failed to load clients');
-      } finally {
-        setLoading(false);
-      }
+    async function load() {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id)')
+        .order('created_at', { ascending: false })
+      setClients((data || []) as any)
+      setLoading(false)
     }
-    
-    fetchClients();
-  }, []);
+    load()
+  }, [])
 
-  // Apply filters whenever searchQuery, selectedTier, selectedType, or selectedConnection changes
-  useEffect(() => {
-    let result = clients;
-    
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(client => 
-        client.name?.toLowerCase().includes(query) ||
-        client.email?.toLowerCase().includes(query) ||
-        client.company?.toLowerCase().includes(query) ||
-        client.whatsapp?.toLowerCase().includes(query)
-      );
-    }
-    
-    // Apply tier filter
-    if (selectedTier !== 'all') {
-      result = result.filter(client => client.tier === selectedTier);
-    }
-    
-    // Apply type filter
-    if (selectedType !== 'all') {
-      result = result.filter(client => client.type === selectedType);
-    }
-    
-    // Apply connection filter
-    if (selectedConnection !== 'all') {
-      result = result.filter(client => {
-        const hasActiveConversation = client.conversations?.some(conv => conv.status === 'active');
-        if (selectedConnection === 'connected') {
-          return hasActiveConversation;
-        } else { // 'not-connected'
-          return !hasActiveConversation;
-        }
-      });
-    }
-    
-    setFilteredClients(result);
-  }, [clients, searchQuery, selectedTier, selectedType, selectedConnection]);
+  const filtered = clients.filter(c => {
+    const q = search.toLowerCase()
+    if (q && !c.name.toLowerCase().includes(q) && !c.company?.toLowerCase().includes(q) && !c.email?.toLowerCase().includes(q)) return false
+    if (tierFilter !== 'all' && c.tier !== tierFilter) return false
+    if (typeFilter !== 'all' && c.type !== typeFilter) return false
+    if (connectionFilter === 'connected' && !c.whatsapp) return false
+    if (connectionFilter === 'not_connected' && c.whatsapp) return false
+    return true
+  })
 
-
-
-  const handleWhatsAppClick = (whatsappNumber: string | null) => {
-    if (whatsappNumber) {
-      window.open(`https://wa.me/${whatsappNumber}`, '_blank');
-    }
-  };
-
-  // Helper function to get WhatsApp connection status
-  const getWhatsAppStatus = (client: Client) => {
-    if (!client.conversations || client.conversations.length === 0) {
-      return { status: 'not-connected', label: 'Not connected', color: '#C9B99A', dotColor: '#C9B99A' };
-    }
-    
-    const activeConversation = client.conversations.find(conv => conv.status === 'active');
-    if (activeConversation) {
-      return { status: 'connected', label: 'Connected', color: '#5AB87A', dotColor: '#5AB87A' };
-    }
-    
-    const waitingConversation = client.conversations.find(conv => conv.status === 'waiting');
-    if (waitingConversation) {
-      return { status: 'pending', label: 'Pending', color: '#F6AD55', dotColor: '#F6AD55' };
-    }
-    
-    return { status: 'not-connected', label: 'Not connected', color: '#C9B99A', dotColor: '#C9B99A' };
-  };
-
-  const tabs: TierType[] = ['all', 'platinum', 'gold', 'silver', 'bronze'];
-  const tabLabels = {
-    all: 'All',
-    platinum: 'Platinum',
-    gold: 'Gold',
-    silver: 'Silver',
-    bronze: 'Bronze'
-  };
-
-  if (loading) {
-    return (
-      <div style={{ width: '100%', padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '16px', color: '#C9B99A' }}>
-          Loading clients...
-        </div>
-      </div>
-    );
+  const counts = {
+    total: clients.length,
+    individual: clients.filter(c => c.type === 'individual').length,
+    sme: clients.filter(c => c.type === 'sme').length,
+    corporate: clients.filter(c => c.type === 'corporate').length,
   }
 
-  if (error) {
-    return (
-      <div style={{ width: '100%', padding: '40px' }}>
-        <div style={{
-          background: 'rgba(229, 62, 62, 0.1)',
-          border: '1px solid #E53E3E',
-          borderRadius: '8px',
-          padding: '24px',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '16px',
-            fontWeight: 500,
-            color: '#F5ECD7',
-            marginBottom: '8px',
-          }}>
-            Error loading clients
-          </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '14px',
-            color: '#C9B99A',
-            marginBottom: '16px',
-          }}>
-            {error || 'Please try again later.'}
-          </div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="btn-primary"
-            style={{ padding: '8px 16px' }}
-          >
-            Retry
+  const tierBtn = (label: string, value: string) => (
+    <button key={value} onClick={() => setTierFilter(value)} style={{
+      background: tierFilter === value ? '#1A1410' : '#FFFFFF',
+      color: tierFilter === value ? '#FFFFFF' : '#6B6460',
+      border: `0.5px solid ${tierFilter === value ? '#1A1410' : '#E8E2DA'}`,
+      borderRadius: 100, padding: '5px 14px', cursor: 'pointer',
+      fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+    }}>
+      {label}
+    </button>
+  )
+
+  const selectStyle: React.CSSProperties = {
+    background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 7,
+    padding: '7px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+    color: '#6B6460', cursor: 'pointer', outline: 'none',
+  }
+
+  return (
+    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Clients</h1>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+            + Import clients
+          </button>
+          <button style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+            Export
           </button>
         </div>
       </div>
-    );
-  }
 
-    return (
-      <div style={{
-        width: '100%',
-        maxWidth: '100%',
-        padding: '0',
-        minHeight: '100vh',
-      }}>
-        <div className="px-8 py-6">
-          {/* Title and Actions Row */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '20px',
-          }}>
-            <h1 style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: '28px',
-              fontWeight: 400,
-              color: '#F5ECD7',
-              margin: 0,
-            }}>Clients</h1>
-            
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Link href="/dashboard/import" style={{ textDecoration: 'none' }}>
-                <button className="btn-primary" style={{
-                  fontSize: '13px',
-                  padding: '8px 16px',
-                }}>
-                  + Import clients
-                </button>
-              </Link>
-              <button className="btn-secondary" style={{
-                fontSize: '13px',
-                padding: '8px 16px',
-              }}>
-                Export
-              </button>
-            </div>
+      {/* KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+        {[
+          { label: 'Total clients', value: counts.total },
+          { label: 'Individual', value: counts.individual },
+          { label: 'SME', value: counts.sme },
+          { label: 'Corporate', value: counts.corporate },
+        ].map(k => (
+          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
-
-          {/* Stats Bar - Simplified */}
-          <div style={{
-            display: 'flex',
-            gap: '16px',
-            marginBottom: '24px',
-          }}>
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              padding: '16px',
-              flex: 1,
-            }}>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#C8813A',
-                marginBottom: '4px',
-              }}>
-                Total clients
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '24px',
-                fontWeight: 600,
-                color: '#F5ECD7',
-              }}>
-                {clients.length || 0}
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              padding: '16px',
-              flex: 1,
-            }}>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#C8813A',
-                marginBottom: '4px',
-              }}>
-                Individual
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '24px',
-                fontWeight: 600,
-                color: '#F5ECD7',
-              }}>
-                {clients.filter(c => c.type === 'individual').length || 0}
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              padding: '16px',
-              flex: 1,
-            }}>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#C8813A',
-                marginBottom: '4px',
-              }}>
-                SME
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '24px',
-                fontWeight: 600,
-                color: '#F5ECD7',
-              }}>
-                {clients.filter(c => c.type === 'sme').length || 0}
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              padding: '16px',
-              flex: 1,
-            }}>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: '#C8813A',
-                marginBottom: '4px',
-              }}>
-                Corporate
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '24px',
-                fontWeight: 600,
-                color: '#F5ECD7',
-              }}>
-                {clients.filter(c => c.type === 'corporate').length || 0}
-              </div>
-            </div>
-          </div>
-
-          {/* Tier Filter Pills */}
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            marginBottom: '24px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid #2E1A0E',
-          }}>
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTier(tab)}
-                style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  padding: '6px 12px',
-                  borderRadius: '100px',
-                  background: selectedTier === tab ? '#C8813A' : 'transparent',
-                  color: selectedTier === tab ? '#120A06' : '#C9B99A',
-                  border: selectedTier === tab ? 'none' : '1px solid #2E1A0E',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {tabLabels[tab]}
-              </button>
-            ))}
-          </div>
-
-          {/* Search and Filter Row */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '24px',
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}>
-              {/* Search Bar */}
-              <div style={{
-                position: 'relative',
-              }}>
-                <input
-                  type="text"
-                  placeholder="Search clients..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    background: '#120A06',
-                    border: '1px solid #2E1A0E',
-                    borderRadius: '6px',
-                    padding: '8px 12px 8px 36px',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '13px',
-                    color: '#F5ECD7',
-                    width: '280px',
-                  }}
-                />
-                <span style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#C9B99A',
-                  fontSize: '14px',
-                }}>
-                  🔍
-                </span>
-              </div>
-              
-              {/* Type Dropdown */}
-              <select 
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value as ClientType)}
-                style={{
-                  background: '#120A06',
-                  border: '1px solid #2E1A0E',
-                  borderRadius: '6px',
-                  padding: '8px 12px',
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#F5ECD7',
-                  minWidth: '120px',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all">All types</option>
-                <option value="individual">Individual</option>
-                <option value="sme">SME</option>
-                <option value="corporate">Corporate</option>
-              </select>
-              
-              {/* Tier Dropdown (syncs with pills) */}
-              <select 
-                value={selectedTier}
-                onChange={(e) => setSelectedTier(e.target.value as TierType)}
-                style={{
-                  background: '#120A06',
-                  border: '1px solid #2E1A0E',
-                  borderRadius: '6px',
-                  padding: '8px 12px',
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#F5ECD7',
-                  minWidth: '120px',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all">All tiers</option>
-                <option value="platinum">Platinum</option>
-                <option value="gold">Gold</option>
-                <option value="silver">Silver</option>
-                <option value="bronze">Bronze</option>
-              </select>
-              
-              {/* Connection Status Dropdown */}
-              <select 
-                value={selectedConnection}
-                onChange={(e) => setSelectedConnection(e.target.value as ConnectionFilter)}
-                style={{
-                  background: '#120A06',
-                  border: '1px solid #2E1A0E',
-                  borderRadius: '6px',
-                  padding: '8px 12px',
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '13px',
-                  color: '#F5ECD7',
-                  minWidth: '140px',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all">All connections</option>
-                <option value="connected">Connected</option>
-                <option value="not-connected">Not connected</option>
-              </select>
-            </div>
-            
-            {/* REMOVED: Filter and Clear buttons */}
-          </div>
-
-          {/* Clients Table */}
-          {filteredClients.length > 0 ? (
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                overflowY: 'auto',
-                maxHeight: 'calc(100vh - 280px)',
-                scrollbarGutter: 'stable',
-              }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  tableLayout: 'fixed',
-                }}>
-                  <colgroup>
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '200px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '120px' }} />
-                  </colgroup>
-                  <thead style={{
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10,
-                    background: '#1C0F0A',
-                  }}>
-                    <tr>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        Client
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        Type
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        Tier
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        Company
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        Email
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        WhatsApp
-                      </th>
-                      <th style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#C8813A',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        MAYA STATUS
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredClients.map((client) => (
-                      <tr key={client.id} style={{
-                        borderBottom: '1px solid #2E1A0E',
-                      }}>
-                        <td style={{
-                          padding: '12px 16px',
-                        }}>
-                          <Link href={`/dashboard/clients/${client.id}`} style={{
-                            textDecoration: 'none',
-                            color: 'inherit',
-                          }}>
-                            <div style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                              fontSize: '13px',
-                              fontWeight: 500,
-                              color: '#F5ECD7',
-                              marginBottom: '4px',
-                            }}>
-                              {client.name}
-                            </div>
-                            <div style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                              fontSize: '11px',
-                              color: '#C9B99A',
-                            }}>
-                              Added {new Date(client.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                            </div>
-                          </Link>
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          {client.type || 'Individual'}
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          <span style={{
-                            display: 'inline-block',
-                            fontFamily: 'DM Sans, sans-serif',
-                            fontSize: '11px',
-                            fontWeight: 500,
-                            padding: '4px 8px',
-                            borderRadius: '100px',
-                            background: client.tier === 'platinum' ? 'rgba(200, 129, 58, 0.2)' : 
-                                       client.tier === 'gold' ? 'rgba(255, 215, 0, 0.2)' :
-                                       client.tier === 'silver' ? 'rgba(192, 192, 192, 0.2)' : 'rgba(205, 127, 50, 0.2)',
-                            color: client.tier === 'platinum' ? '#C8813A' : 
-                                   client.tier === 'gold' ? '#FFD700' :
-                                   client.tier === 'silver' ? '#C0C0C0' : '#CD7F32',
-                            border: `1px solid ${client.tier === 'platinum' ? '#C8813A' : 
-                                                  client.tier === 'gold' ? '#FFD700' :
-                                                  client.tier === 'silver' ? '#C0C0C0' : '#CD7F32'}`,
-                          }}>
-                            {client.tier || 'Bronze'}
-                          </span>
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          {client.company || '—'}
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          {client.email || '—'}
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          {client.whatsapp || '—'}
-                        </td>
-                        <td style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: '13px',
-                          color: '#C9B99A',
-                          padding: '12px 16px',
-                        }}>
-                          {(() => {
-                            const status = getWhatsAppStatus(client);
-                            return (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{
-                                  width: '8px',
-                                  height: '8px',
-                                  borderRadius: '50%',
-                                  backgroundColor: status.dotColor,
-                                }} />
-                                <span style={{ color: status.color }}>{status.label}</span>
-                              </div>
-                            );
-                          })()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              background: '#120A06',
-              border: '1px solid #2E1A0E',
-              borderRadius: '8px',
-              padding: '60px 40px',
-              textAlign: 'center',
-            }}>
-              <div style={{
-                fontFamily: 'Cormorant Garamond, serif',
-                fontSize: '24px',
-                color: '#F5ECD7',
-                marginBottom: '16px',
-              }}>
-                {searchQuery || selectedTier !== 'all' || selectedType !== 'all' 
-                  ? 'No clients match your filters' 
-                  : 'No clients yet'}
-              </div>
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#C9B99A',
-                lineHeight: 1.6,
-                maxWidth: '400px',
-                margin: '0 auto 24px auto',
-              }}>
-                {searchQuery || selectedTier !== 'all' || selectedType !== 'all' 
-                  ? 'Try adjusting your search or filters.'
-                  : 'Import your client list to get started.'}
-              </div>
-              <Link href="/dashboard/import" style={{ textDecoration: 'none' }}>
-                <button className="btn-primary" style={{
-                  padding: '10px 20px',
-                }}>
-                  Import clients
-                </button>
-              </Link>
-            </div>
-          )}
-        </div>
+        ))}
       </div>
-    );
-  }
+
+      {/* Tier filter */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {tierBtn('All', 'all')}
+        {tierBtn('Platinum', 'platinum')}
+        {tierBtn('Gold', 'gold')}
+        {tierBtn('Silver', 'silver')}
+        {tierBtn('Bronze', 'bronze')}
+      </div>
+
+      {/* Search + filters */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 14 }}>🔍</span>
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search clients…"
+            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '0.5px solid #E8E2DA', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' }}
+          />
+        </div>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All types</option>
+          <option value="individual">Individual</option>
+          <option value="sme">SME</option>
+          <option value="corporate">Corporate</option>
+        </select>
+        <select value={tierFilter} onChange={e => setTierFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All tiers</option>
+          <option value="platinum">Platinum</option>
+          <option value="gold">Gold</option>
+          <option value="silver">Silver</option>
+          <option value="bronze">Bronze</option>
+        </select>
+        <select value={connectionFilter} onChange={e => setConnectionFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All connections</option>
+          <option value="connected">Maya connected</option>
+          <option value="not_connected">Not connected</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '200px 100px 90px 180px 200px 130px 120px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
+          {['Client', 'Type', 'Tier', 'Company', 'Email', 'WhatsApp', 'Maya status'].map(h => (
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>No clients found</div>
+        ) : (
+          filtered.map((client, i) => {
+            const ts = TIER_STYLES[client.tier] || TIER_STYLES.silver
+            const isConnected = !!client.whatsapp
+            const convs = (client.conversations as any) || []
+            const hasConversation = convs.length > 0
+
+            return (
+              <Link key={client.id} href={`/dashboard/clients/${client.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '200px 100px 90px 180px 200px 130px 120px', padding: '13px 20px', borderBottom: i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'center', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FAFAF8')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client.name}</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 1 }}>
+                      Added {new Date(client.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', textTransform: 'capitalize' }}>{client.type}</div>
+                  <div>
+                    <span style={{ background: ts.bg, color: ts.color, border: `0.5px solid ${ts.border}`, fontSize: 11, fontWeight: 500, padding: '2px 9px', borderRadius: 100, textTransform: 'capitalize' }}>
+                      {client.tier}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.company || '—'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>{client.whatsapp || '—'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: hasConversation ? '#1D9E75' : isConnected ? '#BA7517' : '#D3D1C7', flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: hasConversation ? '#0F6E56' : isConnected ? '#854F0B' : '#9B9088' }}>
+                      {hasConversation ? 'Connected' : isConnected ? 'Pending' : 'Not connected'}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
