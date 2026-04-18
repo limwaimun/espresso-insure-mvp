@@ -1,213 +1,120 @@
-import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 export default async function RenewalsPage() {
-  const supabase = await createClient();
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
 
   const { data: policies } = await supabase
     .from('policies')
-    .select('*, clients(id, name, company, whatsapp)')
-    .order('renewal_date', { ascending: true });
+    .select('id, type, insurer, premium, renewal_date, status, client_id, clients(id, name, company, whatsapp)')
+    .eq('ifa_id', user.id)
+    .order('renewal_date', { ascending: true })
 
-  const allPolicies = policies || [];
-  const now = new Date();
+  const now = new Date()
+  const allPolicies = policies || []
 
   const enriched = allPolicies.map(p => {
     const days = p.renewal_date
-      ? Math.ceil((new Date(p.renewal_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      : null;
+      ? Math.ceil((new Date(p.renewal_date).getTime() - now.getTime()) / 86400000)
+      : null
+    const status = days === null ? 'upcoming'
+      : days < 0 ? 'lapsed'
+      : days <= 30 ? 'urgent'
+      : days <= 60 ? 'action_needed'
+      : 'under_review'
+    return { ...p, days, status }
+  })
 
-    let statusLabel = 'Upcoming';
-    let statusColor = '#5AB87A';
-    let sortOrder = 4;
+  const lapsed = enriched.filter(p => p.status === 'lapsed')
+  const urgent = enriched.filter(p => p.status === 'urgent')
+  const actionNeeded = enriched.filter(p => p.status === 'action_needed')
+  const underReview = enriched.filter(p => p.status === 'under_review')
 
-    if (days === null) {
-      statusLabel = 'No date'; statusColor = '#C9B99A'; sortOrder = 5;
-    } else if (days < 0) {
-      statusLabel = 'Lapsed'; statusColor = '#8B3A3A'; sortOrder = 0;
-    } else if (days <= 30) {
-      statusLabel = 'Urgent'; statusColor = '#D06060'; sortOrder = 1;
-    } else if (days <= 60) {
-      statusLabel = 'Action needed'; statusColor = '#D4A030'; sortOrder = 2;
-    } else if (days <= 90) {
-      statusLabel = 'Review'; statusColor = '#20A0A0'; sortOrder = 3;
-    }
+  const lapsedPremium = lapsed.reduce((s, p) => s + (Number(p.premium) || 0), 0)
+  const urgentPremium = urgent.reduce((s, p) => s + (Number(p.premium) || 0), 0)
 
-    return { ...p, days, statusLabel, statusColor, sortOrder };
-  });
+  const STATUS_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    lapsed:       { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1', label: 'Lapsed' },
+    urgent:       { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775', label: 'Urgent' },
+    action_needed:{ bg: '#E6F1FB', color: '#185FA5', border: '#B5D4F4', label: 'Action needed' },
+    under_review: { bg: '#F1EFE8', color: '#5F5E5A', border: '#D3D1C7', label: 'Under review' },
+  }
 
-  const sorted = enriched.sort((a, b) => {
-    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-    return (a.days ?? 9999) - (b.days ?? 9999);
-  });
-
-  const lapsedCount = sorted.filter(p => p.sortOrder === 0).length;
-  const urgentCount = sorted.filter(p => p.sortOrder === 1).length;
-  const actionCount = sorted.filter(p => p.sortOrder === 2).length;
-  const reviewCount = sorted.filter(p => p.sortOrder === 3).length;
-  const urgentPremium = sorted.filter(p => p.sortOrder === 1).reduce((s, p) => s + (Number(p.premium) || 0), 0);
-  const lapsedPremium = sorted.filter(p => p.sortOrder === 0).reduce((s, p) => s + (Number(p.premium) || 0), 0);
-
-  // Styles — IDENTICAL to Claims page
-  const thStyle: React.CSSProperties = {
-    fontFamily: 'DM Sans, sans-serif',
-    fontSize: '11px',
-    fontWeight: 500,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    color: '#C8813A',
-    padding: '12px 16px',
-    textAlign: 'left',
-    borderBottom: '1px solid #2E1A0E',
-  };
-
-  const tdStyle: React.CSSProperties = {
-    fontFamily: 'DM Sans, sans-serif',
-    fontSize: '13px',
-    color: '#C9B99A',
-    padding: '12px 16px',
-    verticalAlign: 'top',
-    borderBottom: '1px solid #2E1A0E',
-  };
-
-  const monoStyle: React.CSSProperties = {
-    ...tdStyle,
-    fontFamily: 'DM Mono, monospace',
-  };
+  const kpis = [
+    { label: 'Lapsed', value: lapsed.length, sub: lapsedPremium > 0 ? `$${lapsedPremium.toLocaleString()} at risk` : '', danger: true },
+    { label: 'Urgent', value: urgent.length, sub: urgentPremium > 0 ? `$${urgentPremium.toLocaleString()} in next 30 days` : '', warn: true },
+    { label: 'Action needed', value: actionNeeded.length, sub: '31–60 days', info: true },
+    { label: 'Under review', value: underReview.length, sub: '61–90 days', neutral: true },
+  ]
 
   return (
-    <div>
-      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', fontWeight: 400, color: '#F5ECD7', marginBottom: '24px' }}>
-        Renewals
-      </h1>
+    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
 
-      {/* Summary Cards — same style as All Clients / Claims */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8B3A3A', marginBottom: '8px' }}>LAPSED</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{lapsedCount}</div>
-          <div style={{ fontSize: '12px', color: '#8B3A3A', marginTop: '4px' }}>${lapsedPremium.toLocaleString()} at risk</div>
-        </div>
-        <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D06060', marginBottom: '8px' }}>URGENT</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{urgentCount}</div>
-          <div style={{ fontSize: '12px', color: '#D06060', marginTop: '4px' }}>${urgentPremium.toLocaleString()} in next 30 days</div>
-        </div>
-        <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D4A030', marginBottom: '8px' }}>ACTION NEEDED</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{actionCount}</div>
-          <div style={{ fontSize: '12px', color: '#D4A030', marginTop: '4px' }}>31–60 days</div>
-        </div>
-        <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#20A0A0', marginBottom: '8px' }}>UNDER REVIEW</div>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7' }}>{reviewCount}</div>
-          <div style={{ fontSize: '12px', color: '#20A0A0', marginTop: '4px' }}>61–90 days</div>
-        </div>
+      <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 20px' }}>Renewals</h1>
+
+      {/* KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, lineHeight: 1, marginBottom: 4, color: k.danger ? '#A32D2D' : k.warn ? '#854F0B' : k.info ? '#185FA5' : '#1A1410' }}>{k.value}</div>
+            {k.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{k.sub}</div>}
+          </div>
+        ))}
       </div>
 
-      {/* Summary text */}
-      <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: '8px', padding: '12px 20px', marginBottom: '24px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#C9B99A' }}>
-        {sorted.length} policies tracked
-        {lapsedCount > 0 && <> · <span style={{ color: '#8B3A3A' }}>{lapsedCount} lapsed</span></>}
-        {' '} · <span style={{ color: '#D06060' }}>{urgentCount} urgent</span>
-        {' '} · <span style={{ color: '#D4A030' }}>{actionCount} action needed</span>
-        {' '} · <span style={{ color: '#20A0A0' }}>{reviewCount} under review</span>
+      {/* Summary bar */}
+      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '12px 18px', marginBottom: 20, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
+        {allPolicies.length} policies tracked
+        {lapsed.length > 0 && <> · <span style={{ color: '#A32D2D' }}>{lapsed.length} lapsed</span></>}
+        {urgent.length > 0 && <> · <span style={{ color: '#854F0B' }}>{urgent.length} urgent</span></>}
+        {actionNeeded.length > 0 && <> · <span style={{ color: '#185FA5' }}>{actionNeeded.length} action needed</span></>}
+        {underReview.length > 0 && <> · <span style={{ color: '#6B6460' }}>{underReview.length} under review</span></>}
       </div>
 
       {/* Table */}
-      <div style={{
-        background: '#120A06',
-        border: '1px solid #2E1A0E',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        minHeight: 'calc(100vh - 380px)',
-      }}>
-        <div style={{
-          overflowY: 'auto',
-          maxHeight: 'calc(100vh - 380px)',
-        }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-          }}>
-            <thead style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 10,
-              background: '#1C0F0A',
-            }}>
-              <tr>
-                <th style={thStyle}>Client</th>
-                <th style={thStyle}>Policy Type</th>
-                <th style={thStyle}>Insurer</th>
-                <th style={thStyle}>Premium</th>
-                <th style={thStyle}>Renewal</th>
-                <th style={thStyle}>Days</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Action</th>
-              </tr>
-            </thead>
-          <tbody>
-            {sorted.map((p, i) => {
-              const client = p.clients as any;
-              const clientName = client?.name || 'Unknown';
-              const clientId = client?.id || p.client_id;
-              const renewalDate = p.renewal_date
-                ? new Date(p.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
-                : '—';
-
-              return (
-                <tr key={p.id || i}>
-                  <td style={tdStyle}>
-                    <Link href={`/dashboard/clients/${clientId}`} style={{ color: '#F5ECD7', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>
-                      {clientName}
-                    </Link>
-                    {client?.company && (
-                      <div style={{ fontSize: '11px', color: '#C9B99A', marginTop: '2px' }}>{client.company}</div>
-                    )}
-                  </td>
-                  <td style={tdStyle}>{p.type || '—'}</td>
-                  <td style={tdStyle}>{p.insurer || '—'}</td>
-                  <td style={monoStyle}>${(Number(p.premium) || 0).toLocaleString()}/yr</td>
-                  <td style={{ ...tdStyle, color: p.days !== null && p.days <= 30 ? p.statusColor : '#C9B99A' }}>{renewalDate}</td>
-                  <td style={{ ...monoStyle, color: p.statusColor }}>
-                    {p.days === null ? '—' : p.days < 0 ? 'Overdue' : `${p.days}d`}
-                  </td>
-                  <td style={tdStyle}>
-                    <span style={{
-                      padding: '3px 10px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      background: p.statusColor + '20',
-                      color: p.statusColor,
-                    }}>
-                      {p.statusLabel}
-                    </span>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <Link href={`/dashboard/clients/${clientId}`} style={{ color: '#C8813A', textDecoration: 'none', fontSize: '13px' }}>
-                        View client →
-                      </Link>
-                      <span style={{ color: '#C9B99A', fontSize: '13px', opacity: 0.5, cursor: 'not-allowed' }}>
-                        Ask Maya to follow up
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '180px 160px 140px 110px 100px 80px 120px 160px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
+          {['Client', 'Policy type', 'Insurer', 'Premium', 'Renewal', 'Days', 'Status', 'Action'].map(h => (
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+          ))}
         </div>
+
+        {enriched.map((p, i) => {
+          const s = STATUS_STYLES[p.status] || STATUS_STYLES.under_review
+          const client = p.clients as any
+          const daysColor = p.days === null ? '#6B6460' : p.days < 0 ? '#A32D2D' : p.days <= 7 ? '#854F0B' : '#6B6460'
+
+          return (
+            <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '180px 160px 140px 110px 100px 80px 120px 160px', padding: '14px 20px', borderBottom: i < enriched.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client?.name || 'Unknown'}</div>
+                {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{client.company}</div>}
+              </div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{p.type}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>{p.insurer}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>${Number(p.premium).toLocaleString()}/yr</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: daysColor }}>
+                {p.renewal_date ? new Date(p.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' }) : '—'}
+              </div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: daysColor, fontWeight: p.days !== null && p.days <= 7 ? 500 : 400 }}>
+                {p.days === null ? '—' : p.days < 0 ? 'Overdue' : `${p.days}d`}
+              </div>
+              <div>
+                <span style={{ background: s.bg, color: s.color, border: `0.5px solid ${s.border}`, fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 100 }}>
+                  {s.label}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Link href={`/dashboard/clients/${client?.id || ''}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', cursor: 'pointer' }}>Ask Maya to follow up</span>
+              </div>
+            </div>
+          )
+        })}
       </div>
-
-      {sorted.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#C9B99A' }}>
-          No policies tracked yet. Import clients to see renewals.
-        </div>
-      )}
     </div>
-  );
+  )
 }
