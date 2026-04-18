@@ -76,7 +76,27 @@ export default function AnalyticsPage() {
           animation: shimmer 1.5s infinite;
           border-radius: 6px;
         }
+        @keyframes steam {
+          0%   { transform: translateY(0) scaleX(1); opacity: 0.6; }
+          50%  { transform: translateY(-8px) scaleX(1.2); opacity: 0.3; }
+          100% { transform: translateY(-16px) scaleX(0.8); opacity: 0; }
+        }
+        .steam { animation: steam 1.4s ease-in-out infinite; }
+        .steam2 { animation: steam 1.4s ease-in-out 0.3s infinite; }
+        .steam3 { animation: steam 1.4s ease-in-out 0.6s infinite; }
       `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0 40px' }}>
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
+            <div className="steam" style={{ width: 3, height: 10, background: '#BA7517', borderRadius: 4, opacity: 0.6 }} />
+            <div className="steam2" style={{ width: 3, height: 10, background: '#BA7517', borderRadius: 4, opacity: 0.6 }} />
+            <div className="steam3" style={{ width: 3, height: 10, background: '#BA7517', borderRadius: 4, opacity: 0.6 }} />
+          </div>
+          <div style={{ fontSize: 40 }}>☕</div>
+        </div>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', marginBottom: 4 }}>Brewing your analytics…</div>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>Lens is analysing your portfolio</div>
+      </div>
 
       {/* Title skeleton */}
       <div className="shimmer" style={{ height: 36, width: 180, marginBottom: 8 }} />
@@ -135,7 +155,8 @@ export default function AnalyticsPage() {
   const labelStyle: React.CSSProperties = {
     fontFamily: 'DM Sans, sans-serif',
     fontSize: 11,
-    color: '#6B6460',
+    fontWeight: 500,
+    color: '#1A1410',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
     marginBottom: 4,
@@ -190,7 +211,7 @@ export default function AnalyticsPage() {
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
             <div style={labelStyle}>{k.label}</div>
-            <div style={{ fontFamily: k.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410' }}>
               {k.value}
             </div>
           </div>
