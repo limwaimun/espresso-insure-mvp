@@ -34,14 +34,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#FFFFFF', borderRight: '0.5px solid #E8E2DA', width: 208, flexShrink: 0 }}>
 
-      {/* Logo — exactly 56px to align with topbar */}
-      <div style={{ height: 56, display: 'flex', alignItems: 'center', padding: '0 20px', borderBottom: '0.5px solid #E8E2DA', flexShrink: 0 }}>
-        <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-          <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', letterSpacing: '-0.01em' }}>
-            espresso<span style={{ color: '#BA7517' }}>.</span>
-          </span>
-        </Link>
-      </div>
+
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
@@ -51,7 +44,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '8px 12px', borderRadius: 8, marginBottom: 2,
               background: item.active ? '#FEF3E2' : 'transparent',
-              color: item.active ? '#854F0B' : '#6B6460',
+              color: item.active ? '#854F0B' : '#3D3532',
               fontFamily: 'DM Sans, sans-serif', fontSize: 13,
               fontWeight: item.active ? 500 : 400,
             }}>
@@ -111,7 +104,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
               <span style={{ background: '#FEF3E2', color: '#854F0B', fontSize: 10, fontWeight: 500, padding: '1px 7px', borderRadius: 100, border: '0.5px solid #FAC775' }}>
                 {planLabel}
               </span>
-              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>FA</span>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>FA</span>
             </div>
           </div>
         </div>

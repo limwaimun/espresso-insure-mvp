@@ -11,7 +11,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const now = new Date()
   const ninetyDays = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString()
 
-  // All queries in parallel
   const [profileResult, renewalsResult, alertsResult] = await Promise.all([
     supabase.from('profiles').select('name, plan').eq('id', user.id).single(),
     supabase.from('policies')
@@ -31,25 +30,51 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const highAlerts = allAlerts.filter((a: any) => a.priority === 'high').length
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F7F4F0' }}>
-      <aside style={{
-        width: 240, minWidth: 240,
-        position: 'fixed', top: 0, left: 0,
-        height: '100vh', zIndex: 200, overflowY: 'auto',
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#F7F4F0' }}>
+
+      {/* Full-width topbar — spans entire viewport, no gap possible */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0,
+        height: 56, zIndex: 300,
+        background: '#FFFFFF',
+        borderBottom: '0.5px solid #E8E2DA',
+        display: 'flex', alignItems: 'center',
       }}>
-        <DashboardSidebar
-          profile={profile || undefined}
-          counts={{ conversations: 0, alerts: highAlerts, renewals: renewalsCount, claims: highAlerts }}
-        />
-      </aside>
-      <main style={{ marginLeft: 240, flex: 1, minHeight: '100vh', background: '#F7F4F0', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ borderBottom: '0.5px solid #E8E2DA', background: '#FFFFFF', padding: '0 32px' }}>
+        {/* Logo section — exactly 240px, matches sidebar width */}
+        <div style={{ width: 240, flexShrink: 0, padding: '0 20px', borderRight: '0.5px solid #E8E2DA', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <a href="/dashboard" style={{ textDecoration: 'none' }}>
+            <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', letterSpacing: '-0.01em' }}>
+              espresso<span style={{ color: '#BA7517' }}>.</span>
+            </span>
+          </a>
+        </div>
+        {/* Topbar content */}
+        <div style={{ flex: 1, padding: '0 32px' }}>
           <DashboardTopbar profile={profile} />
         </div>
-        <div style={{ flex: 1 }}>
+      </div>
+
+      {/* Body — below topbar */}
+      <div style={{ display: 'flex', flex: 1, paddingTop: 56 }}>
+
+        {/* Sidebar — no logo needed, starts below topbar */}
+        <aside style={{
+          width: 240, flexShrink: 0,
+          position: 'fixed', top: 56, left: 0,
+          height: 'calc(100vh - 56px)',
+          zIndex: 200, overflowY: 'auto',
+        }}>
+          <DashboardSidebar
+            profile={profile || undefined}
+            counts={{ conversations: 0, alerts: highAlerts, renewals: renewalsCount, claims: highAlerts }}
+          />
+        </aside>
+
+        {/* Main content */}
+        <main style={{ marginLeft: 240, flex: 1, minHeight: 'calc(100vh - 56px)', background: '#F7F4F0' }}>
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

@@ -132,7 +132,7 @@ export default async function DashboardHome() {
         ].map(k => (
           <Link key={k.label} href={k.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#4A4440', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>{k.label}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, fontWeight: 500 }}>{k.label}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 500, color: k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532', marginTop: 3 }}>{k.sub}</div>
             </div>
