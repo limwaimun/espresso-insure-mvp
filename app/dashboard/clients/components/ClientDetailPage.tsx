@@ -241,10 +241,12 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   const [editTitle, setEditTitle] = useState(claim.title || '')
   const [editBody, setEditBody] = useState(claim.body || '')
   const [saving, setSaving] = useState(false)
-  const [updating, setUpdating] = useState(false)
 
-  const currentStatus = claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
-  const currentPriority = claim.priority || 'medium'
+  // Optimistic local state — updates instantly, syncs to server in background
+  const [localStatus, setLocalStatus] = useState(
+    claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
+  )
+  const [localPriority, setLocalPriority] = useState(claim.priority || 'medium')
 
   const claimDate = claim.created_at
     ? new Date(claim.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -254,34 +256,39 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   const bodyText = claim.body || ''
   const isTruncated = bodyText.length > TRUNCATE
 
-  async function updateClaim(patch: Record<string, unknown>) {
-    setUpdating(true)
-    await fetch('/api/claim-update', {
+  async function saveToServer(patch: Record<string, unknown>) {
+    // Fire and forget — don't await, don't block UI
+    fetch('/api/claim-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ claimId: claim.id, ifaId, ...patch }),
-    })
-    setUpdating(false)
-    onUpdated()
+    }).catch(err => console.error('[claim-update] failed:', err))
   }
 
-  async function setStatus(status: string) {
-    await updateClaim({ status, resolved: status === 'resolved' })
+  function handleStatusChange(status: string) {
+    setLocalStatus(status) // instant UI update
+    saveToServer({ status, resolved: status === 'resolved' })
   }
 
-  async function setPriority(priority: string) {
-    await updateClaim({ priority })
+  function handlePriorityChange(priority: string) {
+    setLocalPriority(priority) // instant UI update
+    saveToServer({ priority })
   }
 
   async function saveEdit() {
     setSaving(true)
-    await updateClaim({ title: editTitle, body: editBody })
+    await fetch('/api/claim-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claimId: claim.id, ifaId, title: editTitle, body: editBody }),
+    })
     setEditing(false)
     setSaving(false)
+    onUpdated() // refresh only after text edit save
   }
 
   return (
-    <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '14px 16px', opacity: updating ? 0.7 : 1, transition: 'opacity 0.15s' }}>
+    <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '14px 16px' }}>
 
       {/* Top row: date + edit button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -335,13 +342,13 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>Status:</span>
           <select
-            value={currentStatus}
-            onChange={e => setStatus(e.target.value)}
+            value={localStatus}
+            onChange={e => handleStatusChange(e.target.value)}
             style={{
               fontFamily: 'DM Sans, sans-serif', fontSize: 11,
               background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 5,
               padding: '4px 8px', cursor: 'pointer', outline: 'none',
-              color: currentStatus === 'resolved' ? '#5AB87A' : currentStatus === 'in_progress' ? '#4A9EBF' : '#D4A030',
+              color: localStatus === 'resolved' ? '#5AB87A' : localStatus === 'in_progress' ? '#4A9EBF' : '#D4A030',
             }}>
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
@@ -352,13 +359,13 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>Priority:</span>
           <select
-            value={currentPriority}
-            onChange={e => setPriority(e.target.value)}
+            value={localPriority}
+            onChange={e => handlePriorityChange(e.target.value)}
             style={{
               fontFamily: 'DM Sans, sans-serif', fontSize: 11,
               background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 5,
               padding: '4px 8px', cursor: 'pointer', outline: 'none',
-              color: currentPriority === 'high' ? '#D06060' : currentPriority === 'medium' ? '#D4A030' : '#C9B99A',
+              color: localPriority === 'high' ? '#D06060' : localPriority === 'medium' ? '#D4A030' : '#C9B99A',
             }}>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
