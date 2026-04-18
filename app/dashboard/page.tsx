@@ -123,9 +123,7 @@ export default async function DashboardHome() {
           { label: 'Renewing', value: renewingIn30.length, sub: 'next 30 days', href: '/dashboard/renewals' },
         ].map(k => (
           <Link key={k.label} href={k.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px', transition: 'border-color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#C8813A')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#2E1A0E')}>
+            <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px', transition: 'border-color 0.15s' }}>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
               <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 300, color: '#F5ECD7', lineHeight: 1 }}>{k.value}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', marginTop: 4 }}>{k.sub}</div>
@@ -158,9 +156,7 @@ export default async function DashboardHome() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {feed.map(item => (
               <Link key={item.id} href={item.href} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 10, padding: '14px 18px', transition: 'border-color 0.15s, background 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#C8813A'; e.currentTarget.style.background = '#220F07' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#2E1A0E'; e.currentTarget.style.background = '#1C0F0A' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 10, padding: '14px 18px', transition: 'border-color 0.15s, background 0.15s' }}>
 
                   <span style={{ fontSize: 18, flexShrink: 0 }}>{TYPE_ICONS[item.type]}</span>
 
