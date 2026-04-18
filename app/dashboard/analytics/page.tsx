@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
       {/* KPI row skeleton */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
         {[1,2,3,4].map(i => (
-          <div key={i} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
+          <div key={i} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
             <div className="shimmer" style={{ height: 11, width: 80, marginBottom: 10 }} />
             <div className="shimmer" style={{ height: 32, width: 120 }} />
           </div>
@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
 
       {/* Narrative */}
       {narrative && (
-        <div style={{ ...panelStyle, background: '#F7F4F0', borderColor: '#E8E2DA', marginBottom: 24 }}>
+        <div style={{ ...panelStyle, background: '#FFFFFF', borderColor: '#E8E2DA', marginBottom: 24 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
             🔍 Lens insight
           </div>
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
           { label: 'Annual premium', value: `$${metrics.portfolio.totalAnnualPremium.toLocaleString()}`, mono: true },
           { label: 'Avg per client', value: `$${metrics.portfolio.avgPremiumPerClient.toLocaleString()}`, mono: true },
         ].map(k => (
-          <div key={k.label} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
+          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
             <div style={labelStyle}>{k.label}</div>
             <div style={{ fontFamily: k.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410' }}>
               {k.value}
@@ -223,7 +223,7 @@ export default function AnalyticsPage() {
           {metrics.renewals.next30Days.policies.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {metrics.renewals.next30Days.policies.map((p, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FAFAF8', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{p.client}</div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{p.insurer} · {p.type}</div>
@@ -266,7 +266,7 @@ export default function AnalyticsPage() {
             {metrics.claims.details.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {metrics.claims.details.slice(0, 4).map((c, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#F7F4F0', borderRadius: 6, border: '0.5px solid #E8E2DA' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#FAFAF8', borderRadius: 6, border: '0.5px solid #E8E2DA' }}>
                     <div>
                       <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410' }}>{c.client}</div>
                       <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{c.title}</div>
@@ -292,8 +292,8 @@ export default function AnalyticsPage() {
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
               {['platinum', 'gold', 'silver', 'bronze'].map(tier => (
-                <div key={tier} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: TIER_COLORS[tier], textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 500, fontSize: 11 }}>{tier}</div>
+                <div key={tier} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#1A1410', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 500, fontSize: 11 }}>{tier}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, color: '#1A1410', fontWeight: 400 }}>
                     {metrics.tiers[tier] || 0}
                   </div>
@@ -314,7 +314,7 @@ export default function AnalyticsPage() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {metrics.topClients.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FAFAF8', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', width: 16 }}>{i + 1}</span>
                   <div>
@@ -343,7 +343,7 @@ export default function AnalyticsPage() {
                 const maxPremium = Math.max(...Object.values(metrics.insurerBreakdown).map(d => d.premium))
                 const pct = maxPremium > 0 ? (data.premium / maxPremium) * 100 : 0
                 return (
-                  <div key={insurer} style={{ padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
+                  <div key={insurer} style={{ padding: '10px 12px', background: '#FAFAF8', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{insurer}</span>
                       <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517' }}>${data.premium.toLocaleString()}</span>
