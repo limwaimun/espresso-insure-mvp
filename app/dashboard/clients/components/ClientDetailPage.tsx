@@ -235,22 +235,14 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
-const STATUSES = ['open', 'in_progress', 'resolved'] as const
-const PRIORITIES = ['low', 'medium', 'high'] as const
-
-const statusLabel: Record<string, string> = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' }
-const statusPill: Record<string, string> = { open: 'pill-amber', in_progress: 'pill-info', resolved: 'pill-ok' }
-const priorityLabel: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High' }
-const priorityPill: Record<string, string> = { low: 'pill-info', medium: 'pill-amber', high: 'pill-danger' }
-
 function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; onUpdated: () => void }) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(claim.title || '')
   const [editBody, setEditBody] = useState(claim.body || '')
   const [saving, setSaving] = useState(false)
+  const [updating, setUpdating] = useState(false)
 
-  // Derive current status string from resolved + any extended status
   const currentStatus = claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
   const currentPriority = claim.priority || 'medium'
 
@@ -258,27 +250,27 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
     ? new Date(claim.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '—'
 
-  const TRUNCATE = 120
+  const TRUNCATE = 150
   const bodyText = claim.body || ''
   const isTruncated = bodyText.length > TRUNCATE
 
   async function updateClaim(patch: Record<string, unknown>) {
+    setUpdating(true)
     await fetch('/api/claim-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ claimId: claim.id, ifaId, ...patch }),
     })
+    setUpdating(false)
     onUpdated()
   }
 
-  async function cycleStatus() {
-    const next = { open: 'in_progress', in_progress: 'resolved', resolved: 'open' }[currentStatus] as string
-    await updateClaim({ status: next, resolved: next === 'resolved' })
+  async function setStatus(status: string) {
+    await updateClaim({ status, resolved: status === 'resolved' })
   }
 
-  async function cyclePriority() {
-    const next = { low: 'medium', medium: 'high', high: 'low' }[currentPriority] as string
-    await updateClaim({ priority: next })
+  async function setPriority(priority: string) {
+    await updateClaim({ priority })
   }
 
   async function saveEdit() {
@@ -289,76 +281,91 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   }
 
   return (
-    <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        {/* Left: date + content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#C9B99A', marginBottom: 6 }}>{claimDate}</div>
+    <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: '14px 16px', opacity: updating ? 0.7 : 1, transition: 'opacity 0.15s' }}>
 
-          {editing ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }}
-                placeholder="Claim title"
-              />
-              <textarea
-                value={editBody}
-                onChange={e => setEditBody(e.target.value)}
-                rows={4}
-                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontSize: 12 } as React.CSSProperties}
-                placeholder="Description"
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={saveEdit} disabled={saving}
-                  style={{ ...btnPrimary, fontSize: 12, padding: '6px 14px', opacity: saving ? 0.7 : 1 }}>
-                  <Save size={12} />{saving ? 'Saving…' : 'Save'}
-                </button>
-                <button onClick={() => { setEditing(false); setEditTitle(claim.title || ''); setEditBody(claim.body || '') }}
-                  style={{ ...btnOutline, fontSize: 12, padding: '6px 14px' }}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500, marginBottom: 4 }}>
-                {claim.title || 'Untitled claim'}
-              </div>
-              {bodyText && (
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', lineHeight: 1.6 }}>
-                  {expanded || !isTruncated ? bodyText : bodyText.slice(0, TRUNCATE) + '…'}
-                  {isTruncated && (
-                    <button onClick={() => setExpanded(v => !v)}
-                      style={{ background: 'transparent', border: 'none', color: '#C8813A', fontSize: 11, cursor: 'pointer', padding: '0 4px', fontFamily: 'DM Sans, sans-serif' }}>
-                      {expanded ? 'Show less' : 'Show more'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+      {/* Top row: date + edit button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#C9B99A' }}>{claimDate}</span>
+        {!editing && (
+          <button onClick={() => setEditing(true)}
+            style={{ background: 'transparent', border: '1px solid #2E1A0E', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: '#C9B99A', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 4 }}>
+            ✏️ Edit
+          </button>
+        )}
+      </div>
 
-        {/* Right: status + priority + edit */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-          <button onClick={cycleStatus} title="Click to change status"
-            className={`pill ${statusPill[currentStatus]}`}
-            style={{ cursor: 'pointer', border: 'none', fontFamily: 'DM Sans, sans-serif' }}>
-            {statusLabel[currentStatus]}
-          </button>
-          <button onClick={cyclePriority} title="Click to change priority"
-            className={`pill ${priorityPill[currentPriority]}`}
-            style={{ cursor: 'pointer', border: 'none', fontFamily: 'DM Sans, sans-serif' }}>
-            {priorityLabel[currentPriority]}
-          </button>
-          {!editing && (
-            <button onClick={() => setEditing(true)}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.5, marginTop: 2 }}
-              title="Edit claim">
-              ✏️
+      {/* Content */}
+      {editing ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
+            style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }} placeholder="Claim title" />
+          <textarea value={editBody} onChange={e => setEditBody(e.target.value)}
+            rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontSize: 12 } as React.CSSProperties}
+            placeholder="Description" />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={saveEdit} disabled={saving} style={{ ...btnPrimary, fontSize: 12, padding: '6px 14px', opacity: saving ? 0.7 : 1 }}>
+              <Save size={12} />{saving ? 'Saving…' : 'Save'}
             </button>
+            <button onClick={() => { setEditing(false); setEditTitle(claim.title || ''); setEditBody(claim.body || '') }}
+              style={{ ...btnOutline, fontSize: 12, padding: '6px 14px' }}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500, marginBottom: 4 }}>
+            {claim.title || 'Untitled claim'}
+          </div>
+          {bodyText && (
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', lineHeight: 1.6 }}>
+              {expanded || !isTruncated ? bodyText : bodyText.slice(0, TRUNCATE) + '…'}
+              {isTruncated && (
+                <button onClick={() => setExpanded(v => !v)}
+                  style={{ background: 'transparent', border: 'none', color: '#C8813A', fontSize: 11, cursor: 'pointer', padding: '0 4px', fontFamily: 'DM Sans, sans-serif' }}>
+                  {expanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
           )}
         </div>
+      )}
+
+      {/* Bottom row: status dropdown + priority dropdown */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>Status:</span>
+          <select
+            value={currentStatus}
+            onChange={e => setStatus(e.target.value)}
+            style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11,
+              background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 5,
+              padding: '4px 8px', cursor: 'pointer', outline: 'none',
+              color: currentStatus === 'resolved' ? '#5AB87A' : currentStatus === 'in_progress' ? '#4A9EBF' : '#D4A030',
+            }}>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>Priority:</span>
+          <select
+            value={currentPriority}
+            onChange={e => setPriority(e.target.value)}
+            style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11,
+              background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 5,
+              padding: '4px 8px', cursor: 'pointer', outline: 'none',
+              color: currentPriority === 'high' ? '#D06060' : currentPriority === 'medium' ? '#D4A030' : '#C9B99A',
+            }}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
       </div>
     </div>
   )
