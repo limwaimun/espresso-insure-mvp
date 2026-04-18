@@ -12,14 +12,22 @@ export default async function DashboardHome() {
     { count: clientCount },
     { data: policies },
     { data: alerts },
+    { data: clients },
+    { data: overdueHoldings },
   ] = await Promise.all([
     supabase.from('clients').select('*', { count: 'exact', head: true }),
-    supabase.from('policies').select('*, clients(id, name, company)').eq('status', 'active'),
-    supabase.from('alerts').select('*, clients(id, name)').eq('resolved', false).order('created_at', { ascending: false }),
+    supabase.from('policies').select('id, type, insurer, premium, renewal_date, status, created_at, client_id, clients!inner(id, name, company)'),
+    supabase.from('alerts').select('id, title, type, priority, resolved, created_at, client_id, clients(id, name)').eq('resolved', false).order('created_at', { ascending: false }),
+    supabase.from('clients').select('id, name, birthday'),
+    supabase.from('holdings')
+      .select('id, product_name, client_id, last_reviewed_at, clients(id, name)')
+      .or(`last_reviewed_at.is.null,last_reviewed_at.lt.${new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()}`)
+      .limit(5),
   ])
 
   const allPolicies = policies || []
   const allAlerts = alerts || []
+  const allClients = clients || []
 
   const totalPremium = allPolicies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
   const renewingIn30 = allPolicies.filter(p => {
@@ -27,156 +35,241 @@ export default async function DashboardHome() {
     const d = new Date(p.renewal_date)
     return d >= now && d <= thirtyDays
   })
+  const openClaims = allAlerts.filter(a => a.priority === 'high' || a.type === 'claim')
 
-  type FeedItem = {
-    id: string
-    urgency: number
-    type: 'renewal' | 'claim' | 'alert'
-    label: string
-    sublabel: string
-    tag: string
-    tagColor: string
-    href: string
-    meta: string
-  }
-
-  const feed: FeedItem[] = []
-
-  allPolicies.forEach(p => {
-    if (!p.renewal_date) return
+  // Urgent column: lapsed + due ≤7 days + high priority claims
+  const lapsed = allPolicies.filter(p => {
+    if (!p.renewal_date) return false
+    return new Date(p.renewal_date) < now
+  })
+  const dueSoon = allPolicies.filter(p => {
+    if (!p.renewal_date) return false
     const d = new Date(p.renewal_date)
-    const days = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    if (days <= 7) {
-      const client = p.clients as any
-      feed.push({
-        id: `renewal-${p.id}`,
-        urgency: days < 0 ? -999 : days,
-        type: 'renewal',
-        label: client?.name || 'Unknown client',
-        sublabel: `${p.type} · ${p.insurer}`,
-        tag: days < 0 ? 'Lapsed' : `${days}d`,
-        tagColor: days < 0 ? '#D06060' : '#D4A030',
-        href: `/dashboard/clients/${client?.id || ''}`,
-        meta: `$${Number(p.premium).toLocaleString()}/yr`,
-      })
-    }
+    const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
+    return days >= 0 && days <= 7
+  })
+  const highClaims = allAlerts.filter(a => a.priority === 'high' && !a.resolved)
+
+  // Relationship column: birthdays + policy anniversaries + quiet conversations
+  const birthdaysThisWeek = allClients.filter(c => {
+    if (!c.birthday) return false
+    const bday = new Date(c.birthday)
+    const thisYear = new Date(now.getFullYear(), bday.getMonth(), bday.getDate())
+    const diff = Math.ceil((thisYear.getTime() - now.getTime()) / 86400000)
+    return diff >= 0 && diff <= 7
+  })
+  const policyAnniversaries = allPolicies.filter(p => {
+    if (!p.created_at) return false
+    const created = new Date(p.created_at)
+    const anniv = new Date(now.getFullYear(), created.getMonth(), created.getDate())
+    const diff = Math.ceil((anniv.getTime() - now.getTime()) / 86400000)
+    return diff >= 0 && diff <= 3
   })
 
-  allAlerts.forEach(a => {
-    const client = a.clients as any
-    const daysAgo = Math.floor((now.getTime() - new Date(a.created_at).getTime()) / (1000 * 60 * 60 * 24))
-    const isClaim = a.type === 'claim'
-    const isHighPriority = a.priority === 'high'
-    if (isHighPriority || isClaim) {
-      feed.push({
-        id: `alert-${a.id}`,
-        urgency: 100 + daysAgo,
-        type: isClaim ? 'claim' : 'alert',
-        label: client?.name || 'Unknown client',
-        sublabel: a.title || 'Alert',
-        tag: isHighPriority ? 'High' : (a.priority || 'Info'),
-        tagColor: isHighPriority ? '#D06060' : '#D4A030',
-        href: `/dashboard/clients/${client?.id || ''}`,
-        meta: `${daysAgo}d ago`,
-      })
-    }
-  })
-
-  feed.sort((a, b) => a.urgency - b.urgency)
+  // Pipeline column: renewals 8–30 days + coverage gaps
+  const pipeline = allPolicies.filter(p => {
+    if (!p.renewal_date) return false
+    const d = new Date(p.renewal_date)
+    const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
+    return days > 7 && days <= 30
+  }).sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())
+  const gaps = allAlerts.filter(a => a.type === 'gap' && !a.resolved)
 
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  const TYPE_ICONS: Record<string, string> = {
-    renewal: '📅',
-    claim: '📄',
-    alert: '🔔',
+  const getDays = (date: string) => Math.ceil((new Date(date).getTime() - now.getTime()) / 86400000)
+
+  const pill = (text: string, color: 'red' | 'amber' | 'teal' | 'blue') => {
+    const styles = {
+      red:   { bg: '#FCEBEB', text: '#A32D2D', border: '#F7C1C1' },
+      amber: { bg: '#FAEEDA', text: '#854F0B', border: '#FAC775' },
+      teal:  { bg: '#E1F5EE', text: '#0F6E56', border: '#9FE1CB' },
+      blue:  { bg: '#E6F1FB', text: '#185FA5', border: '#B5D4F4' },
+    }
+    const s = styles[color]
+    return (
+      <span style={{ background: s.bg, color: s.text, border: `0.5px solid ${s.border}`, fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 100, flexShrink: 0, whiteSpace: 'nowrap' }}>
+        {text}
+      </span>
+    )
   }
 
+  const card = (key: string, icon: string, name: string, sub: string, badge: React.ReactNode, href: string) => (
+    <Link key={key} href={href} style={{ textDecoration: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '10px 12px', marginBottom: 6 }}>
+        <span style={{ fontSize: 14, flexShrink: 0, width: 20, textAlign: 'center' }}>{icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{sub}</div>
+        </div>
+        {badge}
+      </div>
+    </Link>
+  )
+
+  const secLabel = (text: string) => (
+    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#B4B2A9', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 6px' }}>{text}</div>
+  )
+
+  const colHead = (label: string, color: string, dot: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color }}>{label}</div>
+    </div>
+  )
+
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
 
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#F5ECD7', margin: '0 0 6px' }}>
-          {greeting}
-        </h1>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A', margin: 0 }}>
-          {feed.length > 0
-            ? `${feed.length} item${feed.length > 1 ? 's' : ''} need${feed.length === 1 ? 's' : ''} your attention today`
-            : 'All clear — nothing urgent today'}
-        </p>
+      {/* KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
+        {[
+          { label: 'Clients', value: String(clientCount || 0), sub: 'total book', href: '/dashboard/clients', warn: false },
+          { label: 'Annual premium', value: `$${totalPremium.toLocaleString()}`, sub: `${allPolicies.length} policies`, href: '/dashboard/analytics', warn: false },
+          { label: 'Renewing', value: String(renewingIn30.length), sub: 'next 30 days', href: '/dashboard/renewals', warn: renewingIn30.length > 0 },
+          { label: 'Open claims', value: String(openClaims.length), sub: 'needs follow-up', href: '/dashboard/claims', warn: openClaims.length > 0 },
+        ].map(k => (
+          <Link key={k.label} href={k.href} style={{ textDecoration: 'none' }}>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>{k.label}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 500, color: k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', marginTop: 3 }}>{k.sub}</div>
+            </div>
+          </Link>
+        ))}
       </div>
 
-      {/* 3 KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
-        <Link href="/dashboard/clients" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Clients</div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 300, color: '#F5ECD7', lineHeight: 1 }}>{clientCount || 0}</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', marginTop: 4 }}>total</div>
-          </div>
-        </Link>
-        <Link href="/dashboard/analytics" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Annual premium</div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 300, color: '#F5ECD7', lineHeight: 1 }}>${totalPremium.toLocaleString()}</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', marginTop: 4 }}>across all policies</div>
-          </div>
-        </Link>
-        <Link href="/dashboard/renewals" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Renewing</div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 300, color: renewingIn30.length > 0 ? '#D4A030' : '#F5ECD7', lineHeight: 1 }}>{renewingIn30.length}</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', marginTop: 4 }}>next 30 days</div>
-          </div>
-        </Link>
-      </div>
+      {/* Three columns */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14 }}>
 
-      {/* Priority feed */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#F5ECD7', margin: 0 }}>
-            Needs attention
-          </h2>
-          {feed.length > 0 && (
-            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
-              {feed.length} item{feed.length !== 1 ? 's' : ''}
-            </span>
+        {/* URGENT */}
+        <div>
+          {colHead('Urgent — act today', '#A32D2D', '#E24B4A')}
+
+          {lapsed.length > 0 && (
+            <>
+              {secLabel('Lapsed')}
+              {lapsed.slice(0, 3).map(p => {
+                const c = p.clients as any
+                return card(`lapsed-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · ${p.insurer}`, pill('Lapsed', 'red'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {dueSoon.length > 0 && (
+            <>
+              {secLabel('Due this week')}
+              {dueSoon.slice(0, 3).map(p => {
+                const c = p.clients as any
+                const days = getDays(p.renewal_date)
+                return card(`due-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · ${p.insurer}`, pill(`${days}d`, 'amber'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {highClaims.length > 0 && (
+            <>
+              {secLabel('High-priority claims')}
+              {highClaims.slice(0, 2).map(a => {
+                const c = a.clients as any
+                return card(`claim-${a.id}`, '📄', c?.name || 'Unknown', a.title || 'Open claim', pill('High', 'red'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {lapsed.length === 0 && dueSoon.length === 0 && highClaims.length === 0 && (
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+              Nothing urgent today ✓
+            </div>
           )}
         </div>
 
-        {feed.length === 0 ? (
-          <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 12, padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A' }}>
-              Nothing urgent right now. Great work.
+        {/* RELATIONSHIPS */}
+        <div>
+          {colHead('Relationships — reach out', '#854F0B', '#EF9F27')}
+
+          {birthdaysThisWeek.length > 0 && (
+            <>
+              {secLabel('Birthdays this week')}
+              {birthdaysThisWeek.map(c => {
+                const bday = new Date(c.birthday)
+                const anniv = new Date(now.getFullYear(), bday.getMonth(), bday.getDate())
+                const diff = Math.ceil((anniv.getTime() - now.getTime()) / 86400000)
+                const when = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : `in ${diff}d`
+                return card(`bday-${c.id}`, '🎂', c.name, `Birthday ${when}`, pill('Birthday', 'amber'), `/dashboard/clients/${c.id}`)
+              })}
+            </>
+          )}
+
+          {policyAnniversaries.length > 0 && (
+            <>
+              {secLabel('Policy anniversaries')}
+              {policyAnniversaries.slice(0, 2).map(p => {
+                const c = p.clients as any
+                const years = now.getFullYear() - new Date(p.created_at).getFullYear()
+                return card(`anniv-${p.id}`, '🔁', c?.name || 'Unknown', `${p.type} · ${years} year${years !== 1 ? 's' : ''} today`, pill(`${years}yr`, 'blue'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {birthdaysThisWeek.length === 0 && policyAnniversaries.length === 0 && (
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+              No touchpoints this week
             </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {feed.map(item => (
-              <Link key={item.id} href={item.href} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 10, padding: '14px 18px' }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{TYPE_ICONS[item.type]}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#F5ECD7', fontWeight: 500, marginBottom: 2 }}>
-                      {item.label}
-                    </div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.sublabel}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                    <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>{item.meta}</span>
-                    <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 100, textTransform: 'uppercase', background: `${item.tagColor}22`, color: item.tagColor, border: `1px solid ${item.tagColor}44` }}>
-                      {item.tag}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* PIPELINE */}
+        <div>
+          {colHead('Pipeline — plan ahead', '#0F6E56', '#1D9E75')}
+
+          {pipeline.length > 0 && (
+            <>
+              {secLabel('Renewals next 30 days')}
+              {pipeline.slice(0, 4).map(p => {
+                const c = p.clients as any
+                const days = getDays(p.renewal_date)
+                return card(`pipe-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · $${Number(p.premium).toLocaleString()}/yr`, pill(`${days}d`, 'teal'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {gaps.length > 0 && (
+            <>
+              {secLabel('Coverage gaps')}
+              {gaps.slice(0, 2).map(a => {
+                const c = a.clients as any
+                return card(`gap-${a.id}`, '⚠', c?.name || 'Unknown', a.title || 'Coverage gap', pill('Gap', 'amber'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {pipeline.length === 0 && gaps.length === 0 && (!overdueHoldings || overdueHoldings.length === 0) ? (
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+              Pipeline clear for now
+            </div>
+          ) : null}
+
+          {overdueHoldings && overdueHoldings.length > 0 && (
+            <>
+              {secLabel('Portfolio reviews overdue')}
+              {overdueHoldings.map((h: any) => {
+                const c = h.clients as any
+                const daysSince = h.last_reviewed_at
+                  ? Math.floor((Date.now() - new Date(h.last_reviewed_at).getTime()) / (1000 * 60 * 60 * 24))
+                  : null
+                return card(
+                  `holding-${h.id}`, '📊',
+                  c?.name || 'Unknown',
+                  h.product_name,
+                  pill(daysSince ? `${daysSince}d` : 'Never', 'amber'),
+                  `/dashboard/clients/${c?.id || ''}`
+                )
+              })}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

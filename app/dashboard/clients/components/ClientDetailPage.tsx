@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import HoldingsSection from '@/components/HoldingsSection'
 import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2 } from 'lucide-react'
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from '../../../../lib/supabase/client'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -800,6 +801,9 @@ export default function ClientDetailPage({
           )}
         </div>
       </div>
+
+      {/* == SECTION 5.5: HOLDINGS == */}
+      <HoldingsSection clientId={client.id} ifaId={resolvedIfaId} />
 
       {/* == SECTION 6: CLAIMS == */}
       <div className="panel" style={{ marginBottom: 24 }}>

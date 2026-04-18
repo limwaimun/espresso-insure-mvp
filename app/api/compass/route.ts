@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SECRET_KEY!
@@ -24,6 +27,12 @@ const COVERAGE_CATEGORIES = [
   'Disability',
   'Travel',
   'Motor',
+  // Investment products
+  'Unit Trust / Mutual Fund',
+  'ETF',
+  'ILP (Investment-Linked Policy)',
+  'Annuity',
+  'Retirement Planning',
 ]
 
 // ── SG insurer landscape (for comparison context) ─────────────────────────
@@ -72,8 +81,9 @@ export async function POST(request: NextRequest) {
       : 'No active policies on record'
 
     // ── Generate Compass analysis ──────────────────────────────────────────
-    const systemPrompt = `You are Compass, an expert insurance analysis agent for Singapore financial advisors.
-You have deep knowledge of the Singapore insurance market, MAS regulations, and all major SG insurers.
+    const systemPrompt = `You are Compass, an expert financial product analysis agent for Singapore financial advisors.
+You have deep knowledge of the Singapore insurance AND investment market, MAS regulations, all major SG insurers, fund houses, and investment platforms.
+You can analyse both insurance coverage gaps AND investment portfolio gaps.
 You provide structured, actionable analysis — never generic advice.
 Always cite specific insurers and approximate premium ranges based on Singapore market rates (2025-2026).
 Preferred insurers for this FA: ${preferredInsurers.length > 0 ? preferredInsurers.join(', ') : 'None specified — be neutral'}.`

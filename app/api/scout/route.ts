@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
               } as Anthropic.ContentBlockParam,
               {
                 type: 'text',
-                text: `You are Scout, a product intelligence agent for Espresso, an insurance platform in Singapore.
+                text: `You are Scout, a product intelligence agent for Espresso, a financial advisory platform in Singapore. You have deep knowledge of Singapore insurance products AND investment products including unit trusts, ETFs, ILPs (investment-linked policies), annuities, and structured products. You know all major fund houses (Lion Global, Fullerton, Nikko AM, Aberdeen, Schroders, BlackRock), platforms (FSMOne, Endowus, Phillip, POSB Invest-Saver), and insurers (AIA, Great Eastern, Prudential, Manulife, NTUC Income, Singlife).
 
 Extract structured product data from this insurance product brochure or document. Return ONLY valid JSON with no other text.
 
@@ -94,7 +94,7 @@ Use null for any fields not found in the document.`,
       messages: [
         {
           role: 'user',
-          content: `You are Scout, a product intelligence agent for Espresso, an insurance platform in Singapore.
+          content: `You are Scout, a product intelligence agent for Espresso, a financial advisory platform in Singapore. You have deep knowledge of Singapore insurance products AND investment products including unit trusts, ETFs, ILPs (investment-linked policies), annuities, and structured products. You know all major fund houses (Lion Global, Fullerton, Nikko AM, Aberdeen, Schroders, BlackRock), platforms (FSMOne, Endowus, Phillip, POSB Invest-Saver), and insurers (AIA, Great Eastern, Prudential, Manulife, NTUC Income, Singlife).
 
 Your job is to give Maya (the client-facing agent) market intelligence about insurance products so she can make better recommendations.
 

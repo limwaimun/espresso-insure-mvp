@@ -11,13 +11,15 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 // ── Intent classification ──────────────────────────────────────────────────
 
 type Intent =
-  | 'product_research'   // Scout: research a specific product or insurer
-  | 'premium_estimate'   // Sage: estimate premiums for a client
-  | 'policy_comparison'  // Compass: compare policies across insurers
-  | 'claim_prefill'      // Atlas: pre-fill a claim form
-  | 'portfolio_report'   // Lens: FA portfolio analytics
-  | 'renewal_pipeline'   // Lens: upcoming renewals
-  | 'coverage_gap'       // Compass: identify coverage gaps for a client
+  | 'product_research'
+  | 'premium_estimate'
+  | 'policy_comparison'
+  | 'claim_prefill'
+  | 'portfolio_report'
+  | 'renewal_pipeline'
+  | 'coverage_gap'
+  | 'investment_research'    // Scout: research a fund or ETF
+  | 'portfolio_review'       // Harbour: review client investment holdings
   | 'unknown'
 
 interface RelayRequest {
@@ -184,6 +186,33 @@ export async function POST(request: NextRequest) {
           summary: intent === 'renewal_pipeline'
             ? 'Routing to Lens for renewal pipeline report'
             : 'Routing to Lens for portfolio analytics',
+        }
+        break
+
+      case 'investment_research':
+        route = {
+          intent,
+          agentUrl: `${baseUrl}/api/scout`,
+          agentPayload: {
+            ifaId,
+            query: message,
+            productType: params.product_type,
+            insurer: params.insurer,
+          },
+          summary: `Routing to Scout to research ${params.product_type || 'investment'} products`,
+        }
+        break
+
+      case 'portfolio_review':
+        route = {
+          intent,
+          agentUrl: `${baseUrl}/api/harbour`,
+          agentPayload: {
+            ifaId,
+            clientId,
+            mode: clientId ? 'client_review' : 'review_report',
+          },
+          summary: clientId ? 'Routing to Harbour for client portfolio review' : 'Routing to Harbour for full portfolio review report',
         }
         break
 
