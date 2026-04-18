@@ -554,7 +554,7 @@ export default function ClientDetailPage({
           <div key={i} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '20px 24px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{m.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>{m.value}</div>
-            {m.subtitle && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', marginTop: 6 }}>{m.subtitle}</div>}
+            {m.subtitle && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 6 }}>{m.subtitle}</div>}
           </div>
         ))}
       </div>
@@ -838,7 +838,7 @@ export default function ClientDetailPage({
                     <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: item.type === 'message' ? '#BA7517' : item.type === 'alert' ? '#A32D2D' : '#0F6E56' }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{item.text}</div>
-                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', marginTop: 2 }}>{formatRelativeTime(item.date)}</div>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 2 }}>{formatRelativeTime(item.date)}</div>
                     </div>
                   </div>
                 ))}

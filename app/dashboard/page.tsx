@@ -129,9 +129,9 @@ export default async function DashboardHome() {
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
 
       {/* Greeting */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Greeting name={ifaProfile?.name} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF7', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <Greeting name={ifaProfile?.name || undefined} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF7', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px', marginTop: 6 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>Maya active</span>
         </div>
