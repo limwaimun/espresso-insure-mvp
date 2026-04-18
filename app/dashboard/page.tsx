@@ -101,7 +101,7 @@ export default async function DashboardHome() {
         <span style={{ fontSize: 14, flexShrink: 0, width: 20, textAlign: 'center' }}>{icon}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{sub}</div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{sub}</div>
         </div>
         {badge}
       </div>
@@ -109,7 +109,7 @@ export default async function DashboardHome() {
   )
 
   const secLabel = (text: string) => (
-    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 6px', fontWeight: 500 }}>{text}</div>
+    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 6px', fontWeight: 500 }}>{text}</div>
   )
 
   const colHead = (label: string, color: string, dot: string) => (
@@ -132,9 +132,9 @@ export default async function DashboardHome() {
         ].map(k => (
           <Link key={k.label} href={k.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>{k.label}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#4A4440', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>{k.label}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 500, color: k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', marginTop: 3 }}>{k.sub}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532', marginTop: 3 }}>{k.sub}</div>
             </div>
           </Link>
         ))}
@@ -179,7 +179,7 @@ export default async function DashboardHome() {
           )}
 
           {lapsed.length === 0 && dueSoon.length === 0 && highClaims.length === 0 && (
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
               Nothing urgent today ✓
             </div>
           )}
@@ -214,7 +214,7 @@ export default async function DashboardHome() {
           )}
 
           {birthdaysThisWeek.length === 0 && policyAnniversaries.length === 0 && (
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
               No touchpoints this week
             </div>
           )}
@@ -246,7 +246,7 @@ export default async function DashboardHome() {
           )}
 
           {pipeline.length === 0 && gaps.length === 0 && (!overdueHoldings || overdueHoldings.length === 0) ? (
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#B4B2A9' }}>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
               Pipeline clear for now
             </div>
           ) : null}

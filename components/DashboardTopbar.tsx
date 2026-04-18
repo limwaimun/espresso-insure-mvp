@@ -19,13 +19,13 @@ const DashboardTopbar = ({ profile }: DashboardTopbarProps) => {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: 56 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 0 }}>
         {isMobile && (
-          <button style={{ background: 'transparent', border: 'none', color: '#6B6460', fontSize: 20, cursor: 'pointer', padding: 4 }}>
+          <button style={{ background: 'transparent', border: 'none', color: '#3D3532', fontSize: 20, cursor: 'pointer', padding: 4 }}>
             ☰
           </button>
         )}
         <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410' }}>
           {greeting}, <span style={{ fontWeight: 500 }}>{profile?.name?.split(' ')[0] || 'there'}</span>
-          {!isMobile && <span style={{ color: '#6B6460' }}> &nbsp;·&nbsp; {dateStr}</span>}
+          {!isMobile && <span style={{ color: '#3D3532' }}> &nbsp;·&nbsp; {dateStr}</span>}
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
@@ -36,7 +36,7 @@ const DashboardTopbar = ({ profile }: DashboardTopbarProps) => {
           </div>
         )}
         {isMobile && (
-          <button style={{ background: 'transparent', border: 'none', color: '#6B6460', fontSize: 18, cursor: 'pointer', padding: 4 }}>
+          <button style={{ background: 'transparent', border: 'none', color: '#3D3532', fontSize: 18, cursor: 'pointer', padding: 4 }}>
             🔔
           </button>
         )}
