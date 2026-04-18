@@ -132,6 +132,27 @@ export async function POST(request: NextRequest) {
       p.type?.toLowerCase().includes(form.form_type.toLowerCase().split('/')[0].toLowerCase())
     ) || policies?.[0]
 
+    // ── Fetch claim attachments if claim exists ──────────────────────────────
+    let claimAttachments: { file_name: string; file_type: string; storage_path: string; description: string | null }[] = []
+    if (clientId) {
+      const { data: openClaim } = await supabase
+        .from('alerts')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('resolved', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (openClaim) {
+        const { data: attachments } = await supabase
+          .from('claim_attachments')
+          .select('file_name, file_type, storage_path, description')
+          .eq('claim_id', openClaim.id)
+        claimAttachments = attachments || []
+      }
+    }
+
     // ── Build known fields ─────────────────────────────────────────────────
     const knownFields = buildKnownFields(client, relevantPolicy, ifa)
 
@@ -223,6 +244,8 @@ Keep it under 60 words. Friendly and direct. Mention they can find it on the ${f
       } : null,
       mayaCollectionScript: formAvailable ? mayaScript : null,
       faFormRequestScript,  // Maya sends this to the FA if form not in library
+      claimAttachments: claimAttachments.map(a => ({ name: a.file_name, type: a.file_type, description: a.description })),
+      attachmentCount: claimAttachments.length,
       readyToGenerate: formAvailable && requiredMissing.length === 0,
     })
   } catch (err) {

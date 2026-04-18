@@ -220,6 +220,97 @@ export async function POST(request: NextRequest) {
     recentMessages = (msgs || []).reverse()
   }
 
+  // ── STEP 3b: Handle media messages — upload to Supabase Storage ──────────
+  if (messageType !== 'text' && clientId) {
+    const mediaId = message.image?.id || message.document?.id || message.audio?.id || message.video?.id
+    const mediaCaption = message.image?.caption || message.document?.caption || message.document?.filename || ''
+    const mimeType = message.image?.mime_type || message.document?.mime_type || message.audio?.mime_type || 'application/octet-stream'
+    const isMedia = !!(mediaId)
+
+    if (isMedia && process.env.WHATSAPP_TOKEN) {
+      try {
+        // 1. Get temporary download URL from Meta
+        const urlRes = await fetch(`https://graph.facebook.com/v18.0/${mediaId}`, {
+          headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` }
+        })
+        const urlData = await urlRes.json()
+        const downloadUrl = urlData.url
+
+        if (downloadUrl) {
+          // 2. Download the file
+          const fileRes = await fetch(downloadUrl, {
+            headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` }
+          })
+          const fileBuffer = await fileRes.arrayBuffer()
+          const fileBytes = new Uint8Array(fileBuffer)
+
+          // 3. Find the most recent open claim for this client
+          const { data: recentClaim } = await supabase
+            .from('alerts')
+            .select('id')
+            .eq('client_id', clientId)
+            .eq('resolved', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          const claimId = recentClaim?.id || 'general'
+          const ext = mimeType.split('/')[1] || 'bin'
+          const fileName = mediaCaption || `whatsapp_${messageType}_${Date.now()}.${ext}`
+          const storagePath = `${ifaId}/${claimId}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+
+          // 4. Upload to Supabase Storage using service key
+          const serviceSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SECRET_KEY!
+          )
+          const { error: storageErr } = await serviceSupabase.storage
+            .from('claim-attachments')
+            .upload(storagePath, fileBytes, { contentType: mimeType, upsert: false })
+
+          if (!storageErr) {
+            // 5. Save attachment record
+            await serviceSupabase.from('claim_attachments').insert({
+              claim_id: recentClaim?.id || null,
+              client_id: clientId,
+              ifa_id: ifaId,
+              file_name: fileName,
+              file_type: mimeType,
+              file_size: fileBuffer.byteLength,
+              storage_path: storagePath,
+              source: 'whatsapp',
+              whatsapp_media_id: mediaId,
+              description: mediaCaption || `From ${clientName || senderNumber} via WhatsApp`,
+              uploaded_by: senderNumber,
+            })
+
+            // 6. Notify FA via Supabase alert
+            await supabase.from('alerts').insert({
+              ifa_id: ifaId,
+              client_id: clientId,
+              type: 'client_message',
+              title: `Document received from ${clientName || senderNumber}`,
+              body: `${messageType}: ${fileName}${mediaCaption ? ` — "${mediaCaption}"` : ''} — saved to claim attachments`,
+              priority: 'info',
+              resolved: false,
+            }).catch(() => {})
+
+            console.log(`[webhook] Media saved: ${storagePath}`)
+          }
+        }
+      } catch (err) {
+        console.error('[webhook] Media upload error:', err)
+        // Non-fatal — continue processing
+      }
+    }
+
+    // For non-text messages, update Maya with a summary and return
+    // Maya can't process audio/video directly
+    if (messageType === 'audio' || messageType === 'video') {
+      return NextResponse.json({ status: 'media_saved', type: messageType })
+    }
+  }
+
   // ── STEP 4: Get client and policy data ───────────────────────────────────
   const { data: client } = clientId
     ? await supabase.from('clients').select('*').eq('id', clientId).single()

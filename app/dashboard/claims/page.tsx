@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ClaimAttachments from '@/components/ClaimAttachments'
 import { createClient } from '@/lib/supabase/client'
 
 type FilterType = 'all' | 'open' | 'resolved' | 'high'
@@ -48,10 +49,13 @@ export default function ClaimsPage() {
   const [copied, setCopied] = useState(false)
   const [newForm, setNewForm] = useState({ client_id: '', title: '', body: '', priority: 'medium' })
   const [saving, setSaving] = useState(false)
+  const [ifaId, setIfaId] = useState('')
+  const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
 
   useEffect(() => {
     load()
     supabase.from('clients').select('id, name, company').order('name').then(({ data }) => setClients(data || []))
+    supabase.auth.getUser().then(({ data: { user } }) => { if (user) setIfaId(user.id) })
   }, [])
 
   async function load() {
@@ -228,7 +232,7 @@ export default function ClaimsPage() {
 
       {/* Table */}
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 180px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 200px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Description', 'Status', 'Priority', 'Filed', 'Action'].map(h => (
             <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
@@ -243,7 +247,7 @@ export default function ClaimsPage() {
           const statusLabel = claim.resolved ? 'Resolved' : claim.priority === 'high' ? 'Urgent' : 'Open'
           const priorityS = PRIORITY_STYLE[claim.priority] || PRIORITY_STYLE.info
           return (
-            <div key={claim.id} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 180px', padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'start' }}>
+            <div key={claim.id} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 200px', padding: '14px 20px', borderBottom: expandedClaim !== claim.id && i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'start' }}>
               <div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client?.name || '—'}</div>
                 {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{client.company}</div>}
@@ -260,8 +264,17 @@ export default function ClaimsPage() {
                 <button onClick={() => openMayaModal(claim)} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', textAlign: 'left' }}>
                   Ask Maya to follow up
                 </button>
+                <button onClick={() => setExpandedClaim(expandedClaim === claim.id ? null : claim.id)} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textAlign: 'left' }}>
+                  {expandedClaim === claim.id ? 'Hide attachments ↑' : '📎 Attachments'}
+                </button>
               </div>
-            </div>
+            {/* Expanded attachments */}
+            {expandedClaim === claim.id && ifaId && (
+              <div style={{ gridColumn: '1 / -1', padding: '12px 20px 16px', borderTop: '0.5px solid #F1EFE8', background: '#FAFAF8' }}>
+                <ClaimAttachments claimId={claim.id} clientId={claim.client_id} ifaId={ifaId} />
+              </div>
+            )}
+          </div>
           )
         })}
       </div>
