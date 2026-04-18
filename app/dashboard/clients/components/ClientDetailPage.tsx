@@ -415,6 +415,7 @@ export default function ClientDetailPage({
   const [deleting, setDeleting] = useState(false)
   const [policyFile, setPolicyFile] = useState<File | null>(null)
   const policyFileRef = useRef<HTMLInputElement>(null)
+  const [localActivity, setLocalActivity] = useState<{ date: string; text: string; type: string }[]>([])
 
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
@@ -451,6 +452,14 @@ export default function ClientDetailPage({
       setShowAddPolicy(false)
       setPolicyFile(null)
       setPolicySaving(false)
+
+      // Optimistically add to activity immediately
+      setLocalActivity(prev => [{
+        date: new Date().toISOString(),
+        text: `${policyForm.insurer} ${policyForm.type} added ($${parseFloat(policyForm.premium).toLocaleString()}/yr)`,
+        type: 'policy',
+      }, ...prev])
+
       router.refresh()
     } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
   }
@@ -687,21 +696,28 @@ export default function ClientDetailPage({
       <div className="panel">
         <div className="panel-header"><span className="panel-title">Activity</span></div>
         <div className="panel-body">
-          {timeline.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {timeline.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: item.type === 'message' ? '#C8813A' : item.type === 'alert' ? '#D06060' : '#5AB87A' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7' }}>{item.text}</div>
-                    <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A', marginTop: 2 }}>{formatRelativeTime(item.date)}</div>
+          {(() => {
+            // Merge local optimistic entries with server timeline, deduplicate by text
+            const merged = [...localActivity, ...timeline]
+              .filter((item, idx, arr) =>
+                idx === arr.findIndex(t => t.text === item.text && t.type === item.type)
+              )
+            return merged.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {merged.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: item.type === 'message' ? '#C8813A' : item.type === 'alert' ? '#D06060' : '#5AB87A' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7' }}>{item.text}</div>
+                      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A', marginTop: 2 }}>{formatRelativeTime(item.date)}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>No activity recorded yet.</div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>No activity recorded yet.</div>
+            )
+          })()}
         </div>
       </div>
 
