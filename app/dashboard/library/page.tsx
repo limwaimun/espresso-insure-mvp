@@ -275,26 +275,62 @@ export default function LibraryPage() {
             {/* Atlas Result */}
             {atlasResult && (
               <div>
+                {!atlasResult.form.available ? (
+                  /* ── Form not in library — ask FA to upload it ── */
+                  <div>
+                    <div style={{ background: 'rgba(200,129,58,0.1)', border: '1px solid #3D2215', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#D4A030', fontWeight: 600, marginBottom: 6 }}>
+                        ⚠ Form not in library yet
+                      </div>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', lineHeight: 1.6 }}>
+                        The <strong style={{ color: '#F5ECD7' }}>{atlasResult.form.name}</strong> hasn't been uploaded to your library. Download it from {atlasResult.form.insurer} and upload it here so Atlas can pre-fill it for your client.
+                      </div>
+                    </div>
+
+                    {atlasResult.faFormRequestScript && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', fontWeight: 600, marginBottom: 8 }}>
+                          💬 Maya will send you this
+                        </div>
+                        <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: 12, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 8 }}>
+                          "{atlasResult.faFormRequestScript}"
+                        </div>
+                        <button onClick={async () => { await navigator.clipboard.writeText(atlasResult.faFormRequestScript!); setCopiedScript(true); setTimeout(() => setCopiedScript(false), 2000) }}
+                          style={{ background: 'transparent', border: '1px solid #2E1A0E', borderRadius: 6, padding: '5px 12px', fontSize: 11, color: '#C9B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                          {copiedScript ? '✓ Copied!' : 'Copy message'}
+                        </button>
+                      </div>
+                    )}
+
+                    <a href={`https://www.google.com/search?q=${encodeURIComponent(atlasResult.form.insurer + ' ' + atlasResult.form.type + ' claim form Singapore PDF')}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'block', textAlign: 'center', background: '#C8813A', color: '#120A06', borderRadius: 8, padding: '10px 0', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                      Find {atlasResult.form.insurer} form →
+                    </a>
+                  </div>
+                ) : (
+                  /* ── Form available — show pre-fill details ── */
+                  <div>
                 {/* Completion bar */}
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A' }}>Form completion</span>
-                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: atlasResult.prefill.completionPercent >= 80 ? '#5AB87A' : '#C8813A' }}>
-                      {atlasResult.prefill.completionPercent}%
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: atlasResult.prefill!.completionPercent >= 80 ? '#5AB87A' : '#C8813A' }}>
+                      {atlasResult.prefill!.completionPercent}%
                     </span>
                   </div>
                   <div style={{ height: 6, background: '#2E1A0E', borderRadius: 3 }}>
-                    <div style={{ height: '100%', borderRadius: 3, background: atlasResult.prefill.completionPercent >= 80 ? '#5AB87A' : '#C8813A', width: `${atlasResult.prefill.completionPercent}%`, transition: 'width 0.5s' }} />
+                    <div style={{ height: '100%', borderRadius: 3, background: atlasResult.prefill!.completionPercent >= 80 ? '#5AB87A' : '#C8813A', width: `${atlasResult.prefill!.completionPercent}%`, transition: 'width 0.5s' }} />
                   </div>
                 </div>
 
                 {/* Known fields */}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5AB87A', fontWeight: 600, marginBottom: 8 }}>
-                    ✓ Pre-filled from database ({Object.keys(atlasResult.prefill.knownFields).length} fields)
+                    ✓ Pre-filled from database ({Object.keys(atlasResult.prefill!.knownFields).length} fields)
                   </div>
                   <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: 12, maxHeight: 140, overflowY: 'auto' }}>
-                    {Object.entries(atlasResult.prefill.knownFields).map(([k, v]) => (
+                    {Object.entries(atlasResult.prefill!.knownFields).map(([k, v]) => (
                       <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 4, fontFamily: 'DM Sans, sans-serif', fontSize: 11 }}>
                         <span style={{ color: '#C9B99A', minWidth: 140 }}>{k.replace(/_/g, ' ')}</span>
                         <span style={{ color: '#F5ECD7' }}>{String(v)}</span>
@@ -304,13 +340,13 @@ export default function LibraryPage() {
                 </div>
 
                 {/* Missing fields */}
-                {atlasResult.prefill.missingFields.length > 0 && (
+                {atlasResult.prefill!.missingFields.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#D4A030', fontWeight: 600, marginBottom: 8 }}>
-                      ⚠ Missing fields ({atlasResult.prefill.requiredMissingCount} required)
+                      ⚠ Missing fields ({atlasResult.prefill!.requiredMissingCount} required)
                     </div>
                     <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 8, padding: 12 }}>
-                      {atlasResult.prefill.missingFields.map(f => (
+                      {atlasResult.prefill!.missingFields.map(f => (
                         <div key={f.field} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontFamily: 'DM Sans, sans-serif', fontSize: 11 }}>
                           <span style={{ color: f.required ? '#D06060' : '#C9B99A' }}>{f.required ? '●' : '○'}</span>
                           <span style={{ color: '#F5ECD7' }}>{f.label}</span>
@@ -351,6 +387,8 @@ export default function LibraryPage() {
                     Try another client
                   </button>
                 </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

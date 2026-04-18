@@ -167,6 +167,26 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
     // ── Check if form PDF is available in storage ──────────────────────────
     const formAvailable = !!form.storage_url
 
+    // ── If form not in library, generate FA request script ─────────────────
+    let faFormRequestScript: string | null = null
+    if (!formAvailable) {
+      const scriptRes = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `You are Maya, a WhatsApp assistant for an IFA in Singapore.
+
+A client needs to submit a ${form.form_type} claim with ${form.insurer}, but we don't have their claim form in our library yet.
+
+Write a short, natural WhatsApp message to the FA asking them to upload the blank ${form.insurer} ${form.form_type} claim form to the Espresso Library so we can pre-fill it for the client. 
+
+Keep it under 60 words. Friendly and direct. Mention they can find it on the ${form.insurer} website or get it from their insurer contact.`,
+        }],
+      })
+      faFormRequestScript = scriptRes.content.find(b => b.type === 'text')?.text ?? null
+    }
+
     return NextResponse.json({
       success: true,
       form: {
@@ -186,7 +206,7 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
         type: relevantPolicy.type,
         premium: relevantPolicy.premium,
       } : null,
-      prefill: {
+      prefill: formAvailable ? {
         knownFields: Object.entries(allKnown)
           .filter(([, v]) => v !== null && v !== undefined)
           .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {}),
@@ -200,9 +220,10 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
         completionPercent: Math.round(
           ((claimSpecific.length - requiredMissing.length) / Math.max(claimSpecific.length, 1)) * 100
         ),
-      },
-      mayaCollectionScript: mayaScript,
-      readyToGenerate: requiredMissing.length === 0,
+      } : null,
+      mayaCollectionScript: formAvailable ? mayaScript : null,
+      faFormRequestScript,  // Maya sends this to the FA if form not in library
+      readyToGenerate: formAvailable && requiredMissing.length === 0,
     })
   } catch (err) {
     console.error('[atlas] error:', err)
