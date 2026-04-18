@@ -34,8 +34,8 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#FFFFFF', borderRight: '0.5px solid #E8E2DA', width: 208, flexShrink: 0 }}>
 
-      {/* Logo */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '0.5px solid #E8E2DA' }}>
+      {/* Logo — exactly 56px to align with topbar */}
+      <div style={{ height: 56, display: 'flex', alignItems: 'center', padding: '0 20px', borderBottom: '0.5px solid #E8E2DA', flexShrink: 0 }}>
         <Link href="/dashboard" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', letterSpacing: '-0.01em' }}>
             espresso<span style={{ color: '#BA7517' }}>.</span>

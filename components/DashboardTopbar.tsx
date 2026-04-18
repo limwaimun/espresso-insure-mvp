@@ -23,9 +23,9 @@ const DashboardTopbar = ({ profile }: DashboardTopbarProps) => {
             ☰
           </button>
         )}
-        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460' }}>
-          {greeting}, <span style={{ color: '#1A1410', fontWeight: 500 }}>{profile?.name?.split(' ')[0] || 'there'}</span>
-          {!isMobile && <span style={{ color: '#B4B2A9' }}>&nbsp;·&nbsp;{dateStr}</span>}
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410' }}>
+          {greeting}, <span style={{ fontWeight: 500 }}>{profile?.name?.split(' ')[0] || 'there'}</span>
+          {!isMobile && <span style={{ color: '#6B6460' }}> &nbsp;·&nbsp; {dateStr}</span>}
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
