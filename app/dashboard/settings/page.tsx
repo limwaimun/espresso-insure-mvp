@@ -29,8 +29,6 @@ export default function SettingsPage() {
     load()
   }, [])
 
-  const planLabel = profile?.plan === 'solo' ? 'Solo' : profile?.plan === 'pro' ? 'Pro' : profile?.plan === 'team' ? 'Team' : 'Trial'
-
   async function saveProfile() {
     setSaving(true); setProfileMsg('')
     await supabase.from('profiles').update({ name, phone, company }).eq('id', userId)
