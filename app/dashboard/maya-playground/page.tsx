@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Send, Bot, Eye, EyeOff, RotateCcw, Zap, Paperclip, X, FileText, Image } from 'lucide-react'
+import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image } from 'lucide-react'
 
 interface Client {
   id: string
@@ -60,6 +61,9 @@ const QUICK_PROMPTS = [
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
 
 export default function MayaPlaygroundPage() {
+  const searchParams = useSearchParams()
+  const preloadClientId = searchParams.get('clientId')
+
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [policies, setPolicies] = useState<Policy[]>([])
@@ -86,6 +90,14 @@ export default function MayaPlaygroundPage() {
     loadClients()
     loadIfaProfile()
   }, [])
+
+  // Auto-select client from URL param once clients are loaded
+  useEffect(() => {
+    if (preloadClientId && clients.length > 0 && !selectedClient) {
+      const match = clients.find(c => c.id === preloadClientId)
+      if (match) setSelectedClient(match)
+    }
+  }, [preloadClientId, clients])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -334,7 +346,7 @@ export default function MayaPlaygroundPage() {
         </div>
         {selectedClient && policies.length > 0 && (
           <div style={{ borderTop: '1px solid #2E1A0E', padding: '10px 10px 12px', maxHeight: 210, overflowY: 'auto' }}>
-            <p style={{ fontSize: 9, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 7px' }}>Policies</p>
+            <p style={{ fontSize: 9, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 7px' }}>Policies ({policies.length})</p>
             {policies.map(p => {
               const days = getRenewalDays(p.renewal_date)
               return (
@@ -347,6 +359,28 @@ export default function MayaPlaygroundPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+        {selectedClient && claims.length > 0 && (
+          <div style={{ borderTop: '1px solid #2E1A0E', padding: '10px 10px 12px', maxHeight: 160, overflowY: 'auto' }}>
+            <p style={{ fontSize: 9, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 7px' }}>Open Claims ({claims.filter(c => c.status !== 'resolved').length})</p>
+            {claims.filter(c => c.status !== 'resolved').map(c => (
+              <div key={c.id} style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 6, padding: '7px 9px', marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 11, color: '#F5ECD7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{c.title}</span>
+                  <span style={{ fontSize: 9, color: c.priority === 'high' ? '#D06060' : c.priority === 'medium' ? '#D4A030' : '#C9B99A', textTransform: 'uppercase' }}>{c.priority}</span>
+                </div>
+                <span style={{ fontSize: 10, color: '#C9B99A' }}>{c.status.replace('_', ' ')} · {c.daysSinceUpdate}d ago</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {selectedClient && (
+          <div style={{ borderTop: '1px solid #2E1A0E', padding: '10px 10px 12px' }}>
+            <a href={`/dashboard/clients/${selectedClient.id}`}
+              style={{ display: 'block', textAlign: 'center', fontSize: 11, color: '#C8813A', textDecoration: 'none', padding: '6px 0', border: '1px solid #3D2215', borderRadius: 6 }}>
+              View full client page →
+            </a>
           </div>
         )}
       </div>

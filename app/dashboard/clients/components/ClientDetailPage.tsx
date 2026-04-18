@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2 } from 'lucide-react'
-import { createClient } from '../../../../lib/supabase/client'
+import { createClient } from "@/lib/supabase/client"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -508,6 +508,10 @@ export default function ClientDetailPage({
           <button onClick={() => setShowEdit(true)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C8813A', padding: '8px 16px', border: '1px solid #C8813A', borderRadius: 4, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             ✏️ Edit
           </button>
+          <a href={`/dashboard/maya-playground?clientId=${client.id}`}
+            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', padding: '8px 16px', border: '1px solid #2E1A0E', borderRadius: 4, background: '#1C0F0A', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+            🤖 Test with Maya
+          </a>
           {connectionStatus !== 'connected' && (
             <button onClick={() => setShowWAInstructions(v => !v)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 4, background: '#25D366', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
               <MessageCircle size={14} /> Set up WhatsApp group
