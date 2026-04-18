@@ -58,9 +58,9 @@ export default async function RenewalsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
         {kpis.map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, lineHeight: 1, marginBottom: 4, color: k.danger ? '#A32D2D' : k.warn ? '#854F0B' : k.info ? '#185FA5' : '#1A1410' }}>{k.value}</div>
-            {k.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{k.sub}</div>}
+            {k.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{k.sub}</div>}
           </div>
         ))}
       </div>
@@ -78,7 +78,7 @@ export default async function RenewalsPage() {
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '180px 160px 140px 110px 100px 80px 120px 160px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Policy type', 'Insurer', 'Premium', 'Renewal', 'Days', 'Status', 'Action'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
@@ -91,7 +91,7 @@ export default async function RenewalsPage() {
             <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '180px 160px 140px 110px 100px 80px 120px 160px', padding: '14px 20px', borderBottom: i < enriched.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'center' }}>
               <div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client?.name || 'Unknown'}</div>
-                {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{client.company}</div>}
+                {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{client.company}</div>}
               </div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{p.type}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>{p.insurer}</div>
@@ -109,7 +109,7 @@ export default async function RenewalsPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <Link href={`/dashboard/clients/${client?.id || ''}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', cursor: 'pointer' }}>Ask Maya to follow up</span>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', cursor: 'pointer' }}>Ask Maya to follow up</span>
               </div>
             </div>
           )

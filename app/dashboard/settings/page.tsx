@@ -56,7 +56,7 @@ export default function SettingsPage() {
   }
   const labelStyle: React.CSSProperties = {
     fontFamily: 'DM Sans, sans-serif', fontSize: 11,
-    color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em',
+    color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.06em',
     marginBottom: 6, display: 'block',
   }
   const card: React.CSSProperties = {
@@ -67,7 +67,7 @@ export default function SettingsPage() {
   return (
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh', maxWidth: 720 }}>
       <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Settings</h1>
-      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', margin: '0 0 24px' }}>Manage your account and Maya preferences</p>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 24px' }}>Manage your account and Maya preferences</p>
 
       {/* Profile */}
       <div style={card}>
@@ -79,7 +79,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label style={labelStyle}>Email</label>
-            <input value={email} disabled style={{ ...inputStyle, background: '#F7F4F0', color: '#9B9088' }} />
+            <input value={email} disabled style={{ ...inputStyle, background: '#F7F4F0', color: '#5F5A57' }} />
           </div>
           <div>
             <label style={labelStyle}>WhatsApp number</label>
@@ -101,7 +101,7 @@ export default function SettingsPage() {
       {/* Security */}
       <div style={card}>
         <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Security</h2>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', margin: '0 0 20px' }}>Update your password</p>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 20px' }}>Update your password</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
             <label style={labelStyle}>New password</label>
@@ -123,7 +123,7 @@ export default function SettingsPage() {
       {/* Preferred insurers */}
       <div style={card}>
         <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Maya preferences</h2>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', margin: '0 0 12px' }}>Maya and Compass will prioritise these insurers in recommendations</p>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 12px' }}>Maya and Compass will prioritise these insurers in recommendations</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {['AIA', 'Great Eastern', 'Prudential', 'NTUC Income', 'Manulife', 'Singlife', 'FWD', 'Tokio Marine', 'HSBC Life', 'AXA'].map(ins => (
             <span key={ins} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 100, padding: '5px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', cursor: 'pointer' }}>

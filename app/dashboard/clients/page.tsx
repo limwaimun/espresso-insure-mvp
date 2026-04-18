@@ -104,7 +104,7 @@ export default function ClientsPage() {
           { label: 'Corporate', value: counts.corporate },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
         ))}
@@ -153,14 +153,14 @@ export default function ClientsPage() {
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '200px 100px 90px 180px 200px 130px 120px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Type', 'Tier', 'Company', 'Email', 'WhatsApp', 'Maya status'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
         {loading ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>Loading…</div>
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>Loading…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>No clients found</div>
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>No clients found</div>
         ) : (
           filtered.map((client, i) => {
             const ts = TIER_STYLES[client.tier] || TIER_STYLES.silver
@@ -175,7 +175,7 @@ export default function ClientsPage() {
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client.name}</div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 1 }}>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 1 }}>
                       Added {new Date(client.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                   </div>

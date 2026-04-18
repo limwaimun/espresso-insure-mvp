@@ -97,7 +97,7 @@ export default function ClaimsPage() {
           { label: 'High priority', value: highPriority, danger: highPriority > 0 },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: k.danger ? '#A32D2D' : k.green ? '#0F6E56' : k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
         ))}
@@ -116,14 +116,14 @@ export default function ClaimsPage() {
         {/* Header row */}
         <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 160px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
           {['Client', 'Description', 'Status', 'Priority', 'Filed', 'Action'].map(h => (
-            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>{h}</div>
+            <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#5F5A57', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>{h}</div>
           ))}
         </div>
 
         {loading ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>Loading…</div>
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>Loading…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>No claims found</div>
+          <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>No claims found</div>
         ) : (
           filtered.map((claim, i) => {
             const statusStyle = claim.resolved ? STATUS_STYLE.resolved : claim.priority === 'high' ? STATUS_STYLE.urgent : STATUS_STYLE.open
@@ -135,18 +135,18 @@ export default function ClaimsPage() {
               <div key={claim.id} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 160px', padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'start' }}>
                 <div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client?.name || 'Unknown'}</div>
-                  {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 2 }}>{client.company}</div>}
+                  {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 2 }}>{client.company}</div>}
                 </div>
                 <div style={{ paddingRight: 16 }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', marginBottom: 3 }}>{claim.title}</div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }}>{claim.body}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }}>{claim.body}</div>
                 </div>
                 <div>{pill(statusLabel, statusStyle)}</div>
                 <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityStyle)}</div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>{daysAgo(claim.created_at)}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <Link href={`/dashboard/clients/${claim.client_id}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
-                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', cursor: 'pointer' }}>Ask Maya to follow up</span>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', cursor: 'pointer' }}>Ask Maya to follow up</span>
                 </div>
               </div>
             )

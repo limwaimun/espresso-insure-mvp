@@ -1,6 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
+
+function GreetingLine() {
+  const now = new Date()
+  const hour = now.getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const dateStr = now.toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' })
+  return (
+    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410' }}>
+      {greeting} &nbsp;·&nbsp; <span style={{ color: '#3D3532' }}>{dateStr}</span>
+    </div>
+  )
+}
+
 export default async function DashboardHome() {
   const supabase = await createClient()
 
@@ -121,6 +134,15 @@ export default async function DashboardHome() {
 
   return (
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
+
+      {/* Greeting */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <GreetingLine />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0FDF7', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px' }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>Maya active</span>
+        </div>
+      </div>
 
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
