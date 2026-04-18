@@ -185,7 +185,13 @@ YOUR RULES
 6. ESCALATE to @${ifaName} for final decisions, pricing negotiations, or formal quotes.
 7. Never reveal you are AI. You are simply Maya.
 8. Singapore context: MAS, CPF, MediShield Life, SG insurers.
-9. Lead with empathy before logistics in any distressing situation.`
+9. Lead with empathy before logistics in any distressing situation.
+10. CLAIM UPDATES — you can update claim status and priority directly:
+    - If ${ifaName} says things like "mark the AIA claim as resolved", "update the health claim to in progress", "set that claim to high priority" — use the update_claim tool immediately.
+    - Valid status values: "open", "in_progress", "resolved"
+    - Valid priority values: "low", "medium", "high"
+    - After updating, confirm naturally: "Done — I've marked the [claim] as [status]."
+    - Only update claims that are listed in the OPEN CLAIMS section above. If a claim isn't listed, tell ${ifaName} you don't see it on record.`
 }
 
 // ── Memory functions ───────────────────────────────────────────────────────
@@ -433,7 +439,7 @@ export async function POST(request: NextRequest) {
   try {
     const {
       client, policies, ifaName, messages,
-      preferredInsurers, speakingAs, ifaId,
+      preferredInsurers, speakingAs, ifaId, claims,
     } = await request.json() as {
       client: Client
       policies: Policy[]
@@ -442,13 +448,14 @@ export async function POST(request: NextRequest) {
       preferredInsurers?: string[]
       speakingAs: 'client' | 'ifa'
       ifaId?: string
+      claims?: { id: string; title: string; status: string; priority: string; daysSinceUpdate: number }[]
     }
 
     if (!client || !messages?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // ── Memory: get/create conversation, load summary ──────────────────────
+    // ── Memory ─────────────────────────────────────────────────────────────
     let conversationId: string | null = null
     let summary: string | null = null
 
@@ -459,30 +466,119 @@ export async function POST(request: NextRequest) {
         summary = history.summary
       } catch (err) {
         console.error('[memory] failed to load/create conversation:', err)
-        // Non-fatal — continue without memory
       }
     }
 
-    // ── Build system prompt with memory ───────────────────────────────────
+    // ── Open claims for system prompt ──────────────────────────────────────
+    const openClaims = (claims ?? [])
+      .filter(c => c.status !== 'resolved')
+      .map(c => ({ title: c.title, daysSinceUpdate: c.daysSinceUpdate }))
+
+    // ── System prompt ──────────────────────────────────────────────────────
     const systemPrompt = buildSystemPrompt(
       client,
       policies ?? [],
       ifaName ?? 'Your Advisor',
       preferredInsurers ?? [],
-      summary ?? undefined
+      summary ?? undefined,
+      openClaims.length > 0 ? openClaims : undefined
     )
 
-    // ── Call Claude ────────────────────────────────────────────────────────
+    // ── Tool definition ────────────────────────────────────────────────────
+    const tools: Anthropic.Tool[] = [
+      {
+        name: 'update_claim',
+        description: 'Update the status or priority of a claim for this client. Use when the IFA explicitly asks to change a claim\'s status or priority.',
+        input_schema: {
+          type: 'object' as const,
+          properties: {
+            claim_id: {
+              type: 'string',
+              description: 'The ID of the claim to update',
+            },
+            status: {
+              type: 'string',
+              enum: ['open', 'in_progress', 'resolved'],
+              description: 'New status for the claim',
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'New priority for the claim',
+            },
+          },
+          required: ['claim_id'],
+        },
+      },
+    ]
+
+    // ── Build claim ID lookup for tool use ─────────────────────────────────
+    const claimLookup = Object.fromEntries((claims ?? []).map(c => [c.id, c]))
+
+    // ── Call Claude with tools ─────────────────────────────────────────────
     const claudeMessages = buildClaudeMessages(messages, client, ifaName)
 
-    const response = await anthropic.messages.create({
+    let response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: systemPrompt,
       messages: claudeMessages,
+      tools,
     })
 
-    const responseText = response.content.find(b => b.type === 'text')?.text ?? ''
+    // ── Handle tool use (agentic loop) ─────────────────────────────────────
+    let responseText = ''
+    const toolResults: string[] = []
+
+    while (response.stop_reason === 'tool_use') {
+      const toolUseBlock = response.content.find(b => b.type === 'tool_use') as Anthropic.ToolUseBlock | undefined
+      if (!toolUseBlock) break
+
+      const input = toolUseBlock.input as { claim_id?: string; status?: string; priority?: string }
+      let toolResult = ''
+
+      if (toolUseBlock.name === 'update_claim' && input.claim_id && ifaId) {
+        const patch: Record<string, unknown> = {}
+        if (input.status) { patch.status = input.status; patch.resolved = input.status === 'resolved' }
+        if (input.priority) patch.priority = input.priority
+
+        const { error } = await supabase
+          .from('alerts')
+          .update(patch)
+          .eq('id', input.claim_id)
+          .eq('ifa_id', ifaId)
+
+        if (error) {
+          toolResult = `Error updating claim: ${error.message}`
+        } else {
+          const claim = claimLookup[input.claim_id]
+          toolResult = `Successfully updated claim "${claim?.title ?? input.claim_id}": ${Object.entries(patch).filter(([k]) => k !== 'resolved').map(([k, v]) => `${k} = ${v}`).join(', ')}`
+          toolResults.push(toolResult)
+        }
+      }
+
+      // Continue conversation with tool result
+      response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [
+          ...claudeMessages,
+          { role: 'assistant', content: response.content },
+          {
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolUseBlock.id,
+              content: toolResult,
+            }],
+          },
+        ],
+        tools,
+      })
+    }
+
+    responseText = response.content.find(b => b.type === 'text')?.text ?? ''
 
     // ── Save to memory ─────────────────────────────────────────────────────
     if (conversationId && ifaId) {
@@ -494,8 +590,6 @@ export async function POST(request: NextRequest) {
           lastUserMsg.content,
           responseText
         )
-
-        // Generate summary every SUMMARY_TRIGGER messages (async — don't await)
         if (newTotal > 0 && newTotal % SUMMARY_TRIGGER === 0) {
           generateAndSaveSummary(conversationId, client.name, ifaName).catch(err =>
             console.error('[summary] generation failed:', err)
@@ -510,6 +604,7 @@ export async function POST(request: NextRequest) {
       response: responseText,
       systemPrompt,
       conversationId,
+      claimsUpdated: toolResults.length > 0,
       thinking: null,
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,

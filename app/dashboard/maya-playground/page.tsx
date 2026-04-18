@@ -63,6 +63,7 @@ export default function MayaPlaygroundPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [policies, setPolicies] = useState<Policy[]>([])
+  const [claims, setClaims] = useState<{ id: string; title: string; status: string; priority: string; daysSinceUpdate: number }[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [speakingAs, setSpeakingAs] = useState<'client' | 'ifa'>('client')
@@ -72,6 +73,10 @@ export default function MayaPlaygroundPage() {
   const [ifaName, setIfaName] = useState('Your Advisor')
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [preferredInsurers, setPreferredInsurers] = useState<string[]>([])
+  const [ifaId, setIfaId] = useState<string>('')
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [conversationSummary, setConversationSummary] = useState<string | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -87,21 +92,51 @@ export default function MayaPlaygroundPage() {
   }, [messages])
 
   useEffect(() => {
-    if (selectedClient) {
+    if (selectedClient && ifaId) {
       loadPolicies(selectedClient.id)
-      setMessages([])
-      setSystemPrompt('')
+      loadClaims(selectedClient.id)
+      loadConversationHistory(selectedClient.id)
       setAttachments([])
       inputRef.current?.focus()
     }
-  }, [selectedClient])
+  }, [selectedClient, ifaId])
+
+  async function loadConversationHistory(clientId: string) {
+    if (!ifaId) return
+    setHistoryLoading(true)
+    setMessages([])
+    setSystemPrompt('')
+    setConversationId(null)
+    setConversationSummary(null)
+    try {
+      const res = await fetch(`/api/maya-playground?ifaId=${ifaId}&clientId=${clientId}`)
+      const data = await res.json()
+      if (data.conversationId) {
+        setConversationId(data.conversationId)
+        setConversationSummary(data.summary)
+        if (data.messages?.length > 0) {
+          setMessages(data.messages.map((m: { role: string; content: string }, i: number) => ({
+            id: `history-${i}`,
+            role: m.role as 'client' | 'ifa' | 'maya',
+            content: m.content,
+            timestamp: new Date(),
+          })))
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load history:', err)
+    } finally {
+      setHistoryLoading(false)
+      inputRef.current?.focus()
+    }
+  }
 
   async function loadIfaProfile() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    setIfaId(user.id)
     const { data } = await supabase.from('profiles').select('name, company, preferred_insurers').eq('id', user.id).single()
     if (data?.name) setIfaName(data.name)
-    // preferred_insurers is a text[] column — falls back to empty array until Settings feature is built
     if (data?.preferred_insurers && Array.isArray(data.preferred_insurers)) {
       setPreferredInsurers(data.preferred_insurers)
     }
@@ -121,6 +156,24 @@ export default function MayaPlaygroundPage() {
       .eq('client_id', clientId)
       .order('renewal_date')
     if (data) setPolicies(data)
+  }
+
+  async function loadClaims(clientId: string) {
+    const { data } = await supabase
+      .from('alerts')
+      .select('id, title, resolved, status, priority, created_at')
+      .eq('client_id', clientId)
+      .eq('type', 'claim')
+      .order('created_at', { ascending: false })
+    if (data) {
+      setClaims(data.map((c: { id: string; title: string; resolved: boolean; status: string | null; priority: string | null; created_at: string }) => ({
+        id: c.id,
+        title: c.title || 'Untitled claim',
+        status: c.resolved ? 'resolved' : (c.status || 'open'),
+        priority: c.priority || 'medium',
+        daysSinceUpdate: Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+      })))
+    }
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -192,8 +245,10 @@ export default function MayaPlaygroundPage() {
         body: JSON.stringify({
           client: selectedClient,
           policies,
+          claims,
           ifaName,
           preferredInsurers,
+          ifaId,
           messages: [...messages, userMessage].map(m => ({
             role: m.role,
             content: m.content,
@@ -210,6 +265,7 @@ export default function MayaPlaygroundPage() {
 
       const data = await res.json()
       if (data.systemPrompt) setSystemPrompt(data.systemPrompt)
+      if (data.claimsUpdated && selectedClient) loadClaims(selectedClient.id)
 
       setMessages(prev => [
         ...prev,
@@ -330,7 +386,22 @@ export default function MayaPlaygroundPage() {
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {messages.length === 0 && (
+              {historyLoading && (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <p style={{ fontSize: 12, color: '#C9B99A' }}>Loading conversation history…</p>
+                </div>
+              )}
+
+              {!historyLoading && conversationSummary && messages.length === 0 && (
+                <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '12px 14px', marginBottom: 8 }}>
+                  <p style={{ fontSize: 9, color: '#C8813A', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 5px', fontFamily: 'DM Mono, monospace' }}>
+                    Maya remembers
+                  </p>
+                  <p style={{ fontSize: 12, color: '#C9B99A', margin: 0, lineHeight: 1.6 }}>{conversationSummary}</p>
+                </div>
+              )}
+
+              {!historyLoading && messages.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px 0' }}>
                   <p style={{ fontSize: 12, color: '#C9B99A', marginBottom: 16 }}>Maya is ready — try one of these, or type your own</p>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 560, margin: '0 auto' }}>
@@ -416,6 +487,12 @@ export default function MayaPlaygroundPage() {
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <Zap size={11} color="#C8813A" />
                   <span style={{ fontSize: 11, color: '#C9B99A' }}>{policies.length} polic{policies.length === 1 ? 'y' : 'ies'} loaded</span>
+                  {conversationId && (
+                    <span style={{ fontSize: 11, color: '#5AB87A', marginLeft: 8, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#5AB87A', display: 'inline-block' }} />
+                      Memory on
+                    </span>
+                  )}
                 </div>
               </div>
 
