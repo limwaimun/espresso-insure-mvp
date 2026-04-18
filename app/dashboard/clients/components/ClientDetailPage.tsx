@@ -305,6 +305,7 @@ export default function ClientDetailPage({
 
       setShowAddPolicy(false)
       setPolicyFile(null)
+      setPolicySaving(false)
       router.refresh()
     } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
   }
@@ -430,17 +431,23 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button onClick={() => { setPolicyForm({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <button onClick={() => { setPolicyForm({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
             + Add policy
           </button>
         </div>
         <div className="panel-body">
           {policies.length > 0 ? (
             <div className="table">
-              <table style={{ width: '100%' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
-                    <th>Insurer</th><th>Type</th><th>Premium</th><th>Renewal Date</th><th>Policy Doc</th><th>Status</th><th style={{ width: 80 }}></th>
+                    <th style={{ width: '15%' }}>Insurer</th>
+                    <th style={{ width: '15%' }}>Type</th>
+                    <th style={{ width: '10%' }}>Premium</th>
+                    <th style={{ width: '13%' }}>Renewal Date</th>
+                    <th style={{ width: '16%' }}>Policy Doc</th>
+                    <th style={{ width: '18%' }}>Status</th>
+                    <th style={{ width: '8%' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -457,17 +464,17 @@ export default function ClientDetailPage({
                     const isConfirming = confirmDeleteId === policy.id
                     return (
                       <tr key={policy.id}>
-                        <td>{policy.insurer || '—'}</td>
-                        <td>{policy.type || '—'}</td>
+                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.insurer || '—'}</td>
+                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.type || '—'}</td>
                         <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><PolicyDocCell policyId={policy.id} ifaId={resolvedIfaId} existingFileName={policy.document_name} /></td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
-                        <td style={{ width: 80, textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                           {isConfirming ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                               <button onClick={() => deletePolicy(policy.id)} disabled={deleting}
-                                style={{ fontSize: 10, color: '#D06060', background: 'rgba(208,96,96,0.1)', border: '1px solid #D06060', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}>
+                                style={{ fontSize: 10, color: '#D06060', background: 'rgba(208,96,96,0.1)', border: '1px solid #D06060', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
                                 {deleting ? '…' : 'Delete'}
                               </button>
                               <button onClick={() => setConfirmDeleteId(null)}
