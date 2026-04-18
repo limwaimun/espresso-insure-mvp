@@ -63,7 +63,6 @@ export default function MayaPlaygroundPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [policies, setPolicies] = useState<Policy[]>([])
-  const [claims, setClaims] = useState<{ id: string; title: string; status: string; priority: string; daysSinceUpdate: number }[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [speakingAs, setSpeakingAs] = useState<'client' | 'ifa'>('client')
@@ -94,7 +93,6 @@ export default function MayaPlaygroundPage() {
   useEffect(() => {
     if (selectedClient && ifaId) {
       loadPolicies(selectedClient.id)
-      loadClaims(selectedClient.id)
       loadConversationHistory(selectedClient.id)
       setAttachments([])
       inputRef.current?.focus()
@@ -156,24 +154,6 @@ export default function MayaPlaygroundPage() {
       .eq('client_id', clientId)
       .order('renewal_date')
     if (data) setPolicies(data)
-  }
-
-  async function loadClaims(clientId: string) {
-    const { data } = await supabase
-      .from('alerts')
-      .select('id, title, resolved, status, priority, created_at')
-      .eq('client_id', clientId)
-      .eq('type', 'claim')
-      .order('created_at', { ascending: false })
-    if (data) {
-      setClaims(data.map((c: { id: string; title: string; resolved: boolean; status: string | null; priority: string | null; created_at: string }) => ({
-        id: c.id,
-        title: c.title || 'Untitled claim',
-        status: c.resolved ? 'resolved' : (c.status || 'open'),
-        priority: c.priority || 'medium',
-        daysSinceUpdate: Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24)),
-      })))
-    }
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -245,7 +225,6 @@ export default function MayaPlaygroundPage() {
         body: JSON.stringify({
           client: selectedClient,
           policies,
-          claims,
           ifaName,
           preferredInsurers,
           ifaId,
@@ -265,7 +244,6 @@ export default function MayaPlaygroundPage() {
 
       const data = await res.json()
       if (data.systemPrompt) setSystemPrompt(data.systemPrompt)
-      if (data.claimsUpdated && selectedClient) loadClaims(selectedClient.id)
 
       setMessages(prev => [
         ...prev,
