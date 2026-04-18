@@ -223,7 +223,7 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 14, padding: '28px', width: 500, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 14, padding: '28px', width: 500, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, color: '#1A1410' }}>{title}</span>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}><X size={18} color="#6B6460" /></button>
@@ -551,7 +551,7 @@ export default function ClientDetailPage({
       {/* == SECTION 2: METRIC CARDS == */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         {metrics.map((m, i) => (
-          <div key={i} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '20px 24px' }}>
+          <div key={i} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '20px 24px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{m.label}</div>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>{m.value}</div>
             {m.subtitle && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 6 }}>{m.subtitle}</div>}
@@ -721,7 +721,7 @@ export default function ClientDetailPage({
 
           {/* Compass panel - shows inline below the grid */}
           {compassGap && (
-            <div style={{ marginTop: 20, background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: 18 }}>
+            <div style={{ marginTop: 20, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>
                   🧭 Compass — {compassGap.label} recommendations
@@ -852,7 +852,7 @@ export default function ClientDetailPage({
 
       {/* == WHATSAPP SETUP PANEL == */}
       {showWAInstructions && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: 20, width: 340, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: 20, width: 340, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <span style={{ fontSize: 12, color: '#BA7517', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>2 quick steps</span>
             <button onClick={() => setShowWAInstructions(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}><X size={14} color="#6B6460" /></button>
