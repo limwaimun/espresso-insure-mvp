@@ -10,46 +10,42 @@ const supabase = createClient(
 // These are publicly available forms from insurer websites
 // Updated: April 2026 — trigger /api/forms/harvest to refresh
 const CLAIM_FORMS = [
-  // AIA Singapore — https://www.aia.com.sg/en/claims
-  { id: 'aia-life-tpd', insurer: 'AIA', type: 'Life/TPD', name: 'AIA Life & TPD Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/product-brochures/claims/aia-life-tpd-claim-form.pdf', filename: 'aia-life-tpd.pdf' },
-  { id: 'aia-medical', insurer: 'AIA', type: 'Medical/Health', name: 'AIA Medical Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/product-brochures/claims/aia-medical-claim-form.pdf', filename: 'aia-medical.pdf' },
-  { id: 'aia-ci', insurer: 'AIA', type: 'Critical Illness', name: 'AIA Critical Illness Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/product-brochures/claims/aia-ci-claim-form.pdf', filename: 'aia-ci.pdf' },
-  { id: 'aia-accident', insurer: 'AIA', type: 'Personal Accident', name: 'AIA Personal Accident Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/product-brochures/claims/aia-pa-claim-form.pdf', filename: 'aia-pa.pdf' },
+  // ── AIA Singapore — confirmed URLs ──
+  { id: 'aia-accident-hospitalisation', insurer: 'AIA', type: 'Accident & Hospitalisation', name: 'AIA Accident & Hospitalisation Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/help-support/making-a-claim/accident-and-hospitalisation-claim-form.pdf', filename: 'aia-accident-hospitalisation.pdf' },
+  { id: 'aia-personal-lines', insurer: 'AIA', type: 'Personal Lines', name: 'AIA Personal Lines Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/help-support/making-a-claim/personal-line-claim-form.pdf', filename: 'aia-personal-lines.pdf' },
+  { id: 'aia-death', insurer: 'AIA', type: 'Death', name: 'AIA Death Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/help-support/making-a-claim/death-claim-form.pdf', filename: 'aia-death.pdf' },
+  { id: 'aia-followup', insurer: 'AIA', type: 'Follow-Up', name: 'AIA Follow-Up Claim Form', url: 'https://www.aia.com.sg/content/dam/sg/en/docs/help-support/making-a-claim/follow-up-claim-form.pdf', filename: 'aia-followup.pdf' },
 
-  // Great Eastern — https://www.greateasternlife.com/sg/en/claims
-  { id: 'ge-life', insurer: 'Great Eastern', type: 'Life/TPD', name: 'GE Life & TPD Claim Form', url: 'https://www.greateasternlife.com/content/dam/great-eastern/singapore/doc/forms/claims/ge-life-tpd-claim-form.pdf', filename: 'ge-life-tpd.pdf' },
-  { id: 'ge-medical', insurer: 'Great Eastern', type: 'Medical/Health', name: 'GE Medical Claim Form', url: 'https://www.greateasternlife.com/content/dam/great-eastern/singapore/doc/forms/claims/ge-medical-claim-form.pdf', filename: 'ge-medical.pdf' },
-  { id: 'ge-ci', insurer: 'Great Eastern', type: 'Critical Illness', name: 'GE Critical Illness Claim Form', url: 'https://www.greateasternlife.com/content/dam/great-eastern/singapore/doc/forms/claims/ge-ci-claim-form.pdf', filename: 'ge-ci.pdf' },
+  // ── Great Eastern — confirmed URLs ──
+  { id: 'ge-personal-accident', insurer: 'Great Eastern', type: 'Personal Accident', name: 'GE Personal Accident Claim Form', url: 'https://www.greateasternlife.com/content/dam/corp-site/great-eastern/sg/homepage/personal-insurance/get-help/make-a-claim/personal-accident/personal-accident-claim-form.pdf', filename: 'ge-personal-accident.pdf' },
+  { id: 'ge-travel', insurer: 'Great Eastern', type: 'Travel', name: 'GE Travel Claim Form', url: 'https://www.greateasternlife.com/content/dam/corp-site/great-eastern/sg/homepage/personal-insurance/get-help/make-a-claim/travel-claim/travel-claim-form.pdf', filename: 'ge-travel.pdf' },
+  { id: 'ge-group-hs', insurer: 'Great Eastern', type: 'Group Hospital & Surgical', name: 'GE Group Hospital & Surgical Claim Form', url: 'https://www.greateasternlife.com/content/dam/corp-site/great-eastern/sg/homepage/corporate-solutions/employee-benefits/group-insurance/customer-service/group-hospital-and-surgical-claim-form.pdf', filename: 'ge-group-hs.pdf' },
+  { id: 'ge-group-pa', insurer: 'Great Eastern', type: 'Group Personal Accident', name: 'GE Group Personal Accident Claim Form', url: 'https://www.greateasternlife.com/content/dam/corp-site/great-eastern/sg/homepage/corporate-solutions/employee-benefits/group-insurance/customer-service/group-personal-accident-claim-form.pdf', filename: 'ge-group-pa.pdf' },
+  { id: 'ge-group-outpatient', insurer: 'Great Eastern', type: 'Group Outpatient', name: 'GE Group Outpatient Clinical Claim Form', url: 'https://www.greateasternlife.com/content/dam/corp-site/great-eastern/sg/homepage/corporate-solutions/employee-benefits/group-insurance/customer-service/group-outpatient-clinical-claim-form.pdf', filename: 'ge-group-outpatient.pdf' },
 
-  // Prudential Singapore — https://www.prudential.com.sg/claims
-  { id: 'pru-life', insurer: 'Prudential', type: 'Life/TPD', name: 'PRULife Claim Form', url: 'https://www.prudential.com.sg/content/dam/prudential-singapore/pdf/claims/pru-life-claim-form.pdf', filename: 'pru-life.pdf' },
-  { id: 'pru-medical', insurer: 'Prudential', type: 'Medical/Health', name: 'PRUShield/Medical Claim Form', url: 'https://www.prudential.com.sg/content/dam/prudential-singapore/pdf/claims/pru-medical-claim-form.pdf', filename: 'pru-medical.pdf' },
-  { id: 'pru-ci', insurer: 'Prudential', type: 'Critical Illness', name: 'PRUCritical Illness Claim Form', url: 'https://www.prudential.com.sg/content/dam/prudential-singapore/pdf/claims/pru-ci-claim-form.pdf', filename: 'pru-ci.pdf' },
+  // ── Prudential — confirmed URLs ──
+  { id: 'pru-general', insurer: 'Prudential', type: 'General Claim', name: 'Prudential Claim Form', url: 'https://www.prudential.com.sg/~/media/prudential/PDF/claimforms/pfc_cform.pdf', filename: 'pru-general.pdf' },
+  { id: 'pru-prushield', insurer: 'Prudential', type: 'PRUShield Medical', name: 'PRUShield Claim Form', url: 'https://www.prudential.com.sg/-/media/project/prudential/pdf/how-to-submit-claim/prushield_claim_form_manual_submission.pdf', filename: 'pru-prushield.pdf' },
+  { id: 'pru-prushield-prepost', insurer: 'Prudential', type: 'PRUShield Pre/Post Hospital', name: 'PRUShield Pre & Post-Hospitalisation Claim Form', url: 'https://www.prudential.com.sg/-/media/project/prudential/pdf/how-to-submit-claim/prushield_pre_post_claim_form.pdf', filename: 'pru-prushield-prepost.pdf' },
+  { id: 'pru-ci', insurer: 'Prudential', type: 'Critical Illness', name: 'Prudential Crisis Cover CI Claim Form', url: 'https://www.prudential.com.sg/-/media/project/prudential/pdf/how-to-submit-claim/cc_others_new.pdf', filename: 'pru-ci.pdf' },
+  { id: 'pru-death', insurer: 'Prudential', type: 'Death', name: 'Prudential Death Claim Form', url: 'https://www.prudential.com.sg/-/media/project/prudential/pdf/how-to-submit-claim/d_statment.pdf', filename: 'pru-death.pdf' },
+  { id: 'pru-pruextra', insurer: 'Prudential', type: 'PRUExtra', name: 'PRUExtra Claim Form', url: 'https://www.prudential.com.sg/-/media/project/prudential/pdf/how-to-submit-claim/pruextra_claim_form.pdf', filename: 'pru-pruextra.pdf' },
 
-  // NTUC Income — https://www.income.com.sg/claims
-  { id: 'income-life', insurer: 'NTUC Income', type: 'Life/TPD', name: 'Income Life Claim Form', url: 'https://www.income.com.sg/content/dam/income/documents/forms/claims/life-claim-form.pdf', filename: 'income-life.pdf' },
-  { id: 'income-medical', insurer: 'NTUC Income', type: 'Medical/Health', name: 'Income MediShield Claim Form', url: 'https://www.income.com.sg/content/dam/income/documents/forms/claims/medishield-claim-form.pdf', filename: 'income-medical.pdf' },
-  { id: 'income-motor', insurer: 'NTUC Income', type: 'Motor', name: 'Income Motor Claim Form', url: 'https://www.income.com.sg/content/dam/income/documents/forms/claims/motor-claim-form.pdf', filename: 'income-motor.pdf' },
-  { id: 'income-travel', insurer: 'NTUC Income', type: 'Travel', name: 'Income Travel Claim Form', url: 'https://www.income.com.sg/content/dam/income/documents/forms/claims/travel-claim-form.pdf', filename: 'income-travel.pdf' },
+  // ── NTUC Income ──
+  { id: 'income-life', insurer: 'NTUC Income', type: 'Life', name: 'Income Life Claim Form', url: 'https://www.income.com.sg/sites/default/files/2023-04/life-claim-form.pdf', filename: 'income-life.pdf' },
+  { id: 'income-pa', insurer: 'NTUC Income', type: 'Personal Accident', name: 'Income PA Claim Form', url: 'https://www.income.com.sg/sites/default/files/2023-04/pa-claim-form.pdf', filename: 'income-pa.pdf' },
+  { id: 'income-travel', insurer: 'NTUC Income', type: 'Travel', name: 'Income Travel Claim Form', url: 'https://www.income.com.sg/sites/default/files/2023-04/travel-claim-form.pdf', filename: 'income-travel.pdf' },
+  { id: 'income-motor', insurer: 'NTUC Income', type: 'Motor', name: 'Income Motor Claim Form', url: 'https://www.income.com.sg/sites/default/files/2023-04/motor-accident-report-form.pdf', filename: 'income-motor.pdf' },
 
-  // Manulife Singapore — https://www.manulife.com.sg/claims
-  { id: 'manulife-life', insurer: 'Manulife', type: 'Life/TPD', name: 'Manulife Life Claim Form', url: 'https://www.manulife.com.sg/content/dam/manulife-singapore/documents/forms/claims/life-claim-form.pdf', filename: 'manulife-life.pdf' },
-  { id: 'manulife-medical', insurer: 'Manulife', type: 'Medical/Health', name: 'Manulife ManuMedicare Claim Form', url: 'https://www.manulife.com.sg/content/dam/manulife-singapore/documents/forms/claims/medical-claim-form.pdf', filename: 'manulife-medical.pdf' },
-  { id: 'manulife-ci', insurer: 'Manulife', type: 'Critical Illness', name: 'Manulife Critical Illness Claim Form', url: 'https://www.manulife.com.sg/content/dam/manulife-singapore/documents/forms/claims/ci-claim-form.pdf', filename: 'manulife-ci.pdf' },
+  // ── Manulife ──
+  { id: 'manulife-medical', insurer: 'Manulife', type: 'Medical', name: 'Manulife Medical Claim Form', url: 'https://www.manulife.com.sg/content/dam/manulife-singapore/documents/forms/claims/medical-expenses-claim-form.pdf', filename: 'manulife-medical.pdf' },
+  { id: 'manulife-life', insurer: 'Manulife', type: 'Life/CI', name: 'Manulife Life & CI Claim Form', url: 'https://www.manulife.com.sg/content/dam/manulife-singapore/documents/forms/claims/life-ci-claim-form.pdf', filename: 'manulife-life.pdf' },
 
-  // Singlife (formerly Aviva) — https://singlife.com/claims
-  { id: 'singlife-life', insurer: 'Singlife', type: 'Life/TPD', name: 'Singlife Life Claim Form', url: 'https://singlife.com/content/dam/singlife/documents/claims/life-claim-form.pdf', filename: 'singlife-life.pdf' },
-  { id: 'singlife-medical', insurer: 'Singlife', type: 'Medical/Health', name: 'Singlife Shield Medical Claim Form', url: 'https://singlife.com/content/dam/singlife/documents/claims/shield-claim-form.pdf', filename: 'singlife-medical.pdf' },
+  // ── Singlife ──
+  { id: 'singlife-general', insurer: 'Singlife', type: 'General', name: 'Singlife Claim Form', url: 'https://singlife.com/content/dam/singlife/sg/documents/claims/singlife-claim-form.pdf', filename: 'singlife-general.pdf' },
 
-  // FWD Singapore — https://www.fwd.com.sg/claims
-  { id: 'fwd-life', insurer: 'FWD', type: 'Life/TPD', name: 'FWD Life Claim Form', url: 'https://www.fwd.com.sg/content/dam/fwd-sg/documents/claims/life-claim-form.pdf', filename: 'fwd-life.pdf' },
-  { id: 'fwd-medical', insurer: 'FWD', type: 'Medical/Health', name: 'FWD Medical Claim Form', url: 'https://www.fwd.com.sg/content/dam/fwd-sg/documents/claims/medical-claim-form.pdf', filename: 'fwd-medical.pdf' },
-
-  // Tokio Marine — https://www.tokiomarine.com/sg/claims
-  { id: 'tm-general', insurer: 'Tokio Marine', type: 'General', name: 'Tokio Marine General Claim Form', url: 'https://www.tokiomarine.com/content/dam/sg/documents/claims/general-claim-form.pdf', filename: 'tokiomarine-general.pdf' },
-
-  // AXA / HSBC Life — https://www.hsbc.com.sg/insurance/claims
-  { id: 'hsbc-life', insurer: 'HSBC Life', type: 'Life/TPD', name: 'HSBC Life Claim Form', url: 'https://www.hsbc.com.sg/content/dam/hsbc/sg/documents/insurance/claims/life-claim-form.pdf', filename: 'hsbc-life.pdf' },
+  // ── FWD ──
+  { id: 'fwd-general', insurer: 'FWD', type: 'General', name: 'FWD General Claim Form', url: 'https://www.fwd.com.sg/content/dam/fwd-sg/documents/claims/fwd-claim-form.pdf', filename: 'fwd-general.pdf' },
 ]
 
 const BUCKET = 'claim-forms'
