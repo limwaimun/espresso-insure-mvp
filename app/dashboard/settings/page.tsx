@@ -69,6 +69,7 @@ export default function SettingsPage() {
     <div style={{ padding: '24px 40px', background: '#F7F4F0', minHeight: '100vh' }}>
       <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Settings</h1>
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 24px' }}>Manage your account and Maya preferences</p>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
       {/* Profile */}
       <div style={card}>
@@ -127,13 +128,60 @@ export default function SettingsPage() {
         <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: '0 0 12px' }}>Maya and Compass will prioritise these insurers in recommendations</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {['AIA', 'Great Eastern', 'Prudential', 'NTUC Income', 'Manulife', 'Singlife', 'FWD', 'Tokio Marine', 'HSBC Life', 'AXA'].map(ins => (
-            <span key={ins} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 100, padding: '5px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', cursor: 'pointer' }}>
+            <span key={ins} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 100, padding: '5px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3D3532', cursor: 'pointer' }}>
               {ins}
             </span>
           ))}
         </div>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#B4B2A9', marginTop: 12 }}>Insurer preferences coming in next update</p>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 12 }}>Tap to set preferred insurers — coming in next update</p>
+      </div>
+
+      {/* Plan & upgrade */}
+      <div style={card}>
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Your plan</h2>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: 0 }}>
+            Currently on <strong style={{ color: '#BA7517' }}>{plan === 'solo' ? 'Solo' : plan === 'pro' ? 'Pro' : plan === 'team' ? 'Team' : 'Trial'}</strong>
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {[
+            { id: 'solo', name: 'Solo', price: 'SGD 49', features: ['1 FA', '50 clients', 'All 10 AI agents', 'Claims form library', 'WhatsApp via Maya'] },
+            { id: 'pro', name: 'Pro', price: 'SGD 99', highlight: true, features: ['1 FA', 'Unlimited clients', 'Priority AI responses', 'Custom branding', 'Analytics dashboard'] },
+            { id: 'team', name: 'Team', price: 'SGD 249', features: ['Up to 5 FAs', 'Unlimited clients', 'Team analytics', 'Admin dashboard', 'Dedicated support'] },
+          ].map(p => {
+            const isCurrent = plan === p.id || (plan === 'trial' && p.id === 'solo')
+            return (
+              <div key={p.id} style={{ background: p.highlight ? '#FEF3E2' : '#FAFAF8', border: `0.5px solid ${p.highlight ? '#FAC775' : '#E8E2DA'}`, borderRadius: 10, padding: '16px 18px', position: 'relative' }}>
+                {p.highlight && <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: '#BA7517', color: '#FFFFFF', fontSize: 10, fontWeight: 500, padding: '2px 10px', borderRadius: 100, whiteSpace: 'nowrap' }}>Most popular</div>}
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 2 }}>{p.name}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410' }}>{p.price}</span>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>/month</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                  {p.features.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3D3532' }}>
+                      <span style={{ color: '#0F6E56' }}>✓</span> {f}
+                    </div>
+                  ))}
+                </div>
+                {isCurrent ? (
+                  <div style={{ background: '#E8E2DA', borderRadius: 7, padding: '7px 0', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>Current plan</div>
+                ) : (
+                  <button onClick={() => window.open('mailto:hello@espresso.insure?subject=Upgrade to ' + p.name, '_blank')} style={{ width: '100%', background: p.highlight ? '#BA7517' : 'transparent', border: `0.5px solid ${p.highlight ? '#BA7517' : '#E8E2DA'}`, borderRadius: 7, padding: '7px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: p.highlight ? '#FFFFFF' : '#3D3532', fontWeight: p.highlight ? 500 : 400 }}>
+                    Upgrade to {p.name}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', marginTop: 14, textAlign: 'center' }}>
+          All plans include a 14-day free trial · Cancel anytime · hello@espresso.insure
+        </p>
       </div>
     </div>
+  </div>
   )
 }

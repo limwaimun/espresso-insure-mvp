@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
         .steam2 { animation: steam 1.4s ease-in-out 0.3s infinite; }
         .steam3 { animation: steam 1.4s ease-in-out 0.6s infinite; }
       `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0 40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 120px)', padding: '60px 0 40px' }}>
         <div style={{ position: 'relative', marginBottom: 16 }}>
           <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 4 }}>
             <div className="steam" style={{ width: 3, height: 10, background: '#BA7517', borderRadius: 4, opacity: 0.6 }} />
