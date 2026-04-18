@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 interface FAProfile {
   id: string
@@ -15,34 +14,19 @@ interface FAProfile {
 }
 
 export default function AdminAccountsPage() {
-  const supabase = createClient()
   const [fas, setFas] = useState<FAProfile[]>([])
   const [clientCounts, setClientCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, name, company, phone, plan, created_at, trial_ends_at, preferred_insurers')
-        .order('created_at', { ascending: false })
-
-      if (!data) { setLoading(false); return }
-      setFas(data)
-
-      // Load client counts for each FA
-      const counts: Record<string, number> = {}
-      await Promise.all(data.map(async fa => {
-        const { count } = await supabase
-          .from('clients')
-          .select('*', { count: 'exact', head: true })
-          .eq('ifa_id', fa.id)
-        counts[fa.id] = count || 0
-      }))
-      setClientCounts(counts)
-      setLoading(false)
-    }
-    load()
+    fetch('/api/admin/accounts')
+      .then(r => r.json())
+      .then(data => {
+        if (data.profiles) setFas(data.profiles)
+        if (data.clientCounts) setClientCounts(data.clientCounts)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
   if (loading) return (
