@@ -16,6 +16,13 @@ export default function SettingsPage() {
   const [company, setCompany] = useState('');
   const [counts, setCounts] = useState({ clients: 0, policies: 0, conversations: 0 });
 
+  // Password change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+
   const [maya, setMaya] = useState({
     autoReply: true,
     coverageGaps: true,
@@ -55,262 +62,263 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    if (!newPassword) { setPasswordError('Please enter a new password'); return; }
+    if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters'); return; }
+    if (newPassword !== confirmNewPassword) { setPasswordError('Passwords do not match'); return; }
+    setPasswordSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) { setPasswordError(error.message); setPasswordSaving(false); return; }
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPasswordSaving(false);
+    setPasswordSaved(true);
+    setTimeout(() => setPasswordSaved(false), 3000);
+  };
+
   const trialDays = profile?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 0;
 
-  const hasSubscription = !!profile?.stripe_subscription_id;
-  const trialActive = trialDays > 0 && !hasSubscription;
-  const trialExpired = trialDays <= 0 && !hasSubscription;
-
   if (loading) {
-    return <div style={{ color: '#C9B99A', padding: '40px' }}>Loading settings...</div>;
+    return (
+      <div style={{ padding: '40px', color: '#C9B99A', fontFamily: 'DM Sans, sans-serif' }}>
+        Loading…
+      </div>
+    );
   }
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: '#2E1A0E',
-    border: '1px solid #3D2215',
-    padding: '12px',
-    borderRadius: '6px',
+    padding: '10px 14px',
+    background: '#1C0F0A',
+    border: '1px solid #2E1A0E',
+    borderRadius: '8px',
     color: '#F5ECD7',
     fontFamily: 'DM Sans, sans-serif',
     fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: '12px',
-    textTransform: 'uppercase' as const,
-    color: '#C9B99A',
-    marginBottom: '6px',
     display: 'block',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '11px',
+    color: '#C9B99A',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: '6px',
   };
 
   const sectionStyle: React.CSSProperties = {
-    background: '#3D2215',
-    borderRadius: '8px',
-    padding: '24px',
+    background: '#1C0F0A',
+    border: '1px solid #2E1A0E',
+    borderRadius: '12px',
+    padding: '28px',
     marginBottom: '24px',
   };
 
-  const headingStyle: React.CSSProperties = {
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: '20px',
-    color: '#F5ECD7',
-    marginBottom: '20px',
-  };
-
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', color: '#F5ECD7', marginBottom: '8px' }}>Settings</h1>
-      <p style={{ color: '#C9B99A', fontSize: '14px', marginBottom: '32px' }}>Manage your account, Maya preferences, and billing</p>
+    <div style={{ maxWidth: '720px', margin: '0 auto', padding: '40px 24px' }}>
+      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '32px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 8px' }}>
+        Settings
+      </h1>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#C9B99A', margin: '0 0 32px' }}>
+        Manage your account, Maya preferences, and billing
+      </p>
 
-      {/* PROFILE */}
+      {/* ── PROFILE ── */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>Profile</h2>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 24px' }}>
+          Profile
+        </h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           <div>
             <label style={labelStyle}>Name</label>
-            <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} />
+            <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
           </div>
           <div>
             <label style={labelStyle}>Email</label>
-            <input style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }} value={profile?.email || ''} disabled />
+            <input style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed' }} value={profile?.email || ''} disabled />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
           <div>
-            <label style={labelStyle}>WhatsApp number</label>
-            <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} />
+            <label style={labelStyle}>WhatsApp Number</label>
+            <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+65 9123 4567" />
           </div>
           <div>
             <label style={labelStyle}>Company</label>
-            <input style={inputStyle} value={company} onChange={e => setCompany(e.target.value)} placeholder="Your agency or company" />
+            <input style={inputStyle} value={company} onChange={e => setCompany(e.target.value)} placeholder="Your company" />
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
-          {saved && <span style={{ color: '#5AB87A', fontSize: '14px' }}>✓ Saved</span>}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              background: '#C8813A',
-              color: '#120A06',
-              border: 'none',
-              padding: '10px 24px',
-              borderRadius: '6px',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              cursor: saving ? 'wait' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? 'Saving...' : 'Save profile'}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={handleSave} disabled={saving} style={{
+            background: saved ? '#5AB87A' : '#C8813A',
+            color: '#120A06',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 24px',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: saving ? 'not-allowed' : 'pointer',
+          }}>
+            {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save profile'}
           </button>
         </div>
       </div>
 
-      {/* MAYA */}
+      {/* ── SECURITY / CHANGE PASSWORD ── */}
       <div style={sectionStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ ...headingStyle, marginBottom: 0 }}>Maya</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4A030' }} />
-            <span style={{ fontSize: '13px', color: '#D4A030' }}>Setting up</span>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 6px' }}>
+          Security
+        </h2>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C9B99A', margin: '0 0 24px' }}>
+          Update your password
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div>
+            <label style={labelStyle}>New Password</label>
+            <input
+              type="password"
+              style={inputStyle}
+              value={newPassword}
+              onChange={e => { setNewPassword(e.target.value); setPasswordError(null); }}
+              placeholder="Minimum 8 characters"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Confirm New Password</label>
+            <input
+              type="password"
+              style={inputStyle}
+              value={confirmNewPassword}
+              onChange={e => { setConfirmNewPassword(e.target.value); setPasswordError(null); }}
+              placeholder="Repeat new password"
+            />
           </div>
         </div>
+        {passwordError && (
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#E53E3E', margin: '0 0 16px', padding: '8px 12px', background: 'rgba(229,62,62,0.1)', borderRadius: '6px', border: '1px solid rgba(229,62,62,0.2)' }}>
+            {passwordError}
+          </p>
+        )}
+        {passwordSaved && (
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#5AB87A', margin: '0 0 16px' }}>
+            ✓ Password updated successfully
+          </p>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={handleChangePassword} disabled={passwordSaving} style={{
+            background: '#C8813A',
+            color: '#120A06',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 24px',
+            fontFamily: 'DM Sans, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: passwordSaving ? 'not-allowed' : 'pointer',
+            opacity: passwordSaving ? 0.7 : 1,
+          }}>
+            {passwordSaving ? 'Updating…' : 'Update password'}
+          </button>
+        </div>
+      </div>
 
+      {/* ── MAYA PREFERENCES ── */}
+      <div style={sectionStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div>
+            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 4px' }}>
+              Maya
+            </h2>
+          </div>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '12px', color: '#C9B99A', background: '#2E1A0E', padding: '4px 10px', borderRadius: '100px' }}>
+            Coming soon
+          </span>
+        </div>
         {[
           { key: 'autoReply', label: 'Auto-reply to new messages', desc: 'Maya will respond to client WhatsApp messages automatically' },
           { key: 'coverageGaps', label: 'Flag missing coverage', desc: 'Maya will identify and flag coverage gaps during conversations' },
           { key: 'renewalReminders', label: 'Send renewal reminders', desc: 'Maya will remind clients about upcoming renewals via WhatsApp' },
-          { key: 'birthdayGreetings', label: 'Birthday messages', desc: 'Maya will send birthday greetings to clients automatically' },
+          { key: 'birthdayGreetings', label: 'Birthday greetings', desc: 'Maya will send birthday messages to clients on their special day' },
         ].map(item => (
-          <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #2E1A0E' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#F5ECD7', fontSize: '14px', fontWeight: 'bold' }}>{item.label}</span>
-                <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px' }}>Coming soon</span>
-              </div>
-              <div style={{ color: '#C9B99A', fontSize: '13px', marginTop: '4px' }}>{item.desc}</div>
+          <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid #2E1A0E' }}>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#F5ECD7', fontWeight: 500, marginBottom: '2px' }}>{item.label}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '12px', color: '#C9B99A' }}>{item.desc}</div>
             </div>
             <div
-              onClick={() => setMaya(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
+              onClick={() => setMaya(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof maya] }))}
               style={{
-                width: '44px',
-                height: '24px',
-                borderRadius: '12px',
+                width: '44px', height: '24px', borderRadius: '12px', cursor: 'pointer', flexShrink: 0,
                 background: maya[item.key as keyof typeof maya] ? '#C8813A' : '#2E1A0E',
-                position: 'relative',
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-                flexShrink: 0,
-                marginLeft: '16px',
+                position: 'relative', transition: 'background 0.2s',
               }}
             >
               <div style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                background: '#F5ECD7',
-                position: 'absolute',
-                top: '3px',
-                left: maya[item.key as keyof typeof maya] ? '23px' : '3px',
-                transition: 'left 0.2s',
+                position: 'absolute', top: '2px', width: '20px', height: '20px', borderRadius: '50%',
+                background: '#F5ECD7', transition: 'left 0.2s',
+                left: maya[item.key as keyof typeof maya] ? '22px' : '2px',
               }} />
             </div>
           </div>
         ))}
-
-        <div style={{ marginTop: '20px', padding: '14px 0', borderBottom: '1px solid #2E1A0E' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ color: '#F5ECD7', fontSize: '14px', fontWeight: 'bold' }}>Active hours</span>
-            <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px' }}>Coming soon</span>
-          </div>
-          <div style={{ color: '#C9B99A', fontSize: '13px', marginBottom: '8px' }}>Maya only replies during these hours</div>
-          <div style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed', display: 'inline-block', width: 'auto' }}>9:00 AM — 6:00 PM</div>
-        </div>
-
-        <div style={{ marginTop: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ color: '#F5ECD7', fontSize: '14px', fontWeight: 'bold' }}>Welcome message</span>
-            <span style={{ background: '#2E1A0E', color: '#C9B99A', fontSize: '10px', padding: '2px 8px', borderRadius: '4px' }}>Coming soon</span>
-          </div>
-          <div style={{ color: '#C9B99A', fontSize: '13px', marginBottom: '8px' }}>Maya sends this when a new client messages for the first time</div>
-          <textarea
-            style={{ ...inputStyle, height: '80px', resize: 'vertical', opacity: 0.6 }}
-            defaultValue="Hi! I'm Maya, your insurance advisor's assistant. How can I help you today?"
-            disabled
-          />
-        </div>
-
-        {/* Preferred Insurers */}
-        <PreferredInsurersSection profile={profile} />
-
       </div>
 
-      {/* PLAN & BILLING */}
-      <div style={sectionStyle}>
-        <h2 style={headingStyle}>Plan & billing</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-          <span style={{ background: '#C8813A', color: '#120A06', padding: '4px 16px', borderRadius: '6px', fontWeight: 'bold', fontSize: '14px' }}>
-            {(profile?.plan || 'solo').charAt(0).toUpperCase() + (profile?.plan || 'solo').slice(1)}
-          </span>
-          <span style={{ color: '#F5ECD7', fontSize: '16px', fontFamily: 'DM Mono, monospace' }}>$29/month</span>
-        </div>
-        <div style={{ marginBottom: '16px' }}>
-          {trialActive && (
-            <span style={{ color: '#D4A030', fontSize: '14px' }}>Trial · {trialDays} days remaining</span>
-          )}
-          {hasSubscription && (
-            <span style={{ color: '#5AB87A', fontSize: '14px' }}>Active subscription</span>
-          )}
-          {trialExpired && (
-            <span style={{ color: '#D06060', fontSize: '14px' }}>Trial expired — upgrade to continue</span>
-          )}
-        </div>
-        <button
-          style={{
-            background: 'transparent',
-            color: '#C8813A',
-            border: '1px solid #C8813A',
-            padding: '10px 24px',
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            cursor: 'pointer',
-          }}
-          onClick={() => alert('Coming soon — contact us at hello@espresso.insure to upgrade')}
-        >
-          Upgrade plan
-        </button>
-      </div>
+      {/* ── PREFERRED INSURERS ── */}
+      <PreferredInsurersSection />
 
-      {/* YOUR DATA */}
+      {/* ── PLAN & BILLING ── */}
       <div style={sectionStyle}>
-        <h2 style={headingStyle}>Your data</h2>
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-          <span style={{ background: '#2E1A0E', padding: '6px 14px', borderRadius: '6px', color: '#F5ECD7', fontSize: '14px' }}>
-            {counts.clients} clients
-          </span>
-          <span style={{ background: '#2E1A0E', padding: '6px 14px', borderRadius: '6px', color: '#F5ECD7', fontSize: '14px' }}>
-            {counts.policies} policies
-          </span>
-          <span style={{ background: '#2E1A0E', padding: '6px 14px', borderRadius: '6px', color: '#F5ECD7', fontSize: '14px' }}>
-            {counts.conversations} conversations
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <Link href="/dashboard/import">
-            <button style={{
-              background: '#C8813A',
-              color: '#120A06',
-              border: 'none',
-              padding: '10px 24px',
-              borderRadius: '6px',
-              fontWeight: 'bold',
-              fontSize: '14px',
-              cursor: 'pointer',
-            }}>
-              Import clients
-            </button>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 16px' }}>
+          Plan & billing
+        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '14px', color: '#F5ECD7', fontWeight: 500, marginBottom: '4px', textTransform: 'capitalize' }}>
+              {profile?.plan || 'Trial'} plan
+            </div>
+            {trialDays > 0 && (
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C9B99A' }}>
+                {trialDays} days remaining in trial
+              </div>
+            )}
+          </div>
+          <Link href="/pricing" style={{
+            background: '#C8813A', color: '#120A06', textDecoration: 'none',
+            padding: '8px 20px', borderRadius: '8px', fontFamily: 'DM Sans, sans-serif',
+            fontSize: '13px', fontWeight: 500,
+          }}>
+            Upgrade
           </Link>
-          <button
-            disabled
-            style={{
-              background: 'transparent',
-              color: '#C9B99A',
-              border: '1px solid #3D2215',
-              padding: '10px 24px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              cursor: 'not-allowed',
-              opacity: 0.5,
-            }}
-          >
-            Export data · Coming soon
-          </button>
         </div>
+      </div>
+
+      {/* ── YOUR DATA ── */}
+      <div style={sectionStyle}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '22px', fontWeight: 400, color: '#F5ECD7', margin: '0 0 16px' }}>
+          Your data
+        </h2>
+        <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
+          {[
+            { label: 'Clients', value: counts.clients },
+            { label: 'Policies', value: counts.policies },
+            { label: 'Conversations', value: counts.conversations },
+          ].map(stat => (
+            <div key={stat.label}>
+              <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '28px', fontWeight: 300, color: '#F5ECD7' }}>{stat.value}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '12px', color: '#C9B99A' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+        <Link href="/dashboard/import" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C8813A', textDecoration: 'none' }}>
+          Import data →
+        </Link>
       </div>
     </div>
   );

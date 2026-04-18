@@ -10,6 +10,7 @@ export default function TrialPage() {
     password: '',
     confirmPassword: '',
     whatsapp: '',
+    company: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,6 @@ export default function TrialPage() {
     setIsLoading(true);
     setError(null);
     
-    // Validate passwords
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters');
       setIsLoading(false);
@@ -47,6 +47,7 @@ export default function TrialPage() {
           email: formData.email,
           password: formData.password,
           whatsapp: formData.whatsapp,
+          company: formData.company || null,
         }),
       });
       
@@ -58,13 +59,35 @@ export default function TrialPage() {
         return;
       }
       
-      // Redirect to confirmed page on success
       window.location.href = '/confirmed';
     } catch (error) {
       console.error('Signup error:', error);
       setError('Unable to create account. Please try again.');
       setIsLoading(false);
     }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(200,129,58,0.2)',
+    borderRadius: '8px',
+    color: '#F5ECD7',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '12px',
+    color: '#C9B99A',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: '6px',
   };
 
   return (
@@ -81,284 +104,192 @@ export default function TrialPage() {
         pointerEvents: 'none',
         zIndex: 0,
       }} />
-      
-      {/* Main Content Container */}
+
       <div style={{
+        minHeight: '100vh',
+        background: '#0D0603',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 20px',
         position: 'relative',
         zIndex: 1,
-        width: '100%',
-        maxWidth: '480px',
-        padding: '0 16px',
       }}>
         {/* Logo */}
+        <Link href="/" style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: '24px',
+          fontWeight: 400,
+          color: '#F5ECD7',
+          textDecoration: 'none',
+          marginBottom: '40px',
+          letterSpacing: '0.02em',
+        }}>
+          espresso<span style={{ color: '#C8813A' }}>.</span>
+        </Link>
+
+        {/* Card */}
         <div style={{
-          textAlign: 'center',
-          marginBottom: '32px',
+          width: '100%',
+          maxWidth: '440px',
+          background: 'rgba(28, 15, 10, 0.8)',
+          border: '1px solid #2E1A0E',
+          borderRadius: '16px',
+          padding: '40px',
         }}>
           <h1 style={{
             fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '40px',
+            fontSize: '28px',
             fontWeight: 400,
             color: '#F5ECD7',
-            margin: 0,
-          }}>
-            espresso<span style={{ color: '#C8813A' }}>.</span>
-          </h1>
-        </div>
-
-        {/* Heading */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-        }}>
-          <h2 style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: '32px',
-            fontWeight: 400,
-            color: '#F5ECD7',
-            margin: '0 0 12px 0',
+            margin: '0 0 8px',
           }}>
             Start your free trial
-          </h2>
+          </h1>
           <p style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: '14px',
             color: '#C9B99A',
-            lineHeight: 1.6,
-            maxWidth: '380px',
-            margin: '0 auto',
+            margin: '0 0 32px',
           }}>
-            No credit card required. Get 14 days free to try Espresso with your clients.
+            14 days free. No credit card required.
           </p>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px',
-        }}>
-          {/* Error Message */}
-          {error && (
-            <div style={{
-              background: 'rgba(229, 62, 62, 0.1)',
-              border: '1px solid #E53E3E',
-              borderRadius: '8px',
-              padding: '12px',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#E53E3E',
-              textAlign: 'center',
-            }}>
-              {error}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Name */}
+            <div>
+              <label style={labelStyle}>Full Name *</label>
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder="Lim Wai Mun"
+                value={formData.name}
+                onChange={handleChange}
+                style={inputStyle}
+              />
             </div>
-          )}
-          
-          {/* Full Name */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              Full name
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Your full name"
-              required
-              className="input"
-              disabled={isLoading}
-            />
-          </div>
 
-          {/* Email */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              Email address
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="your@email.com"
-              required
-              className="input"
-              disabled={isLoading}
-            />
-          </div>
+            {/* Email */}
+            <div>
+              <label style={labelStyle}>Email *</label>
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+            </div>
 
-          {/* Password */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="At least 8 characters"
-              required
-              className="input"
-              disabled={isLoading}
-            />
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#C9B99A',
-              marginTop: '4px',
-              lineHeight: 1.5,
-            }}>
-              Must be at least 8 characters long
-            </p>
-          </div>
+            {/* WhatsApp */}
+            <div>
+              <label style={labelStyle}>WhatsApp Number *</label>
+              <input
+                name="whatsapp"
+                type="tel"
+                required
+                placeholder="+65 9123 4567"
+                value={formData.whatsapp}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+            </div>
 
-          {/* Confirm Password */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              Confirm password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              required
-              className="input"
-              disabled={isLoading}
-            />
-          </div>
+            {/* Company (optional) */}
+            <div>
+              <label style={labelStyle}>
+                Company / Agency <span style={{ color: '#C9B99A', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+              </label>
+              <input
+                name="company"
+                type="text"
+                placeholder="e.g. Wayne & Co Financial"
+                value={formData.company}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+            </div>
 
-          {/* WhatsApp */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '13px',
-              color: '#C9B99A',
-              marginBottom: '8px',
-            }}>
-              WhatsApp number
-            </label>
-            <input
-              type="tel"
-              name="whatsapp"
-              value={formData.whatsapp}
-              onChange={handleChange}
-              placeholder="+65 / +60 / +63 / +62 / +66 / +84"
-              required
-              className="input"
-              disabled={isLoading}
-            />
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#C9B99A',
-              marginTop: '8px',
-              lineHeight: 1.5,
-            }}>
-              We will send you a WhatsApp message within 5 minutes to get you set up and ready.
-            </p>
-          </div>
+            {/* Password */}
+            <div>
+              <label style={labelStyle}>Password *</label>
+              <input
+                name="password"
+                type="password"
+                required
+                placeholder="Minimum 8 characters"
+                value={formData.password}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+            </div>
 
-          {/* CTA Button */}
-          <button
-            type="submit"
-            className="btn-primary"
-            style={{
-              marginTop: '8px',
-            }}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creating account...' : 'Start My 14-Day Trial'}
-          </button>
+            {/* Confirm Password */}
+            <div>
+              <label style={labelStyle}>Confirm Password *</label>
+              <input
+                name="confirmPassword"
+                type="password"
+                required
+                placeholder="Repeat your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+            </div>
 
-          {/* Terms */}
-          <div style={{
-            textAlign: 'center',
-            paddingTop: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#C9B99A',
-              lineHeight: 1.5,
-            }}>
-              14-day free trial. No credit card required. Cancel anytime.
-            </p>
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '11px',
-              color: 'rgba(201, 185, 154, 0.8)',
-              lineHeight: 1.5,
-            }}>
-              By signing up you agree to{' '}
-              <Link href="/terms" style={{
-                color: '#C8813A',
-                textDecoration: 'none',
+            {error && (
+              <p style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '13px',
+                color: '#E53E3E',
+                margin: 0,
+                padding: '10px 14px',
+                background: 'rgba(229,62,62,0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(229,62,62,0.2)',
               }}>
-                Espresso's Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" style={{
-                color: '#C8813A',
-                textDecoration: 'none',
-              }}>
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
-        </form>
+                {error}
+              </p>
+            )}
 
-        {/* Already have an account? */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '32px',
-          paddingTop: '24px',
-          borderTop: '1px solid #2E1A0E',
-        }}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: isLoading ? '#2E1A0E' : '#C8813A',
+                color: isLoading ? '#C9B99A' : '#120A06',
+                border: 'none',
+                borderRadius: '8px',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                marginTop: '4px',
+              }}
+            >
+              {isLoading ? 'Creating account…' : 'Start free trial →'}
+            </button>
+          </form>
+
           <p style={{
             fontFamily: 'DM Sans, sans-serif',
-            fontSize: '13px',
+            fontSize: '12px',
             color: '#C9B99A',
+            textAlign: 'center',
+            marginTop: '24px',
+            marginBottom: 0,
           }}>
             Already have an account?{' '}
-            <Link href="/login" style={{
-              color: '#C8813A',
-              fontWeight: 500,
-              textDecoration: 'none',
-            }}>
-              Sign in
+            <Link href="/login" style={{ color: '#C8813A', textDecoration: 'none' }}>
+              Log in
             </Link>
           </p>
         </div>

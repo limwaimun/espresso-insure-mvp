@@ -18,6 +18,10 @@ interface DashboardSidebarProps {
   };
 }
 
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
 const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
   const pathname = usePathname();
   
@@ -33,8 +37,6 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     { id: 'maya-playground', label: 'Maya Playground', icon: '🤖', active: pathname?.includes('maya-playground'), badge: null },
     { id: 'settings', label: 'Settings', icon: '⚙️', active: pathname?.includes('settings'), badge: null },
   ];
-
-
 
   return (
     <div style={{
@@ -66,9 +68,6 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
         padding: '16px 0',
         overflowY: 'auto',
       }}>
-
-
-        {/* Navigation Items */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -123,7 +122,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
         </div>
       </div>
 
-      {/* IFA Profile Card */}
+      {/* FA Profile Card */}
       <div style={{
         padding: '20px 24px',
         borderTop: '1px solid #2E1A0E',
@@ -182,7 +181,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
                 fontSize: '11px',
                 color: '#C9B99A',
               }}>
-                IFA
+                FA
               </span>
             </div>
           </div>
@@ -198,43 +197,22 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
               background: 'transparent',
               border: '1px solid #2E1A0E',
               borderRadius: '6px',
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
               color: '#C9B99A',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '13px',
               cursor: 'pointer',
-              transition: 'all 0.2s',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(229, 62, 62, 0.1)';
-              e.currentTarget.style.borderColor = '#E53E3E';
-              e.currentTarget.style.color = '#E53E3E';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = '#2E1A0E';
-              e.currentTarget.style.color = '#C9B99A';
+              gap: '8px',
             }}
           >
-            <span style={{ fontSize: '14px' }}>↩</span>
-            Sign out
+            <span>↩</span> Sign out
           </button>
         </form>
       </div>
     </div>
   );
 };
-
-// Helper function to get initials from name
-function getInitials(name: string): string {
-  const parts = name.trim().split(' ');
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  }
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
 
 export default DashboardSidebar;
