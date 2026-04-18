@@ -61,23 +61,9 @@ export default function ClientsPage() {
     corporate: clients.filter(c => c.type === 'corporate').length,
   }
 
-  const tierBtn = (label: string, value: string) => (
-    <button key={value} onClick={() => setTierFilter(value)} style={{
-      background: tierFilter === value ? '#1A1410' : '#FFFFFF',
-      color: tierFilter === value ? '#FFFFFF' : '#6B6460',
-      border: `0.5px solid ${tierFilter === value ? '#1A1410' : '#E8E2DA'}`,
-      borderRadius: 100, padding: '5px 14px', cursor: 'pointer',
-      fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-    }}>
-      {label}
-    </button>
-  )
 
-  const selectStyle: React.CSSProperties = {
-    background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 7,
-    padding: '7px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-    color: '#6B6460', cursor: 'pointer', outline: 'none',
-  }
+
+
 
   return (
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
@@ -110,39 +96,26 @@ export default function ClientsPage() {
         ))}
       </div>
 
-      {/* Tier filter */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {tierBtn('All', 'all')}
-        {tierBtn('Platinum', 'platinum')}
-        {tierBtn('Gold', 'gold')}
-        {tierBtn('Silver', 'silver')}
-        {tierBtn('Bronze', 'bronze')}
-      </div>
-
-      {/* Search + filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 14 }}>🔍</span>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search clients…"
-            style={{ width: '100%', padding: '8px 12px 8px 36px', border: '0.5px solid #E8E2DA', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' }}
-          />
+      {/* Filter bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, company or email…" style={{ width: '100%', height: 36, padding: '0 12px 0 34px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' as const }} />
         </div>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={selectStyle}>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
           <option value="all">All types</option>
           <option value="individual">Individual</option>
           <option value="sme">SME</option>
           <option value="corporate">Corporate</option>
         </select>
-        <select value={tierFilter} onChange={e => setTierFilter(e.target.value)} style={selectStyle}>
+        <select value={tierFilter} onChange={e => setTierFilter(e.target.value)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
           <option value="all">All tiers</option>
           <option value="platinum">Platinum</option>
           <option value="gold">Gold</option>
           <option value="silver">Silver</option>
           <option value="bronze">Bronze</option>
         </select>
-        <select value={connectionFilter} onChange={e => setConnectionFilter(e.target.value)} style={selectStyle}>
+        <select value={connectionFilter} onChange={e => setConnectionFilter(e.target.value)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
           <option value="all">All connections</option>
           <option value="connected">Maya connected</option>
           <option value="not_connected">Not connected</option>

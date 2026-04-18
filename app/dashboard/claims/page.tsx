@@ -111,11 +111,7 @@ export default function ClaimsPage() {
 
   const daysAgo = (d: string) => { const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000); return days === 0 ? 'Today' : `${days}d ago` }
 
-  const tab = (label: string, f: FilterType, count?: number) => (
-    <button onClick={() => setFilter(f)} style={{ background: filter === f ? '#1A1410' : 'transparent', color: filter === f ? '#FFFFFF' : '#3D3532', border: `0.5px solid ${filter === f ? '#1A1410' : '#E8E2DA'}`, borderRadius: 100, padding: '5px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-      {label}{count !== undefined && count > 0 && <span style={{ background: filter === f ? 'rgba(255,255,255,0.2)' : '#F1EFE8', color: filter === f ? '#FFFFFF' : '#3D3532', fontSize: 10, padding: '1px 6px', borderRadius: 100 }}>{count}</span>}
-    </button>
-  )
+
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' }
 
@@ -211,18 +207,18 @@ export default function ClaimsPage() {
         ))}
       </div>
 
-      {/* Search + filters */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: 280 }}>
-          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13 }}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search claims…" style={{ ...inputStyle, paddingLeft: 32, width: 280 }} />
+      {/* Filter bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client or description…" style={{ width: '100%', height: 36, padding: '0 12px 0 34px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' as const }} />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {tab('All', 'all', totalClaims)}
-          {tab('Open', 'open', openClaims)}
-          {tab('Resolved', 'resolved', resolvedClaims)}
-          {tab('High priority', 'high', highPriority)}
-        </div>
+        <select value={filter} onChange={e => setFilter(e.target.value as FilterType)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
+          <option value="all">All status ({totalClaims})</option>
+          <option value="open">Open ({openClaims})</option>
+          <option value="resolved">Resolved ({resolvedClaims})</option>
+          <option value="high">High priority ({highPriority})</option>
+        </select>
       </div>
 
       {/* Table */}

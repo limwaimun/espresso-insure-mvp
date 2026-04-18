@@ -10,6 +10,7 @@ export default function RenewalsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [mayaModal, setMayaModal] = useState<{ name: string; type: string; insurer: string; days: number | null; wa: string | null } | null>(null)
+  const [statusFilter, setStatusFilter] = useState('all')
   const [copied, setCopied] = useState(false)
 
   const now = new Date()
@@ -29,9 +30,12 @@ export default function RenewalsPage() {
 
   const filtered = enriched.filter(p => {
     const client = p.clients as any
-    if (!search) return true
-    const q = search.toLowerCase()
-    return client?.name?.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.insurer?.toLowerCase().includes(q)
+    if (search) {
+      const q = search.toLowerCase()
+      if (!client?.name?.toLowerCase().includes(q) && !p.type?.toLowerCase().includes(q) && !p.insurer?.toLowerCase().includes(q)) return false
+    }
+    if (statusFilter !== 'all' && p.status !== statusFilter) return false
+    return true
   })
 
   const lapsed       = enriched.filter(p => p.status === 'lapsed')
@@ -112,18 +116,28 @@ export default function RenewalsPage() {
         ))}
       </div>
 
-      {/* Summary + search */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '12px 18px', marginBottom: 16 }}>
-        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
-          {policies.length} policies tracked
-          {lapsed.length > 0 && <> · <span style={{ color: '#A32D2D' }}>{lapsed.length} lapsed</span></>}
-          {urgent.length > 0 && <> · <span style={{ color: '#854F0B' }}>{urgent.length} urgent</span></>}
-          {actionNeeded.length > 0 && <> · <span style={{ color: '#185FA5' }}>{actionNeeded.length} action needed</span></>}
+      {/* Summary bar */}
+      <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '10px 18px', marginBottom: 12, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
+        {policies.length} policies tracked
+        {lapsed.length > 0 && <> · <span style={{ color: '#A32D2D' }}>{lapsed.length} lapsed</span></>}
+        {urgent.length > 0 && <> · <span style={{ color: '#854F0B' }}>{urgent.length} urgent</span></>}
+        {actionNeeded.length > 0 && <> · <span style={{ color: '#185FA5' }}>{actionNeeded.length} action needed</span></>}
+        {underReview.length > 0 && <> · <span style={{ color: '#3D3532' }}>{underReview.length} under review</span></>}
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client, policy or insurer…" style={{ width: '100%', height: 36, padding: '0 12px 0 34px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' as const }} />
         </div>
-        <div style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13 }}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search renewals…" style={{ ...inputStyle, paddingLeft: 32, width: 220 }} />
-        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
+          <option value="all">All status</option>
+          <option value="lapsed">Lapsed ({lapsed.length})</option>
+          <option value="urgent">Urgent ({urgent.length})</option>
+          <option value="action_needed">Action needed ({actionNeeded.length})</option>
+          <option value="under_review">Under review ({underReview.length})</option>
+        </select>
       </div>
 
       {/* Table */}
