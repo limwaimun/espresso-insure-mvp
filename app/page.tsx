@@ -1,1740 +1,365 @@
-'use client';
+import Link from 'next/link'
 
-import { useEffect } from 'react';
-import Link from 'next/link';
+export default function HomePage() {
 
-export default function LandingPage() {
-  useEffect(() => {
-    // FAQ accordion
-    document.querySelectorAll('.faq-q').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const item = btn.closest('.faq-item');
-        if (!item) return;
-        const isOpen = item.classList.contains('open');
-        document.querySelectorAll('.faq-item').forEach((i) => i.classList.remove('open'));
-        if (!isOpen) item.classList.add('open');
-      });
-    });
-
-    // Smooth nav scroll
-    document.querySelectorAll('a[href^="#"]').forEach((a) => {
-      a.addEventListener('click', (e) => {
-        const href = a.getAttribute('href');
-        if (!href) return;
-        const target = document.querySelector(href);
-        if (target) {
-          e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
-    });
-
-    // Stagger reveal on scroll
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
+  const ICONS = {
+    clock: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#BA7517" strokeWidth="1.3"/><path d="M10 6v4l2.5 2.5" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    calendar: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="2" stroke="#BA7517" strokeWidth="1.3"/><path d="M2 8h16M6 2v2M14 2v2" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+    alert: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3L2 17h16L10 3z" stroke="#BA7517" strokeWidth="1.3" strokeLinejoin="round"/><path d="M10 9v4M10 14.5v.5" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+    moon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 10.5A7 7 0 017.5 3 7 7 0 1015 10.5z" stroke="#BA7517" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+    chat: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H6l-4 3V5a1 1 0 011-1z" stroke="#BA7517" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+    shield: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 3v5c0 4-3 7-7 8-4-1-7-4-7-8V5l7-3z" stroke="#BA7517" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+    doc: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="1" width="12" height="18" rx="1.5" stroke="#BA7517" strokeWidth="1.3"/><path d="M7 7h6M7 10h6M7 13h4" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+    chart: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 15l4-5 4 3 4-6 3 2" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 18h14" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  }
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
-  :root {
-    --espresso: #1E1210;
-    --dark: #140C07;
-    --cream: #F5ECD7;
-    --cream-dim: #D4C4A8;
-    --amber: #C8813A;
-    --amber-light: #E8A55A;
-    --warm-mid: #352012;
-    --warm-border: #3A2416;
-    --light-bg: #F5F0E8;
-    --light-card: #FFFFFF;
-    --light-text: #2A1A10;
-    --light-muted: #7A6A58;
-    --light-border: #E0D5C8;
-    --white: #FDFAF5;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--espresso);
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 300;
-    font-size: 16px;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* NOISE TEXTURE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 999;
-    opacity: 0.4;
-  }
-
-  /* TYPOGRAPHY */
-  h1, h2, h3, h4 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 400;
-    line-height: 1.15;
-    letter-spacing: -0.01em;
-  }
-
-  .display {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(52px, 7vw, 96px);
-    font-weight: 300;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-  }
-
-  .display em {
-    font-style: italic;
-    color: var(--amber-light);
-  }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 20px 48px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(to bottom, rgba(28,15,10,0.95) 0%, rgba(28,15,10,0) 100%);
-  }
-
-  .nav-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--cream);
-    text-decoration: none;
-  }
-
-  .nav-logo span {
-    color: var(--amber);
-  }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    color: var(--cream-dim);
-    text-decoration: none;
-    font-size: 14px;
-    letter-spacing: 0.02em;
-    transition: color 0.2s;
-  }
-
-  .nav-links a:hover { color: var(--cream); }
-
-  .nav-cta {
-    background: var(--amber) !important;
-    color: var(--dark) !important;
-    padding: 10px 24px;
-    border-radius: 100px;
-    font-weight: 500 !important;
-    font-size: 14px !important;
-    transition: background 0.2s, transform 0.15s !important;
-  }
-
-  .nav-cta:hover {
-    background: var(--amber-light) !important;
-    transform: translateY(-1px);
-  }
-
-  /* HERO */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 140px 48px 80px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(200,129,58,0.12) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 50% at 10% 80%, rgba(200,129,58,0.06) 0%, transparent 60%);
-    pointer-events: none;
-  }
-
-  .hero-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(200,129,58,0.15);
-    border: 1px solid rgba(200,129,58,0.3);
-    color: var(--amber-light);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 8px 18px;
-    border-radius: 100px;
-    margin-bottom: 36px;
-    width: fit-content;
-    animation: fadeUp 0.8s ease both;
-  }
-
-  .hero-tag::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--amber);
-    border-radius: 50%;
-    animation: pulse 2s ease infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-
-  .hero h1 {
-    max-width: 820px;
-    margin-bottom: 28px;
-    animation: fadeUp 0.8s 0.1s ease both;
-  }
-
-  .hero-sub {
-    font-size: 18px;
-    color: var(--cream-dim);
-    max-width: 520px;
-    margin-bottom: 48px;
-    font-weight: 300;
-    animation: fadeUp 0.8s 0.2s ease both;
-  }
-
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-
-  .btn-primary {
-    background: var(--amber);
-    color: var(--dark);
-    padding: 16px 36px;
-    border-radius: 100px;
-    font-size: 15px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: background 0.2s, transform 0.15s;
-    letter-spacing: 0.01em;
-  }
-
-  .btn-primary:hover {
-    background: var(--amber-light);
-    transform: translateY(-2px);
-  }
-
-  .btn-ghost {
-    color: var(--cream-dim);
-    font-size: 14px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: color 0.2s;
-    letter-spacing: 0.02em;
-  }
-
-  .btn-ghost:hover { color: var(--cream); }
-  .btn-ghost::after { content: '→'; }
-
-  .hero-stat-row {
-    display: flex;
-    gap: 48px;
-    margin-top: 72px;
-    padding-top: 48px;
-    border-top: 1px solid var(--warm-border);
-    animation: fadeUp 0.8s 0.4s ease both;
-  }
-
-  .hero-stat-value {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 500;
-    color: var(--cream);
-    line-height: 1;
-  }
-
-  .hero-stat-label {
-    font-size: 13px;
-    color: var(--cream-dim);
-    margin-top: 6px;
-    letter-spacing: 0.02em;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-
-  /* Centered hero */
-  .hero {
-    text-align: center;
-    justify-content: center;
-    align-items: center;
-  }
-  .hero-content {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  .hero-sub {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero-actions {
-    justify-content: center;
-  }
-  .hero-stat-row {
-    justify-content: center;
-  }
-
-  /* WHATSAPP MOCKUP */
-  .hero-visual { display:none;
-    position: absolute;
-    right: 48px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 340px;
-    animation: fadeUp 0.8s 0.5s ease both;
-  }
-
-  .wa-phone {
-    background: #111B21;
-    border-radius: 32px;
-    padding: 28px 0 20px;
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-    overflow: hidden;
-  }
-
-  .wa-header {
-    padding: 0 20px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .wa-avatar {
-    width: 38px; height: 38px;
-    background: linear-gradient(135deg, var(--amber) 0%, #8B4513 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    font-weight: 500;
-    color: white;
-    flex-shrink: 0;
-  }
-
-  .wa-header-info { flex: 1; }
-  .wa-name { font-size: 14px; font-weight: 500; color: #E9EDEF; }
-  .wa-status { font-size: 12px; color: #8696A0; }
-
-  .wa-messages {
-    padding: 16px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 320px;
-  }
-
-  .wa-msg {
-    max-width: 85%;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    line-height: 1.5;
-    animation: msgIn 0.4s ease both;
-  }
-
-  .wa-msg.received {
-    background: #202C33;
-    color: #E9EDEF;
-    align-self: flex-start;
-    border-radius: 0 8px 8px 8px;
-  }
-
-  .wa-msg.sent {
-    background: #005C4B;
-    color: #E9EDEF;
-    align-self: flex-end;
-    border-radius: 8px 8px 0 8px;
-  }
-
-  .wa-msg.maya {
-    background: linear-gradient(135deg, #1A3A2A 0%, #0D2B1F 100%);
-    border: none;
-    color: #E9EDEF;
-    align-self: flex-start;
-    border-radius: 0 8px 8px 8px;
-  }
-
-  .wa-msg-sender {
-    font-size: 11px;
-    color: var(--amber-light);
-    margin-bottom: 3px;
-    font-weight: 500;
-  }
-
-  .wa-time { font-size: 10px; color: #8696A0; text-align: right; margin-top: 3px; }
-
-  .wa-typing {
-    background: #202C33;
-    border-radius: 0 8px 8px 8px;
-    padding: 10px 14px;
-    align-self: flex-start;
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-
-  .wa-typing span {
-    width: 6px; height: 6px;
-    background: #8696A0;
-    border-radius: 50%;
-    animation: typing 1.2s ease infinite;
-  }
-
-  .wa-typing span:nth-child(2) { animation-delay: 0.2s; }
-  .wa-typing span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes typing {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-4px); opacity: 1; }
-  }
-
-  @keyframes msgIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  /* SECTION COMMON */
-  section { padding: 100px 48px; }
-
-  .section-tag {
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-tag::before {
-    content: '';
-    width: 24px; height: 1px;
-    background: var(--amber);
-  }
-
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(36px, 4vw, 56px);
-    font-weight: 400;
-    line-height: 1.1;
-    margin-bottom: 16px;
-  }
-
-  .section-title em {
-    font-style: italic;
-    color: var(--amber-light);
-  }
-
-  .section-sub {
-    color: var(--cream-dim);
-    font-size: 17px;
-    max-width: 540px;
-    font-weight: 300;
-  }
-
-  .divider {
-    width: 100%;
-    height: 1px;
-    background: var(--warm-border);
-  }
-
-  /* PROBLEM SECTION */
-  .problem {
-    background: var(--dark);
-  }
-
-  .problem-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--warm-border);
-    border: 1px solid var(--warm-border);
-    border-radius: 16px;
-    overflow: hidden;
-    margin-top: 60px;
-  }
-
-  .problem-item {
-    background: var(--dark);
-    padding: 36px 40px;
-    position: relative;
-  }
-
-
-
-  .problem-item h4 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 400;
-    margin-bottom: 10px;
-    color: var(--cream);
-  }
-
-  .problem-item p {
-    font-size: 14px;
-    color: var(--cream-dim);
-    line-height: 1.7;
-  }
-
-  /* HOW IT WORKS */
-  .steps-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    margin-top: 64px;
-    position: relative;
-  }
-
-  .step {
-    padding: 40px 36px;
-    background: var(--warm-mid);
-    border-radius: 12px;
-    position: relative;
-    transition: background 0.25s;
-  }
-
-  .step:hover { background: #4A2A18; }
-
-  .step-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 64px;
-    font-weight: 300;
-    color: rgba(200,129,58,0.2);
-    line-height: 1;
-    margin-bottom: 20px;
-  }
-
-  .step h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 400;
-    margin-bottom: 12px;
-    color: var(--cream);
-  }
-
-  .step p {
-    font-size: 14px;
-    color: var(--cream-dim);
-    line-height: 1.75;
-  }
-
-  .step-arrow {
-    position: absolute;
-    right: -20px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--amber);
-    font-size: 20px;
-    z-index: 2;
-  }
-
-  /* FEATURES */
-  .features { background: var(--dark); }
-
-  .features-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: end;
-    margin-bottom: 64px;
-  }
-
-  .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--warm-border);
-    border: 1px solid var(--warm-border);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .feature-card {
-    background: var(--dark);
-    padding: 36px 32px;
-    transition: background 0.2s;
-  }
-
-  .feature-card:hover { background: #1A0F09; }
-
-  .feature-icon {
-    width: 44px; height: 44px;
-    background: #2A1A10;
-    border: none;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    margin-bottom: 20px;
-  }
-
-  .feature-card h4 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 400;
-    margin-bottom: 8px;
-    color: var(--cream);
-  }
-
-  .feature-card p {
-    font-size: 13.5px;
-    color: var(--cream-dim);
-    line-height: 1.7;
-  }
-
-  .feature-tag {
-    display: inline-block;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--amber);
-    border: 1px solid rgba(200,129,58,0.3);
-    padding: 3px 10px;
-    border-radius: 100px;
-    margin-bottom: 12px;
-  }
-
-  /* PRICING */
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 64px;
-  }
-
-  .pricing-card {
-    background: var(--warm-mid);
-    border: 1px solid var(--warm-border);
-    border-radius: 16px;
-    padding: 36px 28px;
-    position: relative;
-    transition: transform 0.2s, border-color 0.2s;
-  }
-
-  .pricing-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(200,129,58,0.3);
-  }
-
-  .pricing-card.featured {
-    background: linear-gradient(145deg, #3D2215 0%, #2A1508 100%);
-    border-color: var(--amber);
-  }
-
-  .pricing-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--amber);
-    color: var(--dark);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 4px 16px;
-    border-radius: 100px;
-    white-space: nowrap;
-  }
-
-  .pricing-tier {
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin-bottom: 16px;
-  }
-
-  .pricing-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 52px;
-    font-weight: 300;
-    color: var(--cream);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .pricing-price sup {
-    font-size: 22px;
-    vertical-align: super;
-  }
-
-  .pricing-period {
-    font-size: 13px;
-    color: var(--cream-dim);
-    margin-bottom: 24px;
-  }
-
-  .pricing-desc {
-    font-size: 13.5px;
-    color: var(--cream-dim);
-    line-height: 1.6;
-    margin-bottom: 28px;
-    padding-bottom: 28px;
-    border-bottom: 1px solid var(--warm-border);
-  }
-
-  .pricing-features {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 32px;
-  }
-
-  .pricing-features li {
-    font-size: 13.5px;
-    color: var(--cream-dim);
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    line-height: 1.5;
-  }
-
-  .pricing-features li::before {
-    content: '✓';
-    color: var(--amber);
-    font-size: 13px;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .btn-pricing {
-    display: block;
-    text-align: center;
-    padding: 13px 20px;
-    border-radius: 100px;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s;
-    letter-spacing: 0.01em;
-  }
-
-  .btn-pricing-outline {
-    border: 1px solid rgba(200,129,58,0.4);
-    color: var(--amber-light);
-  }
-
-  .btn-pricing-outline:hover {
-    border-color: var(--amber);
-    background: rgba(200,129,58,0.08);
-  }
-
-  .btn-pricing-filled {
-    background: var(--amber);
-    color: var(--dark);
-  }
-
-  .btn-pricing-filled:hover {
-    background: var(--amber-light);
-  }
-
-  .pricing-note {
-    text-align: center;
-    margin-top: 28px;
-    font-size: 13px;
-    color: var(--cream-dim);
-  }
-
-  /* SETUP SECTION */
-  .setup { background: var(--dark); }
-
-  .setup-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: start;
-    margin-top: 64px;
-  }
-
-  .setup-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .setup-step {
-    display: flex;
-    gap: 24px;
-    padding: 28px 0;
-    border-bottom: 1px solid var(--warm-border);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .setup-step:first-child { padding-top: 0; }
-  .setup-step:last-child { border-bottom: none; }
-
-  .setup-step:hover .setup-step-num { background: var(--amber); color: var(--dark); }
-
-  .setup-step-num {
-    width: 36px; height: 36px;
-    border: 1px solid rgba(200,129,58,0.4);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    color: var(--amber);
-    flex-shrink: 0;
-    transition: all 0.2s;
-  }
-
-  .setup-step-content h4 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
-    font-weight: 400;
-    color: var(--cream);
-    margin-bottom: 6px;
-  }
-
-  .setup-step-content p {
-    font-size: 14px;
-    color: var(--cream-dim);
-    line-height: 1.65;
-  }
-
-  .setup-step-content code {
-    background: #2A1A10;
-    border: none;
-    color: var(--amber-light);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: monospace;
-  }
-
-  .setup-callout {
-    background: var(--warm-mid);
-    border: 1px solid var(--warm-border);
-    border-radius: 16px;
-    padding: 36px;
-    position: sticky;
-    top: 100px;
-  }
-
-  .setup-callout h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 400;
-    margin-bottom: 20px;
-  }
-
-  .setup-callout p {
-    font-size: 14px;
-    color: var(--cream-dim);
-    line-height: 1.7;
-    margin-bottom: 16px;
-  }
-
-  .setup-time {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(200,129,58,0.1);
-    border: none;
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-top: 24px;
-    margin-bottom: 24px;
-  }
-
-  .setup-time-icon { font-size: 22px; }
-
-  .setup-time-text {
-    font-size: 13px;
-    color: var(--amber-light);
-    line-height: 1.4;
-  }
-
-  .setup-time-text strong {
-    display: block;
-    font-weight: 500;
-    font-size: 16px;
-    color: var(--cream);
-  }
-
-  .requirement-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .requirement-list li {
-    font-size: 13.5px;
-    color: var(--cream-dim);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .requirement-list li::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--amber);
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* FAQ */
-  .faq-list {
-    max-width: 740px;
-    margin-top: 56px;
-  }
-
-  .faq-item {
-    border-bottom: 1px solid var(--warm-border);
-  }
-
-  .faq-q {
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px;
-    font-weight: 400;
-    text-align: left;
-    padding: 24px 0;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-    transition: color 0.2s;
-  }
-
-  .faq-q:hover { color: var(--amber-light); }
-
-  .faq-q::after {
-    content: '+';
-    font-size: 22px;
-    color: var(--amber);
-    flex-shrink: 0;
-    transition: transform 0.2s;
-  }
-
-  .faq-item.open .faq-q::after { transform: rotate(45deg); }
-
-  .faq-a {
-    font-size: 14px;
-    color: var(--cream-dim);
-    line-height: 1.75;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s;
-  }
-
-  .faq-item.open .faq-a {
-    max-height: 300px;
-    padding-bottom: 24px;
-  }
-
-  /* CTA SECTION */
-  .cta-section {
-    text-align: center;
-    padding: 120px 48px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cta-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(200,129,58,0.1) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .cta-section h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(40px, 5vw, 68px);
-    font-weight: 300;
-    margin-bottom: 20px;
-  }
-
-  .cta-section h2 em {
-    font-style: italic;
-    color: var(--amber-light);
-  }
-
-  .cta-section p {
-    color: var(--cream-dim);
-    font-size: 17px;
-    max-width: 480px;
-    margin: 0 auto 40px;
-  }
-
-  /* FOOTER */
-  footer {
-    padding: 48px;
-    border-top: 1px solid var(--warm-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .footer-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--cream-dim);
-  }
-
-  .footer-logo span { color: var(--amber); }
-
-  .footer-links {
-    display: flex;
-    gap: 28px;
-    list-style: none;
-  }
-
-  .footer-links a {
-    font-size: 13px;
-    color: var(--cream-dim);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .footer-links a:hover { color: var(--cream); }
-
-  .footer-copy {
-    font-size: 12px;
-    color: #5C4030;
-  }
-
-
-  /* iPhone-style phone mockup */
-  .phone-pair { display:flex; justify-content:center; gap:48px; margin-top:56px; }
-  .phone-wrap { display:flex; flex-direction:column; align-items:center; }
-  .phone-device {
-    width:280px; background:#1A1A1A; border-radius:44px; padding:14px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.05);
-    position:relative; transition:transform 0.3s ease;
-  }
-  .phone-device:hover { transform:translateY(-6px); }
-  .phone-device::before {
-    content:''; position:absolute; top:14px; left:50%; transform:translateX(-50%);
-    width:80px; height:24px; background:#1A1A1A; border-radius:0 0 14px 14px; z-index:10;
-  }
-  .phone-screen { background:#0B141A; border-radius:32px; overflow:hidden; }
-  .phone-screen-pad { padding-top:32px; }
-  .phone-home { width:100px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:8px auto 6px; }
-  .phone-label { text-align:center; margin-top:24px; font-size:15px; font-weight:500; color:#2A1A10; }
-  .phone-label span { color:#7A6A58; font-weight:300; display:block; font-size:13px; margin-top:4px; }
-
-  @media(max-width:768px) {
-    .phone-pair { flex-direction:column; align-items:center; gap:40px; }
-    .phone-device { width:260px; }
-  }
-  @media(max-width:480px) {
-    .phone-device { width:240px; padding:10px; border-radius:36px; }
-    .phone-screen { border-radius:28px; }
-  }
-
-
-  /* Light section card overrides - matching reference design */
-  .section-light .problem-grid { background: transparent !important; border: none !important; gap: 16px !important; display: grid; }
-  .section-light .problem-item { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
-
-  .section-light .feature-grid { background: transparent !important; border: none !important; gap: 16px !important; }
-  .section-light .feature-card { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
-  .section-light .feature-card:hover { background: #FDF8F2 !important; }
-  .section-light .feature-icon { background: #2A1A10 !important; border: none !important; border-radius: 12px !important; }
-
-  .section-light .pricing-card { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
-  .section-light .pricing-card:hover { border-color: #C8813A !important; }
-  .section-light .pricing-card.featured { background: linear-gradient(145deg, #FFF8EE, #FFF3E0) !important; border: 2px solid #C8813A !important; }
-  .section-light .pricing-desc { border-bottom-color: #E0D5C8 !important; }
-  .section-light .btn-outline { border-color: #C8813A !important; color: #C8813A !important; }
-  .section-light .btn-outline:hover { background: rgba(200,129,58,0.08) !important; }
-
-  .section-light .step { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
-  .section-light .step:hover { background: #FDF8F2 !important; }
-
-  .section-light .setup-callout { background: #FFFFFF !important; border: 1px solid #E0D5C8 !important; border-radius: 16px !important; }
-  .section-light .setup-step { border-bottom-color: #E0D5C8 !important; }
-  .section-light .setup-time { background: rgba(200,129,58,0.06) !important; border-color: #E0D5C8 !important; }
-
-  .section-light .faq-item { border-bottom-color: #E0D5C8 !important; }
-
-
-  /* === NUCLEAR OVERRIDES — fix light section backgrounds === */
-  section.section-light { background: #F5F0E8 !important; color: #2A1A10 !important; }
-  section.problem.section-light { background: #F5F0E8 !important; }
-  section.features.section-light { background: #F5F0E8 !important; }
-  section.setup.section-light { background: #F5F0E8 !important; }
-  section.wa-demo.section-light { background: #F5F0E8 !important; }
-  
-  /* Fix ALL text in light sections */
-  .section-light h2 { color: #2A1A10 !important; }
-  .section-light h2 em { color: #C8813A !important; }
-  .section-light h3 { color: #2A1A10 !important; }
-  .section-light h4 { color: #2A1A10 !important; }
-  .section-light p { color: #7A6A58 !important; }
-  .section-light .section-tag { color: #C8813A !important; }
-  .section-light .section-sub { color: #7A6A58 !important; }
-  
-  /* Fix card text in light sections */
-  .section-light .problem-item h4 { color: #2A1A10 !important; }
-  .section-light .problem-item p { color: #7A6A58 !important; }
-  .section-light .feature-card h4 { color: #2A1A10 !important; }
-  .section-light .feature-card p { color: #7A6A58 !important; }
-  .section-light .step h3 { color: #2A1A10 !important; }
-  .section-light .step p { color: #7A6A58 !important; }
-  .section-light .step-num { color: rgba(200,129,58,0.3) !important; }
-  
-  /* Fix pricing text */
-  .section-light .pricing-tier { color: #C8813A !important; }
-  .section-light .pricing-price { color: #2A1A10 !important; }
-  .section-light .pricing-period { color: #7A6A58 !important; }
-  .section-light .pricing-desc { color: #7A6A58 !important; }
-  .section-light .pricing-features li { color: #7A6A58 !important; }
-  .section-light .pricing-features li::before { color: #C8813A !important; }
-  .section-light .pricing-note { color: #7A6A58 !important; }
-  .section-light .price-badge { color: #2A1A10 !important; }
-  
-  /* Fix FAQ text */
-  .section-light .faq-q { color: #2A1A10 !important; }
-  .section-light .faq-q::after { color: #C8813A !important; }
-  .section-light .faq-a { color: #7A6A58 !important; }
-  
-  /* Fix setup text */
-  .section-light .setup-step h4 { color: #2A1A10 !important; }
-  .section-light .setup-step p { color: #7A6A58 !important; }
-  .section-light .setup-callout h3 { color: #2A1A10 !important; }
-  .section-light .setup-callout p { color: #7A6A58 !important; }
-  .section-light .requirement-list li { color: #7A6A58 !important; }
-  .section-light .req-list li { color: #7A6A58 !important; }
-  
-  /* Fix WhatsApp demo text */
-  .section-light .phone-label { color: #2A1A10 !important; }
-  .section-light .phone-label span { color: #7A6A58 !important; }
-
-  /* Fix dividers between light sections */
-  .section-light + .section-light { border-top: 1px solid #E0D5C8 !important; }
-
-  /* RESPONSIVE */
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 1100px) {
-    .hero-visual { display:none; display: none; }
-    .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  @media (max-width: 768px) {
-    nav { padding: 16px 24px; }
-    .nav-links { gap: 16px; }
-    .nav-links li:nth-child(1),
-    .nav-links li:nth-child(2),
-    .nav-links li:nth-child(3),
-    .nav-links li:nth-child(4) { display: none; }
-    section { padding: 60px 20px; }
-    .hero { padding: 100px 20px 60px; min-height: auto; }
-    .hero-visual { display:none; display: none; }
-    .display { font-size: 36px; }
-    .hero-sub { font-size: 16px; }
-    .hero-stat-row { flex-wrap: wrap; gap: 24px; }
-    .hero-stat-value { font-size: 28px; }
-    .hero-actions { flex-wrap: wrap; }
-    .section-title { font-size: 30px; }
-    .section-sub { font-size: 15px; }
-    .problem-grid { grid-template-columns: 1fr; }
-    .steps-row { grid-template-columns: 1fr; }
-    .step-arrow { display: none; }
-    .features-header { grid-template-columns: 1fr; gap: 24px; }
-    .feature-grid { grid-template-columns: 1fr; }
-    .pricing-grid { grid-template-columns: 1fr; }
-    .setup-grid { grid-template-columns: 1fr; }
-    .setup-callout { position: static; margin-top: 40px; }
-    .cta-section { padding: 80px 20px; }
-    .cta-section h2 { font-size: 32px; }
-    footer { flex-direction: column; gap: 24px; text-align: center; padding: 32px 20px; }
-    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
-  }
-
-  @media (max-width: 480px) {
-    nav { padding: 14px 16px; }
-    .nav-logo { font-size: 18px; }
-    .nav-cta { padding: 8px 16px; font-size: 12px; }
-    .hero { padding: 80px 16px 40px; }
-    .display { font-size: 28px; }
-    .hero-sub { font-size: 14px; }
-    .hero-stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .hero-stat-value { font-size: 24px; }
-    .hero-actions { flex-direction: column; align-items: flex-start; }
-    section { padding: 48px 16px; }
-    .section-title { font-size: 26px; }
-    .problem-item { padding: 24px 20px; }
-    .step { padding: 28px 20px; }
-    .step-num { font-size: 48px; }
-    .feature-card { padding: 24px 20px; }
-    .pricing-card { padding: 28px 20px; }
-    .pricing-price { font-size: 40px; }
-    .faq-q { font-size: 15px; padding: 20px 0; }
-    .cta-section { padding: 60px 16px; }
-    .cta-section h2 { font-size: 26px; }
-    .setup-step { gap: 16px; }
-  }
-` }} />
-      {/* NAV */}
-<nav>
-  <a href="#" className="nav-logo">espresso<span>.</span></a>
-  <ul className="nav-links">
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#setup">Setup</a></li>
-    <li><a href="/login">Login</a></li>
-    <li><a href="/trial" className="nav-cta">Start free trial</a></li>
-  </ul>
-</nav>
-
-{/* HERO */}
-<section className="hero">
-  <div className="hero-bg"></div>
-
-  <div className="hero-tag">Now live in Singapore</div>
-
-  <h1 className="display">
-    Your AI back-office.<br/>
-    <em>Inside WhatsApp.</em>
-  </h1>
-
-  <p className="hero-sub">
-    Maya handles intake, renewals, and claims — 24/7, inside WhatsApp.
-  </p>
-
-  <div className="hero-actions">
-    <a href="/trial" className="btn-primary">Start 14-day free trial</a>
-    <a href="#how-it-works" className="btn-ghost">See how it works</a>
-  </div>
-
-  <div className="hero-stat-row">
-    <div>
-      <div className="hero-stat-value">24/7</div>
-      <div className="hero-stat-label">Maya is always on</div>
-    </div>
-    <div>
-      <div className="hero-stat-value">&lt;30min</div>
-      <div className="hero-stat-label">Setup to first client</div>
-    </div>
-    <div>
-      <div className="hero-stat-value">0</div>
-      <div className="hero-stat-label">App downloads needed</div>
-    </div>
-    <div>
-      <div className="hero-stat-value">SGD 29</div>
-      <div className="hero-stat-label">Per month to start</div>
-    </div>
-  </div>
-
-  {/* WhatsApp mockup */}
-  <div className="hero-visual">
-    <div className="wa-phone">
-      <div className="wa-header">
-        <div className="wa-avatar">M</div>
-        <div className="wa-header-info">
-          <div className="wa-name">Maya · Espresso</div>
-          <div className="wa-status">AI assistant to David Tan</div>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background: #F7F4F0; color: #1A1410; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        a { color: inherit; text-decoration: none; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-up { animation: fadeUp 0.6s ease forwards; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse { animation: pulse 2s infinite; }
+        nav a:hover { color: #BA7517; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-outline:hover { background: #1A1410; color: #FFFFFF; }
+        .feature-card:hover { border-color: #D4B896; transform: translateY(-1px); }
+        .plan-card:hover { border-color: #D4B896; }
+        .faq-item summary { cursor: pointer; list-style: none; }
+        .faq-item summary::-webkit-details-marker { display: none; }
+      `}</style>
+
+      {/* ── NAV ── */}
+      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(247,244,240,0.92)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid #E8E2DA', padding: '0 40px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410' }}>
+          espresso<span style={{ color: '#BA7517' }}>.</span>
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+          {[['How it works', '#how-it-works'], ['Features', '#features'], ['Pricing', '#pricing'], ['Setup', '#setup']].map(([label, href]) => (
+            <a key={label} href={href} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>{label}</a>
+          ))}
         </div>
-      </div>
-      <div className="wa-messages">
-        <div className="wa-msg received">
-          <div>Hi! I saw your ad — need insurance for my café.</div>
-          <div className="wa-time">9:47 AM</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/login" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532', padding: '7px 16px' }}>Login</Link>
+          <Link href="/trial" style={{ background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, padding: '8px 18px', borderRadius: 8 }} className="btn-primary">
+            Start free trial
+          </Link>
         </div>
-        <div className="wa-msg maya">
-          <div className="wa-msg-sender">Maya</div>
-          <div>Hi Sarah! Great to meet you. I'm Maya, David's assistant — I'll help get your café sorted properly. Can I ask a couple of quick questions first?</div>
-          <div className="wa-time">9:47 AM</div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section style={{ maxWidth: 900, margin: '0 auto', padding: '90px 40px 80px', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px', marginBottom: 28 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} className="pulse" />
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>Now live in Singapore</span>
         </div>
-        <div className="wa-msg received">
-          <div>Sure, go ahead!</div>
-          <div className="wa-time">9:48 AM</div>
+
+        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 64, fontWeight: 400, color: '#1A1410', lineHeight: 1.1, marginBottom: 24, letterSpacing: '-0.01em' }}>
+          Your AI back-office.<br />
+          <em style={{ color: '#BA7517' }}>Inside WhatsApp.</em>
+        </h1>
+
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, color: '#5F5A57', maxWidth: 560, margin: '0 auto 40px', lineHeight: 1.7 }}>
+          Maya handles intake, renewals, and claims — 24/7, inside the WhatsApp groups you already use.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <Link href="/trial" style={{ background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, padding: '13px 28px', borderRadius: 9, display: 'inline-block' }} className="btn-primary">
+            Start 14-day free trial
+          </Link>
+          <a href="#how-it-works" style={{ background: 'transparent', color: '#3D3532', fontFamily: 'DM Sans, sans-serif', fontSize: 15, padding: '13px 24px', border: '0.5px solid #E8E2DA', borderRadius: 9, display: 'inline-block' }} className="btn-outline">
+            See how it works
+          </a>
         </div>
-        <div className="wa-msg maya">
-          <div className="wa-msg-sender">Maya</div>
-          <div>How many staff do you currently have, including yourself?</div>
-          <div className="wa-time">9:48 AM</div>
+
+        {/* Stats */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, marginTop: 60, paddingTop: 48, borderTop: '0.5px solid #E8E2DA' }}>
+          {[['24/7', 'Maya is always on'], ['<30 min', 'Setup to first client'], ['0', 'App downloads needed'], ['SGD 79', 'Per month to start']].map(([val, label]) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 28, fontWeight: 400, color: '#1A1410' }}>{val}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', marginTop: 3 }}>{label}</div>
+            </div>
+          ))}
         </div>
-        <div className="wa-msg received">
-          <div>5 full-time, 2 part-time</div>
-          <div className="wa-time">9:49 AM</div>
-        </div>
-        <div className="wa-typing">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
-<div className="divider"></div>
-
-{/* PROBLEM */}
-<section className="problem section-light" id="problem">
-  <div className="section-tag">The problem</div>
-  <h2 className="section-title">You're running a<br/><em>500-client business</em> on WhatsApp and Excel.</h2>
-  <p className="section-sub">Your best hours are going to admin that doesn't earn you a cent.</p>
-
-  <div className="problem-grid">
-    <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><h4>New enquiries go cold</h4>
-      <p>Prospects message while you're busy. By the time you respond, they've moved on.</p>
-    </div>
-    <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><h4>Renewals sneak up on you</h4>
-      <p>You track renewals in spreadsheets and memory. One missed renewal is a client lost.</p>
-    </div>
-    <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><h4>Claims catch you off guard</h4>
-      <p>A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.</p>
-    </div>
-    <div className="problem-item">
-      <div style={{"width":"44px","height":"44px","background":"#2A1A10","borderRadius":"12px","display":"flex","alignItems":"center","justifyContent":"center","marginBottom":"16px"}}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div><h4>Evenings lost to admin</h4>
-      <p>Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.</p>
-    </div>
-  </div>
-</section>
-
-{/* HOW IT WORKS */}
-<section className="section-light" id="how-it-works">
-  <div className="section-tag">How it works</div>
-  <h2 className="section-title">Three steps.<br/><em>30 minutes.</em> You're live.</h2>
-  <p className="section-sub">No app to download. No platform to learn. Just WhatsApp.</p>
-
-  <div className="steps-row">
-    <div className="step">
-      <div className="step-num">01</div>
-      <h3>Sign up and connect</h3>
-      <p>Create your account, add Maya's number, upload your client list. Under 30 minutes.</p>
-      <div className="step-arrow">→</div>
-    </div>
-    <div className="step">
-      <div className="step-num">02</div>
-      <h3>Add Maya to any client group</h3>
-      <p>Create a WhatsApp group with your client and add Maya. She handles intake, follow-ups, and renewals from there.</p>
-      <div className="step-arrow">→</div>
-    </div>
-    <div className="step">
-      <div className="step-num">03</div>
-      <h3>Check your dashboard, close deals</h3>
-      <p>Review client briefs, renewals, and alerts in your dashboard. You sell. Maya handles the rest.</p>
-    </div>
-  </div>
-</section>
-
-
-{/* WHATSAPP DEMO */}
-<section className="wa-demo section-light" style={{"borderTop":"1px solid var(--light-border)"}}>
-  <div style={{"maxWidth":"1200px","margin":"0 auto","padding":"0 48px"}}>
-    <div className="section-tag" style={{"justifyContent":"center"}}>See Maya in action</div>
-    <h2 className="section-title" style={{"textAlign":"center","marginBottom":"12px"}}>Maya handles the conversation.<br/><em>You close the deal.</em></h2>
-    <p style={{"textAlign":"center","color":"var(--light-muted)","maxWidth":"480px","margin":"0 auto"}}>Watch Maya qualify a lead and manage a renewal — right inside WhatsApp.</p>
-    
-    <div className="phone-pair">
-      {/* Phone 1: New client intake */}
-      <div className="phone-wrap">
-        <div className="phone-device">
-          <div className="phone-screen">
-            <div className="phone-screen-pad">
-              <div className="wa-header">
-                <div className="wa-avatar">M</div>
-                <div className="wa-header-info">
-                  <div className="wa-name">Sarah · Café owner</div>
-                  <div className="wa-status">Maya + David Tan</div>
-                </div>
-              </div>
-              <div className="wa-messages" style={{"minHeight":"280px","padding":"12px 10px"}}>
-                <div className="wa-msg received"><div>I need insurance for my café.</div><div className="wa-time">9:47 AM</div></div>
-                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Sarah! How many staff do you have?</div><div className="wa-time">9:47 AM</div></div>
-                <div className="wa-msg received"><div>5 full-time, 2 part-time</div><div className="wa-time">9:48 AM</div></div>
-                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Got it. I\'ll prepare a brief for David. Expect a call today!</div><div className="wa-time">9:48 AM</div></div>
-              </div>
-              <div className="phone-home"></div>
+      {/* ── WHATSAPP DEMO CARD ── */}
+      <section style={{ maxWidth: 420, margin: '0 auto 100px', padding: '0 40px' }}>
+        <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 40px rgba(26,20,16,0.06)' }}>
+          <div style={{ background: '#F7F4F0', padding: '12px 16px', borderBottom: '0.5px solid #E8E2DA', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FEF3E2', border: '1px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#854F0B' }}>M</div>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>Maya · Espresso</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>AI assistant to David Tan</div>
             </div>
           </div>
-        </div>
-        <div className="phone-label">New client intake<span>Maya qualifies leads 24/7</span></div>
-      </div>
-
-      {/* Phone 2: Renewal follow-up */}
-      <div className="phone-wrap">
-        <div className="phone-device">
-          <div className="phone-screen">
-            <div className="phone-screen-pad">
-              <div className="wa-header">
-                <div className="wa-avatar">M</div>
-                <div className="wa-header-info">
-                  <div className="wa-name">Kevin · Policy holder</div>
-                  <div className="wa-status">Maya + David Tan</div>
+          <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { from: 'client', text: 'Hi! I saw your ad — need insurance for my café.', time: '9:47 AM' },
+              { from: 'maya', text: "Hi Sarah! Great to meet you. I'm Maya, David's assistant — I'll help get your café sorted. Can I ask a couple of quick questions first?", time: '9:47 AM' },
+              { from: 'client', text: 'Sure, go ahead!', time: '9:48 AM' },
+              { from: 'maya', text: 'How many staff do you currently have, including yourself?', time: '9:48 AM' },
+              { from: 'client', text: '5 full-time, 2 part-time', time: '9:49 AM' },
+            ].map((m, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: m.from === 'client' ? 'flex-start' : 'flex-end' }}>
+                <div style={{ maxWidth: '80%', background: m.from === 'maya' ? '#BA7517' : '#F1EFE8', borderRadius: m.from === 'maya' ? '12px 12px 2px 12px' : '12px 12px 12px 2px', padding: '9px 12px' }}>
+                  {m.from === 'maya' && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 3 }}>Maya</div>}
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: m.from === 'maya' ? '#FFFFFF' : '#1A1410', lineHeight: 1.4 }}>{m.text}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: m.from === 'maya' ? 'rgba(255,255,255,0.6)' : '#9B9088', marginTop: 4, textAlign: 'right' }}>{m.time}</div>
                 </div>
               </div>
-              <div className="wa-messages" style={{"minHeight":"280px","padding":"12px 10px"}}>
-                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>Hi Kevin! Your health plan renews May 10. Want renewal options?</div><div className="wa-time">10:00 AM</div></div>
-                <div className="wa-msg received"><div>Yes please! Any better rates?</div><div className="wa-time">10:05 AM</div></div>
-                <div className="wa-msg maya"><div className="wa-msg-sender">Maya</div><div>I\'ll compare 3 plans and send a summary today.</div><div className="wa-time">10:05 AM</div></div>
-                <div className="wa-typing"><span></span><span></span><span></span></div>
-              </div>
-              <div className="phone-home"></div>
-            </div>
+            ))}
           </div>
         </div>
-        <div className="phone-label">Renewal follow-up<span>Never miss a renewal again</span></div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
-<div className="divider"></div>
-
-{/* FEATURES */}
-<section className="features section-light" id="features">
-  <div className="features-header">
-    <div>
-      <div className="section-tag">What Espresso does</div>
-      <h2 className="section-title">Everything you need.<br/><em>Nothing you don't.</em></h2>
-    </div>
-    <p className="section-sub">Built for the IFA who works alone but needs to perform like a full team.</p>
-  </div>
-
-  <div className="feature-grid">
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-      <h4>Maya — Client intake</h4>
-      <p>Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.</p>
-    </div>
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <h4>Renewal management</h4>
-      <p>Every policy tracked. Renewals managed at 90, 60, 30, 14, and 7 days out. Never miss a follow-up.</p>
-    </div>
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-      <h4>Policy advisory</h4>
-      <p>Clients ask coverage questions. Maya answers from their policy data — accurate, specific, instant.</p>
-    </div>
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-      <h4>Claims support</h4>
-      <p>Maya guides clients through claims in real time, at any hour. You get an alert and full report.</p>
-    </div>
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <h4>Document management</h4>
-      <p>Summaries, certificates, endorsements — always complete, always retrievable.</p>
-    </div>
-    <div className="feature-card">
-            <div className="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-      <h4>Quote comparison</h4>
-      <p>Quotes aggregated, ranked by quality, presented as a clear comparison. Hours of portal work — gone.</p>
-    </div>
-  </div>
-</section>
-
-{/* PRICING */}
-<section className="section-light" id="pricing">
-  <div className="section-tag">Pricing</div>
-  <h2 className="section-title">Simple pricing.<br/><em>No hidden fees.</em></h2>
-  <p className="section-sub">Start free for 14 days. No credit card required. Cancel anytime.</p>
-
-  <div className="pricing-grid">
-
-    {/* Solo */}
-    <div className="pricing-card">
-      <div className="pricing-tier">Solo</div>
-      <div className="pricing-price"><sup>$</sup>29</div>
-      <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">Intake and renewals, around the clock.</div>
-      <ul className="pricing-features">
-        <li>24/7 client intake in WhatsApp groups</li>
-        <li>Full renewal management</li>
-        <li>Up to 100 active clients</li>
-        <li>IFA dashboard with client briefs</li>
-        <li>Policy CSV import</li>
-        <li>English and Mandarin support</li>
-        <li>Email support</li>
-      </ul>
-      <a href="/trial" className="btn-pricing btn-pricing-outline">Start free trial</a>
-    </div>
-
-    {/* Pro */}
-    <div className="pricing-card featured">
-      <div className="pricing-badge">Most popular</div>
-      <div className="pricing-tier">Pro</div>
-      <div className="pricing-price"><sup>$</sup>79</div>
-      <div className="pricing-period">SGD per month · billed monthly</div>
-      <div className="pricing-desc">Everything. Unlimited clients. Claims. Documents. Quotes.</div>
-      <ul className="pricing-features">
-        <li>Everything in Solo</li>
-        <li>Unlimited clients</li>
-        <li>Policy Q&amp;A and advisory</li>
-        <li>24/7 claims and FNOL support</li>
-        <li>Documents and compliance</li>
-        <li>Quote comparison reports</li>
-        <li>Coverage gap detection alerts</li>
-        <li>Client-facing policy portal</li>
-        <li>Priority support</li>
-      </ul>
-      <a href="/trial" className="btn-pricing btn-pricing-filled">Start free trial</a>
-    </div>
-
-    {/* Team */}
-    <div className="pricing-card">
-      <div className="pricing-tier">Team</div>
-      <div className="pricing-price"><sup>$</sup>199</div>
-      <div className="pricing-period">SGD per month · up to 5 agents</div>
-      <div className="pricing-desc">Full suite shared across up to 5 advisors.</div>
-      <ul className="pricing-features">
-        <li>Everything in Pro</li>
-        <li>Up to 5 IFA seats</li>
-        <li>Shared team dashboard</li>
-        <li>Shared book of business</li>
-        <li>Team renewal calendar</li>
-        <li>Admin controls</li>
-        <li>Dedicated onboarding call</li>
-      </ul>
-      <a href="/trial" className="btn-pricing btn-pricing-outline">Start free trial</a>
-    </div>
-
-    {/* Agency */}
-    <div className="pricing-card">
-      <div className="pricing-tier">Agency</div>
-      <div className="pricing-price" style={{"fontSize":"36px","paddingTop":"8px"}}>Custom</div>
-      <div className="pricing-period">Tailored for your agency</div>
-      <div className="pricing-desc">White-label. API access. Enterprise support.</div>
-      <ul className="pricing-features">
-        <li>Everything in Team</li>
-        <li>Unlimited IFA seats</li>
-        <li>White-label Maya (your brand name)</li>
-        <li>API access and integrations</li>
-        <li>Custom onboarding and training</li>
-        <li>Dedicated account manager</li>
-        <li>SLA and compliance reporting</li>
-        <li>Multi-market support</li>
-      </ul>
-      <a href="mailto:hello@espresso.insure" className="btn-pricing btn-pricing-outline">Contact us</a>
-    </div>
-
-  </div>
-
-  <p className="pricing-note">All prices in SGD. Annual plans available at 2 months free. Need help choosing? <a href="mailto:hello@espresso.insure" style={{"color":"var(--amber-light)","textDecoration":"none"}}>Talk to us →</a></p>
-</section>
-
-<div className="divider"></div>
-
-{/* SETUP GUIDE */}
-<section className="setup section-light" id="setup">
-  <div className="section-tag">Setup guide</div>
-  <h2 className="section-title">From sign-up to<br/><em>first client</em> in 30 minutes.</h2>
-  <p className="section-sub">If you use WhatsApp, you can use Espresso.</p>
-
-  <div className="setup-grid">
-    <div className="setup-steps">
-
-      <div className="setup-step">
-        <div className="setup-step-num">1</div>
-        <div className="setup-step-content">
-          <h4>Create your Espresso account</h4>
-          <p>Go to <code>espresso.insure/trial</code>, enter your name, email, and mobile number. Choose your plan — or start with the 14-day free trial. No credit card needed.</p>
+      {/* ── PROBLEM ── */}
+      <section style={{ background: '#1A1410', padding: '90px 40px' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>The problem</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#F7F4F0', textAlign: 'center', marginBottom: 60, lineHeight: 1.15 }}>
+            You're running a 500-client business<br /><em style={{ color: '#BA7517' }}>on WhatsApp and Excel.</em>
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, background: '#2E1A0E' }}>
+            {[
+              { icon: 'clock', title: 'New enquiries go cold', body: 'Prospects message while you\'re busy. By the time you respond, they\'ve moved on.' },
+              { icon: 'calendar', title: 'Renewals sneak up on you', body: 'You track renewals in spreadsheets and memory. One missed renewal is a client lost.' },
+              { icon: 'alert', title: 'Claims catch you off guard', body: 'A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.' },
+              { icon: 'moon', title: 'Evenings lost to admin', body: 'Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.' },
+            ].map(p => (
+              <div key={p.title} style={{ background: '#1A1410', padding: '32px 36px' }}>
+                <div style={{ marginBottom: 12 }}>{ICONS[p.icon as keyof typeof ICONS]}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#F7F4F0', marginBottom: 8 }}>{p.title}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', lineHeight: 1.6 }}>{p.body}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="setup-step">
-        <div className="setup-step-num">2</div>
-        <div className="setup-step-content">
-          <h4>Save Maya's number</h4>
-          <p>After sign-up, you'll receive Maya's WhatsApp number in your dashboard. Save it in your phone contacts as <code>Maya — Espresso</code>. This is the number you will add to client groups.</p>
+      {/* ── HOW IT WORKS ── */}
+      <section id="how-it-works" style={{ padding: '90px 40px', background: '#F7F4F0' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>How it works</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#1A1410', textAlign: 'center', marginBottom: 16, lineHeight: 1.15 }}>
+            Three steps. <em style={{ color: '#BA7517' }}>30 minutes.</em> You're live.
+          </h2>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 60 }}>No app to download. No platform to learn. Just WhatsApp.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            {[
+              { n: '01', title: 'Sign up and connect', body: 'Create your account, add Maya\'s number, upload your client list. Under 30 minutes.' },
+              { n: '02', title: 'Add Maya to any client group', body: 'Create a WhatsApp group with your client and add Maya. She handles intake, follow-ups, and renewals from there.' },
+              { n: '03', title: 'Check your dashboard, close deals', body: 'Review client briefs, renewals, and alerts in your dashboard. You sell. Maya handles the rest.' },
+            ].map(s => (
+              <div key={s.n} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '28px 24px' }}>
+                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: '#BA7517', marginBottom: 16 }}>{s.n}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>{s.title}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.6 }}>{s.body}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="setup-step">
-        <div className="setup-step-num">3</div>
-        <div className="setup-step-content">
-          <h4>Upload your existing policies</h4>
-          <p>In your dashboard, go to <code>Clients → Import</code> and upload a CSV of your current client policies. Use our template or let the importer map your existing columns. Maya immediately begins tracking all renewals.</p>
+      {/* ── FEATURES ── */}
+      <section id="features" style={{ padding: '90px 40px', background: '#FFFFFF' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>What Espresso does</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#1A1410', textAlign: 'center', marginBottom: 16, lineHeight: 1.15 }}>
+            Everything you need. <em style={{ color: '#BA7517' }}>Nothing you don't.</em>
+          </h2>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 60 }}>Built for the IFA who works alone but needs to perform like a full team.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {[
+              { icon: 'chat', title: 'Client intake', body: 'Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.' },
+              { icon: 'calendar', title: 'Renewal management', body: 'Every policy tracked. Renewals managed at 90, 60, 30, 14, and 7 days out. Never miss a follow-up.' },
+              { icon: 'shield', title: 'Policy advisory', body: 'Clients ask coverage questions. Maya answers from their policy data — accurate, specific, instant.' },
+              { icon: 'alert', title: 'Claims support', body: 'Maya guides clients through claims in real time, at any hour. You get an alert and full report.' },
+              { icon: 'doc', title: 'Document management', body: 'Summaries, certificates, endorsements — always complete, always retrievable from your dashboard.' },
+              { icon: 'chart', title: 'Quote comparison', body: 'Quotes ranked by quality, presented as a clear comparison. Hours of portal work — gone.' },
+            ].map(f => (
+              <div key={f.title} className="feature-card" style={{ background: '#FAFAF8', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '24px', transition: 'all 0.15s' }}>
+                <div style={{ marginBottom: 12 }}>{ICONS[f.icon as keyof typeof ICONS]}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Maya — {f.title}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', lineHeight: 1.6 }}>{f.body}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="setup-step">
-        <div className="setup-step-num">4</div>
-        <div className="setup-step-content">
-          <h4>Create your first client group</h4>
-          <p>Open WhatsApp. Create a new group with yourself and a client. Add Maya's number to the group. That's it — Maya will introduce herself and take over the conversation.</p>
+      {/* ── PRICING ── */}
+      <section id="pricing" style={{ padding: '90px 40px', background: '#F7F4F0' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>Pricing</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#1A1410', textAlign: 'center', marginBottom: 16, lineHeight: 1.15 }}>
+            Simple pricing. <em style={{ color: '#BA7517' }}>No hidden fees.</em>
+          </h2>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#5F5A57', textAlign: 'center', marginBottom: 52 }}>Start free for 14 days. No credit card required. Cancel anytime.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            {[
+              { name: 'Solo', price: '79', period: '/month', tag: null, features: ['1 FA', '50 active clients', 'Maya AI — intake & renewals', 'Dashboard + client briefs', 'Policy CSV import', 'English & Mandarin', 'Email support'], cta: 'Start free trial', href: '/trial' },
+              { name: 'Pro', price: '149', period: '/month', tag: 'Most popular', features: ['Everything in Solo', 'Unlimited clients', 'Claims + FNOL support', 'Coverage gap detection', 'Document management', 'Quote comparison', 'Priority support'], cta: 'Start free trial', href: '/trial' },
+              { name: 'Team', price: '349', period: '/month', tag: 'Coming soon', features: ['Everything in Pro', 'Up to 5 FA seats', 'Shared dashboard', 'Team renewal calendar', 'Admin controls', 'Dedicated onboarding'], cta: 'Join waitlist', href: 'mailto:hello@espresso.insure?subject=Team plan waitlist' },
+              { name: 'Agency', price: 'Custom', period: '/month', tag: null, features: ['Everything in Team', 'Unlimited FA seats', 'White-label Maya', 'API access', 'Custom onboarding', 'SLA + compliance', 'Multi-market support'], cta: 'Contact us', href: 'mailto:hello@espresso.insure' },
+            ].map((plan, i) => (
+              <div key={plan.name} className="plan-card" style={{ background: i === 1 ? '#1A1410' : '#FFFFFF', border: `0.5px solid ${i === 1 ? '#1A1410' : '#E8E2DA'}`, borderRadius: 14, padding: '28px 22px', position: 'relative', transition: 'all 0.15s', display: 'flex', flexDirection: 'column' }}>
+                {plan.tag && (
+                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: plan.tag === 'Coming soon' ? '#5F5A57' : '#BA7517', color: '#FFFFFF', fontSize: 10, fontWeight: 500, padding: '3px 12px', borderRadius: 100, whiteSpace: 'nowrap' }}>
+                    {plan.tag}
+                  </div>
+                )}
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: i === 1 ? '#F7F4F0' : '#1A1410', marginBottom: 8 }}>{plan.name}</div>
+                <div style={{ marginBottom: 20 }}>
+                  {plan.price === 'Custom' ? (
+                    <>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>Tailored for</span><br/>
+                      <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 400, color: '#1A1410' }}>your agency</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: i === 1 ? '#C9B99A' : '#5F5A57' }}>SGD </span>
+                      <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 400, color: i === 1 ? '#F7F4F0' : '#1A1410' }}>{plan.price}</span>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: i === 1 ? '#9B9088' : '#5F5A57' }}>{plan.period}</span>
+                    </>
+                  )}
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+                  {plan.features.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: i === 1 ? '#C9B99A' : '#3D3532' }}>
+                      <span style={{ color: i === 1 ? '#BA7517' : '#0F6E56', flexShrink: 0, marginTop: 1 }}>✓</span>
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <a href={plan.href} style={{ display: 'block', textAlign: 'center', padding: '10px 0', background: i === 1 ? '#BA7517' : 'transparent', border: `0.5px solid ${i === 1 ? '#BA7517' : '#E8E2DA'}`, borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: i === 1 ? '#FFFFFF' : '#3D3532' }}>
+                  {plan.cta}
+                </a>
+              </div>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', marginTop: 24 }}>
+            All prices in SGD. Annual plans available at 2 months free. Need help choosing? <a href="mailto:hello@espresso.insure" style={{ color: '#BA7517' }}>Talk to us →</a>
+          </p>
         </div>
-      </div>
+      </section>
 
-      <div className="setup-step">
-        <div className="setup-step-num">5</div>
-        <div className="setup-step-content">
-          <h4>Watch your dashboard fill up</h4>
-          <p>Every client brief, every renewal flag, and every alert appears in your dashboard in real time. Log in once a day to stay on top of your entire book.</p>
+      {/* ── SETUP ── */}
+      <section id="setup" style={{ padding: '90px 40px', background: '#FFFFFF' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>Setup guide</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#1A1410', textAlign: 'center', marginBottom: 16, lineHeight: 1.15 }}>
+            From sign-up to <em style={{ color: '#BA7517' }}>first client</em> in 30 minutes.
+          </h2>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#5F5A57', textAlign: 'center', marginBottom: 52 }}>If you use WhatsApp, you can use Espresso.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {[
+              { n: '1', title: 'Create your Espresso account', body: 'Go to espresso.insure/trial, enter your name, email, and mobile number. Start with the 14-day free trial. No credit card needed.' },
+              { n: '2', title: "Save Maya's number", body: "After sign-up, you'll receive Maya's WhatsApp number in your dashboard. Save it as Maya — Espresso. This is the number you add to client groups." },
+              { n: '3', title: 'Upload your existing policies', body: 'In your dashboard, go to Clients → Import and upload a CSV of your current client policies. Maya immediately begins tracking all renewals.' },
+              { n: '4', title: 'Create your first client group', body: 'Open WhatsApp. Create a new group with yourself and a client. Add Maya\'s number. She\'ll introduce herself and take over.' },
+              { n: '5', title: 'Watch your dashboard fill up', body: 'Every client brief, renewal flag, and alert appears in your dashboard in real time. Log in once a day to stay on top of your entire book.' },
+              { n: '6', title: 'Control Maya from the group', body: 'Type "Maya pause" to step in. Type "Maya take over" to hand back. Type "Maya brief me" for an instant client summary sent privately to you.' },
+            ].map((s, i, arr) => (
+              <div key={s.n} style={{ display: 'flex', gap: 20, paddingBottom: i < arr.length - 1 ? 32 : 0, marginBottom: i < arr.length - 1 ? 0 : 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FEF3E2', border: '1px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#854F0B', flexShrink: 0 }}>{s.n}</div>
+                  {i < arr.length - 1 && <div style={{ width: 1, flex: 1, background: '#E8E2DA', marginTop: 8 }} />}
+                </div>
+                <div style={{ paddingBottom: i < arr.length - 1 ? 32 : 0, flex: 1 }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 6, marginTop: 6 }}>{s.title}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.6 }}>{s.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '24px 28px', marginTop: 48 }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#1A1410', marginBottom: 14 }}>What you need to get started</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['A WhatsApp account (personal or business)', 'A smartphone with WhatsApp installed', 'An email address for your Espresso account', 'Your client policy list in any spreadsheet format', "That's it"].map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#3D3532' }}>
+                  <span style={{ color: '#0F6E56' }}>✓</span> {item}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+            <Link href="/trial" style={{ background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, padding: '13px 32px', borderRadius: 9, display: 'inline-block' }}>
+              Start your free trial →
+            </Link>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', marginTop: 14 }}>
+              Questions? Email <a href="mailto:hello@espresso.insure" style={{ color: '#BA7517' }}>hello@espresso.insure</a>
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="setup-step">
-        <div className="setup-step-num">6</div>
-        <div className="setup-step-content">
-          <h4>Control Maya from the group</h4>
-          <p>Type <code>Maya pause</code> to silence her while you speak directly to the client. Type <code>Maya take over</code> to hand back control. Type <code>Maya brief me</code> for an instant client summary sent privately to you.</p>
+      {/* ── FAQ ── */}
+      <section style={{ padding: '90px 40px', background: '#F7F4F0' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, textAlign: 'center' }}>FAQs</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 400, color: '#1A1410', textAlign: 'center', marginBottom: 52, lineHeight: 1.15 }}>
+            Common questions from <em style={{ color: '#BA7517' }}>IFAs like you.</em>
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {[
+              { q: 'Do my clients know they\'re talking to an AI?', a: "Maya introduces herself as your AI assistant. She's warm, conversational, and helpful — clients experience her as a responsive assistant who works for you. You're always in the group and can jump in anytime." },
+              { q: 'Do I need to ask my clients to download anything?', a: "No. Everything runs inside WhatsApp. You add Maya to a group with your client. No app, no account, no friction." },
+              { q: 'Is my client data safe?', a: "Espresso never connects to any insurer's system. All client data is encrypted, isolated to your account, and stored in Singapore. We comply with PDPA. Your data is yours — we are your personal tool, not a data aggregator." },
+              { q: 'What happens if Maya says something wrong?', a: 'You see every message in real time. Type "Maya pause" and she goes silent. Maya never makes product recommendations or commits to financial terms without your review.' },
+              { q: "I'm a tied agent — can I still use Espresso?", a: "Absolutely. Even if you only sell one insurer's products, Maya adds enormous value through intake, renewal management, claims support, coverage gap detection, and document handling — all features that work regardless of which insurer you represent." },
+              { q: 'Can I cancel anytime?', a: "Yes, completely. No lock-in. Cancel from your dashboard at any time. Your data remains accessible for 30 days after cancellation so you can export everything." },
+              { q: 'Which markets does Espresso support?', a: "Espresso is live in Singapore. Malaysia and Philippines are launching in 2026, followed by Indonesia and Thailand. Email hello@espresso.insure for early access in other markets." },
+            ].map((f, i, arr) => (
+              <details key={f.q} className="faq-item" style={{ borderBottom: i < arr.length - 1 ? '0.5px solid #E8E2DA' : 'none' }}>
+                <summary style={{ padding: '18px 0', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+                  {f.q}
+                  <span style={{ flexShrink: 0, color: '#BA7517', fontSize: 18 }}>+</span>
+                </summary>
+                <div style={{ paddingBottom: 18, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.7 }}>{f.a}</div>
+              </details>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-    </div>
-
-    <div className="setup-callout">
-      <h3>What you need to get started</h3>
-      <p>Espresso is designed to work with tools you already have. No new software, no technical setup, no IT department needed.</p>
-
-      <ul className="requirement-list">
-        <li>A WhatsApp account (personal or business)</li>
-        <li>A smartphone with WhatsApp installed</li>
-        <li>An email address for your Espresso account</li>
-        <li>Your client policy list in any spreadsheet format</li>
-        <li>That's it</li>
-      </ul>
-
-      <div className="setup-time">
-        <div className="setup-time-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8813A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-        <div className="setup-time-text">
-          <strong>Under 30 minutes</strong>
-          From account creation to your first live Maya conversation
+      {/* ── CTA ── */}
+      <section style={{ padding: '90px 40px', background: '#1A1410', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 52, fontWeight: 400, color: '#F7F4F0', marginBottom: 16, lineHeight: 1.15 }}>
+          Stop doing admin. <em style={{ color: '#BA7517' }}>Start building your book.</em>
+        </h2>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, color: '#9B9088', marginBottom: 36 }}>
+          14-day free trial. No credit card. Set up in 30 minutes. Maya starts working tonight.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <Link href="/trial" style={{ background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, padding: '13px 32px', borderRadius: 9, display: 'inline-block' }}>
+            Start your free trial
+          </Link>
+          <Link href="/login" style={{ color: '#9B9088', fontFamily: 'DM Sans, sans-serif', fontSize: 14, padding: '13px 20px', display: 'inline-block' }}>
+            Already on a plan? Sign in →
+          </Link>
         </div>
-      </div>
+      </section>
 
-      <a href="/trial" className="btn-primary" style={{"display":"block","textAlign":"center","textDecoration":"none"}}>Start your free trial →</a>
-
-      <p style={{"marginTop":"16px","fontSize":"12px","color":"var(--cream-dim)","textAlign":"center"}}>
-        Questions? WhatsApp us at +65 XXXX XXXX or email <a href="mailto:hello@espresso.insure" style={{"color":"var(--amber-light)","textDecoration":"none"}}>hello@espresso.insure</a>
-      </p>
-    </div>
-  </div>
-</section>
-
-{/* FAQ */}
-<section className="section-light" id="faq">
-  <div className="section-tag">FAQs</div>
-  <h2 className="section-title">Common questions<br/>from <em>IFAs like you.</em></h2>
-
-  <div className="faq-list">
-
-    <div className="faq-item">
-      <button className="faq-q">Do my clients know they're talking to an AI?</button>
-      <div className="faq-a">Maya introduces herself as your AI assistant. She's warm, conversational, and helpful. Clients experience her as a responsive assistant who works for you. You're always in the group and can jump in anytime.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">Do I need to ask my clients to download anything?</button>
-      <div className="faq-a">No. Everything runs inside WhatsApp. You add Maya to a group with your client. No app, no account, no friction.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">Is my client data safe?</button>
-      <div className="faq-a">Espresso never connects to any insurer's system. You import your own data — just like using a personal spreadsheet, except smarter. All client data is encrypted, isolated to your account only, and stored in Singapore. No advisor can ever see another advisor's data. We comply with PDPA and equivalent data protection requirements. Your data is yours — we are your personal tool, not a data aggregator.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">What happens if Maya says something wrong to my client?</button>
-      <div className="faq-a">You see every message in real time. Type "Maya pause" and she goes silent. Maya never makes product recommendations or commits to financial terms without your review.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">I'm a tied agent — can I still use Espresso?</button>
-      <div className="faq-a">Absolutely. Even if you can only sell one insurer's products, Maya adds enormous value through client intake, renewal management, claims support, coverage gap detection, and document handling — all features that work regardless of which insurer you represent.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">Can I cancel anytime?</button>
-      <div className="faq-a">Yes, completely. No lock-in contracts. Cancel from your dashboard at any time. Your data remains accessible for 30 days after cancellation so you can export everything before you go.</div>
-    </div>
-
-    <div className="faq-item">
-      <button className="faq-q">Which markets does Espresso support?</button>
-      <div className="faq-a">Espresso is live in Singapore. Malaysia and Philippines are launching in 2026, followed by Indonesia and Thailand. If you are based in another SEA market and want early access, email us at hello@espresso.insure.</div>
-    </div>
-
-  </div>
-</section>
-
-{/* CTA */}
-<section className="cta-section">
-  <h2>Stop doing admin.<br/><em>Start building your book.</em></h2>
-  <p>14-day free trial. No credit card. Set up in 30 minutes. Maya starts working tonight.</p>
-  <a href="/trial" className="btn-primary" style={{"fontSize":"16px","padding":"18px 44px"}}>Start your free trial</a>
-  <p style={{"marginTop":"20px","fontSize":"13px","color":"var(--cream-dim)"}}>Already on a plan? <a href="/login" style={{"color":"var(--amber-light)","textDecoration":"none"}}>Sign in →</a></p>
-</section>
-
-{/* FOOTER */}
-<footer>
-  <div className="footer-logo">espresso<span>.</span></div>
-  <ul className="footer-links">
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#setup">Setup</a></li>
-    <li><a href="mailto:hello@espresso.insure">Contact</a></li>
-    <li><a href="#">Privacy</a></li>
-    <li><a href="#">Terms</a></li>
-  </ul>
-  <div className="footer-copy">© 2026 Espresso. All rights reserved.</div>
-</footer>
+      {/* ── FOOTER ── */}
+      <footer style={{ background: '#120A06', padding: '40px', borderTop: '0.5px solid #2E1A0E' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 400, color: '#F7F4F0' }}>
+            espresso<span style={{ color: '#BA7517' }}>.</span>
+          </div>
+          <div style={{ display: 'flex', gap: 28 }}>
+            {[['How it works', '#how-it-works'], ['Pricing', '#pricing'], ['Setup', '#setup'], ['Contact', 'mailto:hello@espresso.insure'], ['Privacy', '#'], ['Terms', '#']].map(([label, href]) => (
+              <a key={label} href={href} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{label}</a>
+            ))}
+          </div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>© 2026 Espresso</div>
+        </div>
+      </footer>
     </>
-  );
+  )
 }
