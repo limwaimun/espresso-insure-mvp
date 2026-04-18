@@ -692,7 +692,7 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header">
           <span className="panel-title">Coverage analysis</span>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>Click a gap for Compass recommendations</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>Click a gap for Maya recommendations</span>
         </div>
         <div className="panel-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
@@ -724,7 +724,7 @@ export default function ClientDetailPage({
             <div style={{ marginTop: 20, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>
-                  🧭 Compass — {compassGap.label} recommendations
+                  ✨ Maya — {compassGap.label} recommendations
                 </div>
                 <button onClick={() => { setCompassGap(null); setCompassResult(null) }}
                   style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B6460', fontSize: 16 }}>✕</button>

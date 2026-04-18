@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
           <div style={{ fontSize: 40 }}>☕</div>
         </div>
         <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', marginBottom: 4 }}>Brewing your analytics…</div>
-        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>Lens is analysing your portfolio</div>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>Maya is analysing your portfolio</div>
       </div>
 
       {/* Title skeleton */}
@@ -168,14 +168,14 @@ export default function AnalyticsPage() {
         Analytics
       </h1>
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', margin: '0 0 28px' }}>
-        Portfolio overview powered by Lens
+        Portfolio overview powered by Maya
       </p>
 
       {/* Narrative */}
       {narrative && (
         <div style={{ ...panelStyle, background: '#FFFFFF', borderColor: '#E8E2DA', marginBottom: 24 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            🔍 Lens insight
+            ✨ Maya insight
           </div>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', lineHeight: 1.8 }}>
             {narrative
