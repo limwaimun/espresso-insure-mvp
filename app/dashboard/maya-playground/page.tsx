@@ -332,8 +332,12 @@ function MayaPlaygroundInner() {
     inputRef.current?.focus()
   }
 
-  const getRenewalDays = (date: string) =>
-    Math.ceil((new Date(date).getTime() - Date.now()) / 86400000)
+  const getRenewalDays = (date: string | null | undefined) => {
+    if (!date) return 9999
+    const d = new Date(date).getTime()
+    if (isNaN(d)) return 9999
+    return Math.ceil((d - Date.now()) / 86400000)
+  }
 
   const getRenewalColor = (days: number) => {
     if (days < 0) return '#D06060'
@@ -398,7 +402,7 @@ function MayaPlaygroundInner() {
                   <span style={{ fontSize: 11, color: '#F5ECD7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{c.title}</span>
                   <span style={{ fontSize: 9, color: c.priority === 'high' ? '#D06060' : c.priority === 'medium' ? '#D4A030' : '#C9B99A', textTransform: 'uppercase' }}>{c.priority}</span>
                 </div>
-                <span style={{ fontSize: 10, color: '#C9B99A' }}>{c.status.replace('_', ' ')} · {c.daysSinceUpdate}d ago</span>
+                <span style={{ fontSize: 10, color: '#C9B99A' }}>{(c.status || 'open').replace('_', ' ')} · {c.daysSinceUpdate}d ago</span>
               </div>
             ))}
           </div>
