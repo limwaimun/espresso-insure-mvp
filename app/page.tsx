@@ -84,7 +84,7 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section style={{ background: '#F7F4F0' }}>
-        <div className="lp-hero-inner lp-hero-pad" style={{ padding: '80px 32px 60px' }}>
+        <div className="lp-hero-inner lp-hero-pad" style={{ padding: '40px 32px 52px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px', marginBottom: 24 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
             <span style={{ fontSize: 12, color: '#0F6E56' }}>Now live in Singapore</span>
@@ -121,20 +121,16 @@ export default function HomePage() {
           <p style={{ fontSize: 13, color: '#5F5A57', textAlign: 'center', marginBottom: 20 }}>Maya works inside your existing WhatsApp groups — with you and your client together</p>
 
           {/* Tab labels */}
-          <div className="lp-demo-tabs" style={{ maxWidth: 600, margin: '0 auto 24px' }}>
-            {[
-              { label: '💬 New enquiry', color: '#E1F5EE', textColor: '#0F6E56', border: '#9FE1CB' },
-              { label: '📅 Renewal follow-up', color: '#FEF3E2', textColor: '#854F0B', border: '#FAC775' },
-              { label: '🚑 Claims support', color: '#FCEBEB', textColor: '#A32D2D', border: '#F7C1C1' },
-            ].map(t => (
-              <div key={t.label} style={{ background: t.color, border: `0.5px solid ${t.border}`, borderRadius: 8, padding: '8px 12px', textAlign: 'center', fontSize: 12, fontWeight: 500, color: t.textColor }}>
-                {t.label}
+          <div className="lp-demo-tabs" style={{ maxWidth: 680, margin: '0 auto 24px' }}>
+            {['New enquiry', 'Renewal follow-up', 'Claims support'].map((label, i) => (
+              <div key={label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 12px', textAlign: 'center', fontSize: 12, fontWeight: 500, color: '#3D3532' }}>
+                {label}
               </div>
             ))}
           </div>
 
           {/* Three chat cards */}
-          <div className="lp-grid3" style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div className="lp-grid3" style={{ maxWidth: 1100, margin: '0 auto' }}>
 
             {/* 1. New enquiry */}
             <div className="lp-card" style={{ overflow: 'hidden', boxShadow: '0 4px 20px rgba(26,20,16,0.06)' }}>
@@ -233,13 +229,13 @@ export default function HomePage() {
           </h2>
           <div className="lp-grid2">
             {[
-              { icon: '⏳', title: 'New enquiries go cold', body: 'Prospects message while you\'re busy. By the time you respond, they\'ve moved on.' },
-              { icon: '📅', title: 'Renewals sneak up on you', body: 'You track renewals in spreadsheets and memory. One missed renewal is a client lost.' },
-              { icon: '🚨', title: 'Claims catch you off guard', body: 'A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.' },
-              { icon: '🌙', title: 'Evenings lost to admin', body: 'Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.' },
-            ].map(p => (
+              { title: 'New enquiries go cold', body: 'Prospects message while you\'re busy. By the time you respond, they\'ve moved on.' },
+              { title: 'Renewals sneak up on you', body: 'You track renewals in spreadsheets and memory. One missed renewal is a client lost.' },
+              { title: 'Claims catch you off guard', body: 'A client calls at 9pm in a panic. You scramble to find the policy and walk them through the process.' },
+              { title: 'Evenings lost to admin', body: 'Follow-ups, recommendations, forms — all after hours, all unpaid, all keeping you from selling.' },
+            ].map((p, i) => (
               <div key={p.title} style={{ background: '#1A1410', padding: '28px 32px' }}>
-                <div style={{ fontSize: 22, marginBottom: 10 }}>{p.icon}</div>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 500, color: '#FFFFFF', marginBottom: 12 }}>{i + 1}</div>
                 <div style={{ fontSize: 15, fontWeight: 500, color: '#F7F4F0', marginBottom: 6 }}>{p.title}</div>
                 <div style={{ fontSize: 13, color: '#9B9088', lineHeight: 1.65 }}>{p.body}</div>
               </div>
@@ -278,15 +274,15 @@ export default function HomePage() {
           <p style={{ fontSize: 15, color: '#5F5A57', textAlign: 'center', marginBottom: 48 }}>Built for the IFA who works alone but needs to perform like a full team.</p>
           <div className="lp-grid3">
             {[
-              { icon: '💬', title: 'Client intake', body: 'Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.' },
-              { icon: '📅', title: 'Renewal management', body: 'Every policy tracked. Renewals managed at 90, 60, 30, 14, and 7 days out. Never miss a follow-up.' },
-              { icon: '🛡️', title: 'Policy advisory', body: 'Clients ask coverage questions. Maya answers from their policy data — accurate, specific, instant.' },
-              { icon: '🚑', title: 'Claims support', body: 'Maya guides clients through claims in real time, at any hour. You get an alert and a fully pre-filled form.' },
-              { icon: '📎', title: 'Document collection', body: 'Clients send photos and PDFs to the group. Maya saves them to the claim file automatically.' },
-              { icon: '📊', title: 'Quote comparison', body: 'Quotes ranked by quality, presented as a clear comparison. Hours of portal work — gone.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="#BA7517" strokeWidth="1.3"/><path d="M2 14c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>, title: 'Client intake', body: 'Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="#BA7517" strokeWidth="1.3"/><path d="M5 1v2M11 1v2M2 6h12" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>, title: 'Renewal management', body: 'Every policy tracked. Renewals managed at 90, 60, 30, 14, and 7 days out. Never miss a follow-up.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 5v9h12V5L8 1.5z" stroke="#BA7517" strokeWidth="1.3" strokeLinejoin="round"/><path d="M6 10h4M6 7h4" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>, title: 'Policy advisory', body: 'Clients ask coverage questions. Maya answers from their policy data — accurate, specific, instant.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="1" width="10" height="14" rx="1.5" stroke="#BA7517" strokeWidth="1.3"/><path d="M6 5h4M6 8h4M6 11h2" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>, title: 'Claims support', body: 'Maya guides clients through claims in real time, at any hour. You get an alert and a fully pre-filled form.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4h8M4 7h8M4 10h5" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/><path d="M10 9l4 4M12 13l-2-2" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg>, title: 'Document collection', body: 'Clients send photos and PDFs to the WhatsApp group. Maya saves them to the claim file automatically.' },
+              { svg: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12L5.5 7.5 8.5 10 11 7l3 3" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>, title: 'Quote comparison', body: 'Quotes ranked by quality, presented as a clear comparison. Hours of portal work — gone.' },
             ].map(f => (
               <div key={f.title} className="lp-feature" style={{ background: '#FAFAF8', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '24px' }}>
-                <div style={{ fontSize: 22, marginBottom: 10 }}>{f.icon}</div>
+                <div style={{ width: 32, height: 32, background: '#FEF3E2', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>{f.svg}</div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Maya — {f.title}</div>
                 <div style={{ fontSize: 13, color: '#5F5A57', lineHeight: 1.65 }}>{f.body}</div>
               </div>
