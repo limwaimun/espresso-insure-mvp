@@ -19,7 +19,7 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { background: #F7F4F0; color: #1A1410; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        html, body { background: #F7F4F0 !important; color: #1A1410; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
         a { color: inherit; text-decoration: none; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .fade-up { animation: fadeUp 0.6s ease forwards; }
@@ -53,7 +53,8 @@ export default function HomePage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 900, margin: '0 auto', padding: '90px 40px 80px', textAlign: 'center' }}>
+      <section style={{ background: '#F7F4F0', padding: '90px 40px 80px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '5px 14px', marginBottom: 28 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} className="pulse" />
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>Now live in Singapore</span>
@@ -86,10 +87,12 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </div>
       </section>
 
       {/* ── WHATSAPP DEMO CARD ── */}
-      <section style={{ maxWidth: 420, margin: '0 auto 100px', padding: '0 40px' }}>
+      <section style={{ background: '#F7F4F0', padding: '0 40px 100px' }}>
+      <div style={{ maxWidth: 420, margin: '0 auto' }}>
         <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 40px rgba(26,20,16,0.06)' }}>
           <div style={{ background: '#F7F4F0', padding: '12px 16px', borderBottom: '0.5px solid #E8E2DA', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FEF3E2', border: '1px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#854F0B' }}>M</div>
@@ -116,6 +119,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </div>
       </section>
 
       {/* ── PROBLEM ── */}
