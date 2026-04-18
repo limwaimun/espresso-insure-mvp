@@ -133,23 +133,16 @@ export async function POST(request: NextRequest) {
       const narrativeRes = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 600,
-        system: 'You are Lens, an analytics agent for Singapore financial advisors. Provide concise, actionable portfolio insights. Be specific with numbers. Highlight risks and opportunities.',
+        system: 'You are Lens, an analytics agent for Singapore financial advisors. Write in clean flowing prose — no markdown, no headers, no bullet points, no bold text. Just clear, direct sentences an FA can read at a glance. Be specific with numbers and names. Highlight the single most urgent action first.',
         messages: [{
           role: 'user',
-          content: `Generate a portfolio insight report for this FA based on their metrics.
+          content: `Write a 3-4 sentence portfolio insight for this FA. Lead with the most urgent action item, then cover portfolio health and one growth opportunity. Use specific client names, dollar amounts, and dates where relevant. No markdown formatting of any kind.
 
 FA: ${ifa?.name || 'Advisor'}
 ${query ? `Specific question: "${query}"` : ''}
 
 METRICS:
-${JSON.stringify(metrics, null, 2)}
-
-Write 3-4 sentences covering:
-1. Portfolio health summary (size, premium volume)
-2. Most urgent action item (renewals, claims, or gaps)
-3. One growth opportunity
-
-Keep it direct, no fluff. This is for an FA who wants actionable intelligence.`,
+${JSON.stringify(metrics, null, 2)}`,
         }],
       })
       narrative = narrativeRes.content.find(b => b.type === 'text')?.text

@@ -64,8 +64,57 @@ export default function AnalyticsPage() {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: 40, color: '#C9B99A', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
-      Loading analytics…
+    <div style={{ padding: '32px 40px', maxWidth: 1100, margin: '0 auto' }}>
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -800px 0 }
+          100% { background-position: 800px 0 }
+        }
+        .shimmer {
+          background: linear-gradient(90deg, #1C0F0A 25%, #2E1A0E 50%, #1C0F0A 75%);
+          background-size: 800px 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 6px;
+        }
+      `}</style>
+
+      {/* Title skeleton */}
+      <div className="shimmer" style={{ height: 36, width: 180, marginBottom: 8 }} />
+      <div className="shimmer" style={{ height: 16, width: 280, marginBottom: 28 }} />
+
+      {/* Narrative skeleton */}
+      <div style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+        <div className="shimmer" style={{ height: 12, width: 100, marginBottom: 14 }} />
+        <div className="shimmer" style={{ height: 14, width: '100%', marginBottom: 8 }} />
+        <div className="shimmer" style={{ height: 14, width: '95%', marginBottom: 8 }} />
+        <div className="shimmer" style={{ height: 14, width: '88%', marginBottom: 8 }} />
+        <div className="shimmer" style={{ height: 14, width: '92%' }} />
+      </div>
+
+      {/* KPI row skeleton */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 22px' }}>
+            <div className="shimmer" style={{ height: 11, width: 80, marginBottom: 10 }} />
+            <div className="shimmer" style={{ height: 32, width: 120 }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Two-col skeleton */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        {[1,2].map(i => (
+          <div key={i} style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 12, padding: 24 }}>
+            <div className="shimmer" style={{ height: 22, width: 160, marginBottom: 20 }} />
+            {[1,2,3].map(j => (
+              <div key={j} style={{ background: '#120A06', borderRadius: 8, padding: '12px 14px', marginBottom: 8 }}>
+                <div className="shimmer" style={{ height: 14, width: '70%', marginBottom: 6 }} />
+                <div className="shimmer" style={{ height: 11, width: '40%' }} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   )
 
@@ -104,12 +153,30 @@ export default function AnalyticsPage() {
       {/* Narrative */}
       {narrative && (
         <div style={{ ...panelStyle, background: '#120A06', borderColor: '#3D2215', marginBottom: 24 }}>
-          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C8813A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C8813A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
             🔍 Lens insight
           </div>
-          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#F5ECD7', lineHeight: 1.7, margin: 0 }}>
-            {narrative}
-          </p>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A', lineHeight: 1.8 }}>
+            {narrative
+              .replace(/^##\s*/gm, '')        // remove ## headers
+              .replace(/^#\s*/gm, '')          // remove # headers
+              .split('\n')
+              .filter(line => line.trim())
+              .map((line, i) => {
+                // Split on **bold** and render inline
+                const parts = line.split(/\*\*(.*?)\*\*/g)
+                return (
+                  <p key={i} style={{ margin: '0 0 10px' }}>
+                    {parts.map((part, j) =>
+                      j % 2 === 1
+                        ? <strong key={j} style={{ color: '#F5ECD7', fontWeight: 600 }}>{part}</strong>
+                        : <span key={j}>{part}</span>
+                    )}
+                  </p>
+                )
+              })
+            }
+          </div>
         </div>
       )}
 
