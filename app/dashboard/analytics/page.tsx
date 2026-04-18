@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1100, margin: '0 auto' }}>
-      <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 8px' }}>
+      <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>
         Analytics
       </h1>
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', margin: '0 0 28px' }}>
@@ -190,7 +190,7 @@ export default function AnalyticsPage() {
         ].map(k => (
           <div key={k.label} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '20px 22px' }}>
             <div style={labelStyle}>{k.label}</div>
-            <div style={{ fontFamily: k.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', fontSize: 28, fontWeight: 400, color: '#1A1410' }}>
+            <div style={{ fontFamily: k.mono ? 'DM Mono, monospace' : 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410' }}>
               {k.value}
             </div>
           </div>
@@ -207,13 +207,13 @@ export default function AnalyticsPage() {
             </h2>
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: metrics.renewals.next30Days.count > 0 ? '#854F0B' : '#1D9E75' }}>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, color: metrics.renewals.next30Days.count > 0 ? '#854F0B' : '#1D9E75' }}>
                   {metrics.renewals.next30Days.count}
                 </div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>next 30d</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: '#3D3532' }}>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, color: '#3D3532' }}>
                   {metrics.renewals.next90Days.count}
                 </div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>next 90d</div>
@@ -226,13 +226,13 @@ export default function AnalyticsPage() {
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{p.client}</div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{p.insurer} · {p.type}</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{p.insurer} · {p.type}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#BA7517' }}>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517' }}>
                       {new Date(p.renewalDate).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })}
                     </div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>${Number(p.premium).toLocaleString()}/yr</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>${Number(p.premium).toLocaleString()}/yr</div>
                   </div>
                 </div>
               ))}
@@ -253,11 +253,11 @@ export default function AnalyticsPage() {
                 Open claims
               </h2>
               <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: metrics.claims.open > 0 ? '#854F0B' : '#1D9E75' }}>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, color: metrics.claims.open > 0 ? '#854F0B' : '#1D9E75' }}>
                   {metrics.claims.open}
                 </span>
                 {metrics.claims.highPriority > 0 && (
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, color: '#A32D2D' }}>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, color: '#A32D2D' }}>
                     {metrics.claims.highPriority} high
                   </span>
                 )}
@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <span style={{ fontSize: 10, color: c.priority === 'high' ? '#A32D2D' : c.priority === 'medium' ? '#854F0B' : '#6B6460', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}>{c.priority}</span>
-                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#3D3532' }}>{c.daysOpen}d</span>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>{c.daysOpen}d</span>
                     </div>
                   </div>
                 ))}
@@ -287,13 +287,13 @@ export default function AnalyticsPage() {
 
           {/* Client tiers */}
           <div style={panelStyle}>
-            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', margin: '0 0 16px' }}>
               Client tiers
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
               {['platinum', 'gold', 'silver', 'bronze'].map(tier => (
-                <div key={tier} style={{ background: '#F7F4F0', border: `0.5px solid #E8E2DA`, borderRadius: 8, padding: '12px 14px' }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: TIER_COLORS[tier], textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{tier}</div>
+                <div key={tier} style={{ background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: TIER_COLORS[tier], textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 500, fontSize: 11 }}>{tier}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, color: '#1A1410', fontWeight: 400 }}>
                     {metrics.tiers[tier] || 0}
                   </div>
@@ -309,22 +309,22 @@ export default function AnalyticsPage() {
 
         {/* Top clients */}
         <div style={panelStyle}>
-          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', margin: '0 0 16px' }}>
             Top clients
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {metrics.topClients.map((c, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460', width: 16 }}>{i + 1}</span>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', width: 16 }}>{i + 1}</span>
                   <div>
                     <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{c.name}</div>
-                    {c.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{c.company}</div>}
+                    {c.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{c.company}</div>}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#BA7517' }}>${c.totalPremium.toLocaleString()}</div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>{c.policyCount} {c.policyCount === 1 ? 'policy' : 'policies'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#BA7517' }}>${c.totalPremium.toLocaleString()}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{c.policyCount} {c.policyCount === 1 ? 'policy' : 'policies'}</div>
                 </div>
               </div>
             ))}
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
 
         {/* Insurer breakdown */}
         <div style={panelStyle}>
-          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', margin: '0 0 16px' }}>
             By insurer
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -346,7 +346,7 @@ export default function AnalyticsPage() {
                   <div key={insurer} style={{ padding: '10px 12px', background: '#F7F4F0', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{insurer}</span>
-                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#BA7517' }}>${data.premium.toLocaleString()}</span>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517' }}>${data.premium.toLocaleString()}</span>
                     </div>
                     <div style={{ height: 4, background: '#E8E2DA', borderRadius: 2 }}>
                       <div style={{ height: '100%', borderRadius: 2, background: '#BA7517', width: `${pct}%` }} />
