@@ -112,10 +112,12 @@ function MayaPlaygroundInner() {
   }, [messages])
 
   useEffect(() => {
-    if (selectedClient && ifaId) {
+    if (selectedClient) {
       loadPolicies(selectedClient.id)
       loadClaims(selectedClient.id)
-      loadConversationHistory(selectedClient.id)
+      if (ifaId) {
+        loadConversationHistory(selectedClient.id)
+      }
       setAttachments([])
       inputRef.current?.focus()
     }
@@ -152,47 +154,65 @@ function MayaPlaygroundInner() {
   }
 
   async function loadIfaProfile() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    setIfaId(user.id)
-    const { data } = await supabase.from('profiles').select('name, company, preferred_insurers').eq('id', user.id).single()
-    if (data?.name) setIfaName(data.name)
-    if (data?.preferred_insurers && Array.isArray(data.preferred_insurers)) {
-      setPreferredInsurers(data.preferred_insurers)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setIfaId(user.id)
+      const { data } = await supabase.from('profiles').select('name, company, preferred_insurers').eq('id', user.id).single()
+      if (data?.name) setIfaName(data.name)
+      if (data?.preferred_insurers && Array.isArray(data.preferred_insurers)) {
+        setPreferredInsurers(data.preferred_insurers)
+      }
+    } catch (err) {
+      console.error('[loadIfaProfile] error:', err)
     }
   }
 
   async function loadClients() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data } = await supabase.from('clients').select('*').eq('ifa_id', user.id).order('name')
-    if (data) setClients(data)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('clients').select('*').eq('ifa_id', user.id).order('name')
+      if (data) setClients(data)
+    } catch (err) {
+      console.error('[loadClients] error:', err)
+    }
   }
 
   async function loadPolicies(clientId: string) {
-    const { data } = await supabase
-      .from('policies')
-      .select('*')
-      .eq('client_id', clientId)
-      .order('renewal_date')
-    if (data) setPolicies(data)
+    try {
+      const { data } = await supabase
+        .from('policies')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('renewal_date')
+      if (data) setPolicies(data)
+    } catch (err) {
+      console.error('[loadPolicies] error:', err)
+    }
   }
 
   async function loadClaims(clientId: string) {
-    const { data } = await supabase
-      .from('alerts')
-      .select('id, title, resolved, status, priority, created_at')
-      .eq('client_id', clientId)
-      .eq('type', 'claim')
-      .order('created_at', { ascending: false })
-    if (data) {
-      setClaims(data.map((c: { id: string; title: string; resolved: boolean; status: string | null; priority: string | null; created_at: string }) => ({
-        id: c.id,
-        title: c.title || 'Untitled claim',
-        status: c.resolved ? 'resolved' : (c.status || 'open'),
-        priority: c.priority || 'medium',
-        daysSinceUpdate: Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24)),
-      })))
+    try {
+      const { data } = await supabase
+        .from('alerts')
+        .select('id, title, resolved, status, priority, created_at')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+      if (data) {
+        // Filter to claims only — type column may not exist on all rows
+        const claimRows = data.filter((c: any) => !c.type || c.type === 'claim' || c.type === 'client_message')
+        setClaims(claimRows.map((c: any) => ({
+          id: c.id,
+          title: c.title || 'Untitled claim',
+          status: c.resolved ? 'resolved' : (c.status || 'open'),
+          priority: c.priority || 'medium',
+          daysSinceUpdate: Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+        })))
+      }
+    } catch (err) {
+      console.error('[loadClaims] error:', err)
+      setClaims([]) // Non-fatal — just show empty
     }
   }
 
