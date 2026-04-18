@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image } from 'lucide-react'
@@ -61,6 +61,14 @@ const QUICK_PROMPTS = [
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
 
 export default function MayaPlaygroundPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: '#C9B99A', fontFamily: 'DM Sans, sans-serif' }}>Loading Maya Playground…</div>}>
+      <MayaPlaygroundInner />
+    </Suspense>
+  )
+}
+
+function MayaPlaygroundInner() {
   const searchParams = useSearchParams()
   const preloadClientId = searchParams.get('clientId')
 
