@@ -268,6 +268,8 @@ export default function ClientDetailPage({
   const [policyError, setPolicyError] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [policyFile, setPolicyFile] = useState<File | null>(null)
+  const policyFileRef = useRef<HTMLInputElement>(null)
 
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
@@ -290,7 +292,20 @@ export default function ClientDetailPage({
     try {
       const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...policyForm, premium: parseFloat(policyForm.premium) }) })
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
-      setShowAddPolicy(false); router.refresh()
+      const newPolicy = await res.json()
+
+      // If a PDF was selected, upload it now
+      if (policyFile && newPolicy.policy?.id) {
+        const fd = new FormData()
+        fd.append('file', policyFile)
+        fd.append('policyId', newPolicy.policy.id)
+        fd.append('ifaId', resolvedIfaId)
+        await fetch('/api/policy-doc', { method: 'POST', body: fd })
+      }
+
+      setShowAddPolicy(false)
+      setPolicyFile(null)
+      router.refresh()
     } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
   }
 
@@ -415,7 +430,7 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button onClick={() => setShowAddPolicy(true)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <button onClick={() => { setPolicyForm({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
             + Add policy
           </button>
         </div>
@@ -425,7 +440,7 @@ export default function ClientDetailPage({
               <table style={{ width: '100%' }}>
                 <thead>
                   <tr>
-                    <th>Insurer</th><th>Type</th><th>Premium</th><th>Renewal Date</th><th>Policy Doc</th><th>Status</th><th></th>
+                    <th>Insurer</th><th>Type</th><th>Premium</th><th>Renewal Date</th><th>Policy Doc</th><th>Status</th><th style={{ width: 80 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -446,23 +461,23 @@ export default function ClientDetailPage({
                         <td>{policy.type || '—'}</td>
                         <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
-                        <td><PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} /></td>
+                        <td><PolicyDocCell policyId={policy.id} ifaId={resolvedIfaId} existingFileName={policy.document_name} /></td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
-                        <td>
+                        <td style={{ width: 80, textAlign: 'right' }}>
                           {isConfirming ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                               <button onClick={() => deletePolicy(policy.id)} disabled={deleting}
-                                style={{ fontSize: 11, color: '#D06060', background: 'rgba(208,96,96,0.1)', border: '1px solid #D06060', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-                                {deleting ? '…' : 'Confirm'}
+                                style={{ fontSize: 10, color: '#D06060', background: 'rgba(208,96,96,0.1)', border: '1px solid #D06060', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}>
+                                {deleting ? '…' : 'Delete'}
                               </button>
                               <button onClick={() => setConfirmDeleteId(null)}
-                                style={{ fontSize: 11, color: '#C9B99A', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-                                Cancel
+                                style={{ fontSize: 10, color: '#C9B99A', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>
+                                ✕
                               </button>
                             </div>
                           ) : (
                             <button onClick={() => setConfirmDeleteId(policy.id)}
-                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.4, display: 'flex', alignItems: 'center' }}
+                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.35, display: 'flex', alignItems: 'center', marginLeft: 'auto' }}
                               title="Delete policy">
                               <Trash2 size={13} color="#D06060" />
                             </button>
@@ -629,7 +644,7 @@ export default function ClientDetailPage({
 
       {/* == ADD POLICY MODAL == */}
       {showAddPolicy && (
-        <Modal title="Add Policy" onClose={() => { setShowAddPolicy(false); setPolicyError('') }}>
+        <Modal title="Add Policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div><label style={labelStyle}>Insurer *</label>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.insurer} onChange={e => setPolicyForm(p => ({ ...p, insurer: e.target.value }))}>
@@ -650,12 +665,30 @@ export default function ClientDetailPage({
                 <option value="active">Active</option><option value="lapsed">Lapsed</option><option value="cancelled">Cancelled</option>
               </select>
             </div>
+            {/* Optional PDF upload */}
+            <div>
+              <label style={labelStyle}>Policy Document (optional)</label>
+              <input ref={policyFileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+                onChange={e => setPolicyFile(e.target.files?.[0] ?? null)} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => policyFileRef.current?.click()}
+                  style={{ background: 'transparent', border: '1px dashed #2E1A0E', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C9B99A' }}>
+                  <Upload size={12} /> {policyFile ? policyFile.name : 'Upload PDF'}
+                </button>
+                {policyFile && (
+                  <button onClick={() => { setPolicyFile(null); if (policyFileRef.current) policyFileRef.current.value = '' }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: '#C9B99A', fontSize: 11, fontFamily: 'DM Sans, sans-serif' }}>
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
             {policyError && <p style={{ fontSize: 12, color: '#D06060', margin: 0 }}>{policyError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={savePolicy} disabled={policySaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: policySaving ? 0.7 : 1 }}>
                 <Plus size={14} />{policySaving ? 'Saving…' : 'Add Policy'}
               </button>
-              <button onClick={() => setShowAddPolicy(false)} style={btnOutline}>Cancel</button>
+              <button onClick={() => { setShowAddPolicy(false); setPolicyFile(null) }} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>
