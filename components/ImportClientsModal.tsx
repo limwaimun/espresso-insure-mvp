@@ -125,6 +125,7 @@ export default function ImportClientsModal({
   const [importedCount, setImportedCount] = useState(0)
   const [updatedCount, setUpdatedCount] = useState(0)
   const [issues, setIssues] = useState<ImportIssue[]>([])
+  const [importErrors, setImportErrors] = useState<string[]>([])
 
   const isSoftLimited = plan === 'solo' || plan === 'trial'
   const slotsLeft = isSoftLimited ? clientLimit - currentCount : 9999
@@ -152,14 +153,24 @@ export default function ImportClientsModal({
         mediaType = file.name.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       }
 
-      const res = await fetch('/api/import/parse', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, fileContent, isBase64, mediaType }),
-      })
-      if (!res.ok) throw new Error('Parsing failed')
+      let res: Response
+      try {
+        res = await fetch('/api/import/parse', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: file.name, fileContent, isBase64, mediaType }),
+        })
+      } catch (fetchErr: any) {
+        throw new Error(`Network error — could not reach the server. Check your connection. (${fetchErr.message})`)
+      }
+      if (res.status === 404) throw new Error('Import API not found — ask Elon to check app/api/import/parse/route.ts exists.')
+      if (res.status === 500) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(`Server error: ${errData.error || 'Unknown error on /api/import/parse'}`)
+      }
+      if (!res.ok) throw new Error(`Parse request failed (HTTP ${res.status})`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      if (!data.clients?.length) throw new Error('No clients found. Check the file has client or policy data.')
+      if (!data.clients?.length) throw new Error('No clients found in this file. Check it has name, insurer, and premium columns.')
 
       // 2. Load existing clients from Supabase for dedup
       const { data: existing } = await supabase
@@ -216,6 +227,14 @@ export default function ImportClientsModal({
     setImportMode(mode)
     setStep('importing')
     let imported = 0, updated = 0
+    const errors: string[] = []
+
+    // Guard: ensure ifaId is set
+    if (!ifaId) {
+      setImportErrors(['Not logged in — please refresh and try again'])
+      setStep('summary')
+      return
+    }
 
     const toProcess = mode === 'new_only'
       ? parsed.filter(c => c._matchType === 'new' && c._selected)
@@ -227,11 +246,12 @@ export default function ImportClientsModal({
 
       if (isNew) {
         // Insert new client
-        const { data: nc } = await supabase.from('clients').insert({
+        const { data: nc, error: clientErr } = await supabase.from('clients').insert({
           ifa_id: ifaId, name: client.name, email: client.email,
           whatsapp: client.phone, company: client.company,
           type: client.type || 'individual', tier: client.tier || 'silver',
         }).select('id').single()
+        if (clientErr) { errors.push(`${client.name}: ${clientErr.message}`); continue }
         clientId = nc?.id
         if (clientId) imported++
       } else if (mode === 'new_and_update' && clientId) {
@@ -248,19 +268,20 @@ export default function ImportClientsModal({
       // Add new policies only
       const policiesToAdd = isNew ? client.policies : client._newPolicies
       for (const p of (policiesToAdd || [])) {
-        await supabase.from('policies').insert({
+        const { error: pErr } = await supabase.from('policies').insert({
           ifa_id: ifaId, client_id: clientId,
           policy_number: p.policy_number, insurer: p.insurer, type: p.type,
           premium: p.premium, premium_frequency: p.premium_frequency,
           sum_assured: p.sum_assured, start_date: p.start_date,
           renewal_date: p.renewal_date, status: 'active',
         })
+        if (pErr) errors.push(`${client.name} policy (${p.insurer}): ${pErr.message}`)
       }
 
       // Add new holdings only
       const holdingsToAdd = isNew ? client.holdings : client._newHoldings
       for (const h of (holdingsToAdd || [])) {
-        await supabase.from('holdings').insert({
+        const { error: hErr } = await supabase.from('holdings').insert({
           ifa_id: ifaId, client_id: clientId,
           product_type: h.product_type || 'other', product_name: h.product_name,
           provider: h.provider, platform: h.platform,
@@ -268,6 +289,7 @@ export default function ImportClientsModal({
           current_value: h.current_value || (h.units_held && h.last_nav ? h.units_held * h.last_nav : null),
           risk_rating: h.risk_rating,
         })
+        if (hErr) errors.push(`${client.name} holding (${h.product_name}): ${hErr.message}`)
       }
 
       setImportProgress(Math.round((toProcess.indexOf(client) + 1) / toProcess.length * 100))
@@ -275,6 +297,7 @@ export default function ImportClientsModal({
 
     setImportedCount(imported)
     setUpdatedCount(updated)
+    setImportErrors(errors)
     setStep('done')
   }
 
@@ -501,8 +524,19 @@ export default function ImportClientsModal({
                 </div>}
               </div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.7 }}>
-                Maya is now tracking all renewals.<br />Alerts will appear on your dashboard as dates approach.
+                Maya is now tracking all renewals. Alerts will appear on your dashboard as dates approach.
               </div>
+              {importErrors.length > 0 && (
+                <div style={{ marginTop: 20, background: '#FCEBEB', border: '0.5px solid #F7C1C1', borderRadius: 8, padding: '12px 14px', textAlign: 'left' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#A32D2D', marginBottom: 6 }}>
+                    {importErrors.length} item{importErrors.length !== 1 ? 's' : ''} could not be saved:
+                  </div>
+                  {importErrors.slice(0, 5).map((e, i) => (
+                    <div key={i} style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#A32D2D', marginBottom: 2 }}>{e}</div>
+                  ))}
+                  {importErrors.length > 5 && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>+{importErrors.length - 5} more — check Supabase SQL migration was run</div>}
+                </div>
+              )}
             </div>
           )}
         </div>
