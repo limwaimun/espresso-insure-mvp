@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import ImportClientsModal from '@/components/ImportClientsModal'
 
 interface Client {
   id: string
@@ -35,6 +36,7 @@ export default function ClientsPage() {
   const [connectionFilter, setConnectionFilter] = useState('all')
   const [plan, setPlan] = useState('trial')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     async function load() {
