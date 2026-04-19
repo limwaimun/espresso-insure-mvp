@@ -274,6 +274,7 @@ export default function ImportClientsModal({
       // Add new policies only
       const policiesToAdd = isNew ? client.policies : client._newPolicies
       for (const p of (policiesToAdd || [])) {
+        console.log('[MODAL-INSERT]', client.name, p.insurer, 'raw policy:', JSON.stringify(p))
         const { error: pErr } = await supabase.from('policies').insert({
           ifa_id: ifaId, client_id: clientId,
           policy_number: p.policy_number,
@@ -283,7 +284,7 @@ export default function ImportClientsModal({
           sum_assured: p.sum_assured, start_date: p.start_date,
           renewal_date: p.renewal_date,
           notes: (p as any).notes || null,
-          status: 'active',
+          status: (p as any).status || 'active',
         })
         if (pErr) errors.push(`${client.name} policy (${p.insurer}): ${pErr.message}`)
       }
