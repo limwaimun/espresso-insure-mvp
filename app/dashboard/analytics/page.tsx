@@ -314,7 +314,7 @@ export default function AnalyticsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
               {['platinum', 'gold', 'silver', 'bronze'].map(tier => (
                 <div key={tier} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#1A1410', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 500, fontSize: 11 }}>{tier}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 500 }}>{tier}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, color: '#1A1410', fontWeight: 400 }}>
                     {metrics.tiers[tier] || 0}
                   </div>
