@@ -223,7 +223,7 @@ export default function ImportClientsModal({
     }
   }
 
-  async function runImport(mode: ImportMode) {
+  async function runImport(mode: ImportMode, overrideParsed?: typeof parsed) {
     setImportMode(mode)
     setStep('importing')
     let imported = 0, updated = 0
@@ -236,10 +236,10 @@ export default function ImportClientsModal({
       return
     }
 
+    const source = overrideParsed || parsed
     const toProcess = mode === 'new_only'
-      ? parsed.filter(c => c._matchType === 'new' && c._selected)
-      : parsed.filter(c => c._selected && (c._matchType !== 'fuzzy' || true))
-    // Note: fuzzy matches are always treated as new clients (no existing record to update)
+      ? source.filter(c => c._matchType === 'new' && c._selected)
+      : source.filter(c => c._selected)
 
     for (const client of toProcess) {
       const isNew = client._matchType === 'new' || client._matchType === 'fuzzy'
@@ -498,7 +498,9 @@ export default function ImportClientsModal({
                   }
                 })
                 setParsed(updated)
-                runImport(importMode || 'new_and_update')
+                // Pass updated array directly — setParsed is async so state
+                // won't be updated by the time runImport reads it
+                runImport(importMode || 'new_and_update', updated)
               }}
             />
           )}
