@@ -253,6 +253,9 @@ export default function ImportClientsModal({
           type: client.type || 'individual', tier: client.tier || 'silver',
           dob: (client as any).dob || null,
           notes: (client as any).notes || null,
+          nok_name: (client as any).nok_name || null,
+          nok_relationship: (client as any).nok_relationship || null,
+          nok_phone: (client as any).nok_phone || null,
         }).select('id').single()
         if (clientErr) { errors.push(`${client.name}: ${clientErr.message}`); continue }
         clientId = nc?.id

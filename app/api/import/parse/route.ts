@@ -59,6 +59,9 @@ INVESTMENT HOLDINGS (save as holdings):
       "type": "individual" | "sme" | "corporate",
       "tier": "platinum" | "gold" | "silver" | "bronze",
       "notes": "any general notes about this client from notes/remarks columns — or null",
+      "nok_name": "next of kin full name — look for Wife:, Husband:, NOK:, Next of Kin:, Son:, Daughter:, Mother:, Father: patterns in any column — or null",
+      "nok_relationship": "relationship to client e.g. Wife, Husband, Son, Daughter, Mother, Father, Sibling, Partner — or null",
+      "nok_phone": "next of kin phone number if mentioned — or null",
       "policies": [
         {
           "policy_number": "policy number or null",
@@ -102,6 +105,8 @@ INVESTMENT HOLDINGS (save as holdings):
 - Always capture the Notes/Remarks column content into the relevant notes field
 - DOB may appear in Notes column e.g. "DOB: 15 Aug 1988" — extract as dob field in YYYY-MM-DD format
 - product_name is the full marketing name of the product, distinct from type
+- Next of kin often appears in Notes as "Wife: Tan Siew Lian", "NOK: David Lim (husband)", "Husband: John +6591234567" — always extract name, relationship and phone separately
+- Beneficiary mentions like "Beneficiary: spouse" should be captured as NOK relationship even if no name given
 - Empty file or no data: return {"clients":[],"warnings":["No client data found"],"summary":"File contained no recognisable records"}
 - Holdings with no units/NAV: still include if you can identify a fund name and provider
 - Return ONLY the JSON object. No markdown, no explanation, no preamble.`

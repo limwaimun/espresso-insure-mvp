@@ -93,6 +93,9 @@ interface Props {
   connectionStatus: 'connected' | 'pending' | 'not_connected'
   dob?: string | null
   notes?: string | null
+  nok_name?: string | null
+  nok_relationship?: string | null
+  nok_phone?: string | null
   calculatedTier: string
   ifaId: string
   ifaName: string
@@ -558,6 +561,33 @@ export default function ClientDetailPage({
       </div>
 
       {/* == SECTION 2: METRIC CARDS == */}
+      {/* Next of kin + DOB row */}
+      {(client.nok_name || client.dob || client.notes) && (
+        <div style={{ display: 'flex', gap: 24, marginBottom: 20, padding: '12px 16px', background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, flexWrap: 'wrap' }}>
+          {client.dob && (
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>Date of birth</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{new Date(client.dob).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            </div>
+          )}
+          {client.nok_name && (
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>Next of kin</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>
+                {client.nok_name}{client.nok_relationship ? ` (${client.nok_relationship})` : ''}
+                {client.nok_phone && <span style={{ color: '#5F5A57', marginLeft: 8 }}>{client.nok_phone}</span>}
+              </div>
+            </div>
+          )}
+          {client.notes && (
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>Notes</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', lineHeight: 1.5 }}>{client.notes}</div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         {metrics.map((m, i) => (
           <div key={i} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '20px 24px' }}>
