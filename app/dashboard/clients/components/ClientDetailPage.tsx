@@ -11,9 +11,13 @@ import { createClient } from '../../../../lib/supabase/client'
 
 interface Policy {
   id: string
+  policy_number?: string | null
   insurer: string
   type: string
   premium: number
+  premium_frequency?: string | null
+  sum_assured?: number | null
+  start_date?: string | null
   renewal_date: string
   status: string
   document_name?: string | null
@@ -40,6 +44,7 @@ interface Alert {
   body?: string
   resolved: boolean
   priority: string
+  status?: string
   created_at: string
 }
 
