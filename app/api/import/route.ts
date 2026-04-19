@@ -103,6 +103,27 @@ export async function POST(request: Request) {
     console.log('CLIENT ID MAP SIZE:', clientIdMap.size);
     console.log('CLIENT ID MAP KEYS:', Array.from(clientIdMap.keys()));
 
+    // Helper: coerce potentially-enum-ish values to valid DB enums.
+    // The parser's deterministic normalizers should already have done this,
+    // but be defensive in case a policy comes in from another path.
+    const validStatus = (s: unknown): string => {
+      if (typeof s !== 'string') return 'active';
+      const v = s.toLowerCase().trim();
+      if (v === 'lapsed' || v === 'pending' || v === 'cancelled' || v === 'active') return v;
+      // Fallback mapping for anything that slipped through
+      if (v.includes('lapsed') || v.includes('grace') || v.includes('expired')) return 'lapsed';
+      if (v.includes('cancel') || v.includes('surrender') || v.includes('terminated')) return 'cancelled';
+      if (v.includes('pending') || v.includes('progress') || v.includes('underwriting')) return 'pending';
+      return 'active';
+    };
+
+    const validFrequency = (f: unknown): string | null => {
+      if (typeof f !== 'string') return null;
+      const v = f.toLowerCase().trim();
+      if (v === 'annual' || v === 'half-yearly' || v === 'quarterly' || v === 'monthly' || v === 'single') return v;
+      return null;
+    };
+
     // Prepare policies with client_id
     const policiesWithClientIds = policies.map((policy: any) => {
       // Handle both clientName and client_name for compatibility
@@ -122,12 +143,18 @@ export async function POST(request: Request) {
 
       return {
         ifa_id: userId,
-        insurer: policy.insurer,
-        type: policy.type,
-        premium: policy.premium,
-        renewal_date: policy.renewal_date,
-        status: 'active',
         client_id: clientId,
+        insurer: policy.insurer || null,
+        type: policy.type || null,
+        product_name: policy.product_name || null,
+        policy_number: policy.policy_number || null,
+        premium: policy.premium || null,
+        premium_frequency: validFrequency(policy.premium_frequency),
+        sum_assured: policy.sum_assured || null,
+        start_date: policy.start_date || null,
+        renewal_date: policy.renewal_date || null,
+        status: validStatus(policy.status),
+        notes: policy.notes || null,
       };
     });
     
@@ -156,19 +183,21 @@ export async function POST(request: Request) {
       // continue — clients were already inserted
     }
 
-    // AUTO-TIER CALCULATION: Calculate and update client tiers based on total premium
+    // AUTO-TIER CALCULATION: Calculate client tiers based on ACTIVE policies only
+    // (lapsed policies shouldn't inflate tier)
     if (policiesImported > 0) {
       console.log('Calculating auto-tiers for clients...');
       
       for (const [clientName, clientId] of clientIdMap) {
         try {
-          // Get all policies for this client
+          // Get active policies only for tier calculation
           const { data: clientPolicies } = await supabaseAdmin
             .from('policies')
-            .select('premium')
-            .eq('client_id', clientId);
+            .select('premium, status')
+            .eq('client_id', clientId)
+            .eq('status', 'active');
           
-          // Calculate total annual premium
+          // Calculate total annual premium (active only)
           const totalPremium = (clientPolicies || []).reduce((sum, p) => sum + (Number(p.premium) || 0), 0);
           
           // Determine tier based on thresholds
@@ -177,7 +206,7 @@ export async function POST(request: Request) {
           else if (totalPremium >= 5000) tier = 'gold';
           else if (totalPremium >= 1000) tier = 'silver';
           
-          console.log(`Client ${clientName}: $${totalPremium} → ${tier}`);
+          console.log(`Client ${clientName}: $${totalPremium} active → ${tier}`);
           
           // Update client tier
           await supabaseAdmin
