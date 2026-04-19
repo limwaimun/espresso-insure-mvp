@@ -13,9 +13,36 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(request: NextRequest) {
   try {
-    const { ifaId, reportType, query } = await request.json()
+    const { ifaId, reportType, query, forceRefresh } = await request.json()
 
     if (!ifaId) return NextResponse.json({ error: 'Missing ifaId' }, { status: 400 })
+
+    const CACHE_TTL_HOURS = 6
+
+    // ── Check cache first (skip if forceRefresh or custom query) ──────────
+    if (!forceRefresh && !query) {
+      const { data: cached } = await supabase
+        .from('lens_cache')
+        .select('narrative, metrics, generated_at')
+        .eq('ifa_id', ifaId)
+        .single()
+
+      if (cached) {
+        const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3600000
+        if (ageHours < CACHE_TTL_HOURS) {
+          return NextResponse.json({
+            success: true,
+            agent: 'lens',
+            reportType: reportType || 'portfolio',
+            generatedAt: cached.generated_at,
+            metrics: cached.metrics,
+            narrative: cached.narrative,
+            fromCache: true,
+            cacheAge: Math.round(ageHours * 10) / 10,
+          })
+        }
+      }
+    }
 
     // ── Fetch all FA data in parallel ──────────────────────────────────────
     const [
@@ -151,6 +178,18 @@ ${JSON.stringify(metrics, null, 2)}`,
       narrative = narrativeRes.content.find(b => b.type === 'text')?.text
     }
 
+    // ── Save to cache ──────────────────────────────────────────────────────
+    if (!query) {
+      await supabase
+        .from('lens_cache')
+        .upsert({
+          ifa_id: ifaId,
+          narrative,
+          metrics,
+          generated_at: now.toISOString(),
+        }, { onConflict: 'ifa_id' })
+    }
+
     return NextResponse.json({
       success: true,
       agent: 'lens',
@@ -158,6 +197,7 @@ ${JSON.stringify(metrics, null, 2)}`,
       generatedAt: now.toISOString(),
       metrics,
       narrative,
+      fromCache: false,
     })
 
   } catch (err) {

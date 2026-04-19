@@ -43,6 +43,9 @@ export default function AnalyticsPage() {
   const [narrative, setNarrative] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [ifaId, setIfaId] = useState('')
+  const [fromCache, setFromCache] = useState(false)
+  const [cacheAge, setCacheAge] = useState<number | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -62,6 +65,8 @@ export default function AnalyticsPage() {
           if (data.metrics) {
             setMetrics(data.metrics)
             if (data.narrative) setNarrative(data.narrative)
+            setFromCache(data.fromCache || false)
+            setCacheAge(data.cacheAge || null)
             setLoading(false)
             return
           }
@@ -141,6 +146,27 @@ export default function AnalyticsPage() {
     }
     load()
   }, [])
+
+  async function refreshLens() {
+    setRefreshing(true)
+    try {
+      const res = await fetch('/api/lens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ifaId, reportType: 'portfolio', forceRefresh: true }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.metrics) {
+          setMetrics(data.metrics)
+          if (data.narrative) setNarrative(data.narrative)
+          setFromCache(false)
+          setCacheAge(null)
+        }
+      }
+    } catch (_) {}
+    setRefreshing(false)
+  }
 
   if (loading) return (
     <div style={{ padding: '32px 40px', maxWidth: 1100, margin: '0 auto' }}>
@@ -255,7 +281,19 @@ export default function AnalyticsPage() {
       {!narrative && metrics && (
         <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '20px 24px', marginBottom: 24 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            ✨ Maya insight
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>✨ Maya insight</span>
+              {fromCache && cacheAge !== null && (
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  generated {cacheAge < 1 ? 'recently' : `${Math.round(cacheAge)}h ago`}
+                </span>
+              )}
+              {ifaId && (
+                <button onClick={refreshLens} disabled={refreshing} style={{ background: 'transparent', border: 'none', cursor: refreshing ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: refreshing ? '#B4B2A9' : '#BA7517', padding: 0, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  {refreshing ? 'Refreshing…' : '↻ Refresh'}
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', lineHeight: 1.75 }}>
             Your portfolio is tracking {metrics.portfolio.totalClients} clients across {metrics.portfolio.totalPolicies} policies
@@ -272,7 +310,19 @@ export default function AnalyticsPage() {
       {narrative && (
         <div style={{ ...panelStyle, background: '#FFFFFF', borderColor: '#E8E2DA', marginBottom: 24 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-            ✨ Maya insight
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>✨ Maya insight</span>
+              {fromCache && cacheAge !== null && (
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  generated {cacheAge < 1 ? 'recently' : `${Math.round(cacheAge)}h ago`}
+                </span>
+              )}
+              {ifaId && (
+                <button onClick={refreshLens} disabled={refreshing} style={{ background: 'transparent', border: 'none', cursor: refreshing ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: refreshing ? '#B4B2A9' : '#BA7517', padding: 0, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                  {refreshing ? 'Refreshing…' : '↻ Refresh'}
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', lineHeight: 1.8 }}>
             {narrative
