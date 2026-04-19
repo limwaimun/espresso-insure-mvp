@@ -14,6 +14,8 @@ export default function LoginPage() {
     try {
       await login(formData)
     } catch (e: any) {
+      // Re-throw Next.js redirect — it's not an error
+      if (e?.message === 'NEXT_REDIRECT' || e?.digest?.startsWith('NEXT_REDIRECT')) throw e
       setError(e?.message || 'Incorrect email or password.')
       setLoading(false)
     }
@@ -52,7 +54,7 @@ export default function LoginPage() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
                 <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500, color: '#3D3532', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Password</label>
-                <Link href="/forgot-password" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>Forgot?</Link>
+                <Link href="/forgot-password"  style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>Forgot?</Link>
               </div>
               <input name="password" type="password" placeholder="••••••••" required style={{ width: '100%', height: 46, padding: '0 14px', border: '0.5px solid #E8E2DA', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', background: '#FFFFFF', transition: 'border-color 0.15s' }} />
             </div>
