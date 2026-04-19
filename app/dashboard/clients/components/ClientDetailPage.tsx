@@ -86,6 +86,21 @@ interface ClientData {
   nok_phone?: string | null
 }
 
+interface Holding {
+  id: string
+  product_name?: string | null
+  provider?: string | null
+  platform?: string | null
+  product_type?: string | null
+  units?: number | null
+  nav?: number | null
+  current_value: number | null
+  risk_level?: string | null
+  last_reviewed?: string | null
+  reviewed_at?: string | null
+  notes?: string | null
+}
+
 interface Props {
   client: ClientData
   policies: Policy[]
@@ -104,6 +119,7 @@ interface Props {
   calculatedTier: string
   ifaId: string
   ifaName: string
+  holdings: Holding[]
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -400,7 +416,7 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
 
 export default function ClientDetailPage({
   client, policies, conversations, claims, metrics, birthdayDisplay,
-  coverageAnalysis, timeline, connectionStatus, calculatedTier, ifaId, ifaName,
+  coverageAnalysis, timeline, connectionStatus, calculatedTier, ifaId, ifaName, holdings,
 }: Props) {
   const router = useRouter()
   const supabase = createClient()
@@ -596,7 +612,7 @@ export default function ClientDetailPage({
       {(() => {
         const totalPremium = policies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
         const totalSA = policies.reduce((s, p) => s + (Number(p.sum_assured) || 0), 0)
-        const holdingsValue = (client as any).holdings?.reduce((s: number, h: any) => s + (Number(h.current_value) || 0), 0) || 0
+        const holdingsValue = holdings.reduce((s, h) => s + (Number(h.current_value) || 0), 0)
         const nextRenewal = policies.filter(p => p.renewal_date && new Date(p.renewal_date) >= new Date()).sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())[0]
         const daysToRenewal = nextRenewal ? Math.ceil((new Date(nextRenewal.renewal_date).getTime() - Date.now()) / 86400000) : null
         const openClaimsCount = claims.filter(c => !c.resolved).length
@@ -604,7 +620,7 @@ export default function ClientDetailPage({
         const kpis = [
           { label: 'Annual premium', value: totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '—', sub: `${policies.length} polic${policies.length !== 1 ? 'ies' : 'y'}` },
           { label: 'Sum assured', value: totalSA > 0 ? `$${(totalSA / 1000).toFixed(0)}k` : '—', sub: 'total coverage' },
-          { label: 'Holdings AUM', value: holdingsValue > 0 ? `$${holdingsValue.toLocaleString()}` : '—', sub: holdingsValue > 0 ? `${(client as any).holdings?.length || 0} holding${((client as any).holdings?.length || 0) !== 1 ? 's' : ''}` : 'no holdings' },
+          { label: 'Holdings AUM', value: holdingsValue > 0 ? `$${holdingsValue.toLocaleString()}` : '—', sub: holdingsValue > 0 ? `${holdings.length} holding${holdings.length !== 1 ? 's' : ''}` : 'no holdings' },
           { label: 'Next renewal', value: nextRenewal ? (daysToRenewal !== null && daysToRenewal <= 30 ? `${daysToRenewal}d` : new Date(nextRenewal.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })) : '—', sub: nextRenewal ? `${nextRenewal.insurer} · ${nextRenewal.type}` : 'no upcoming renewals', warn: daysToRenewal !== null && daysToRenewal <= 30 },
           { label: 'Open claims', value: openClaimsCount, sub: openClaimsCount > 0 ? `${claims.filter(c => !c.resolved && c.priority === 'high').length} high priority` : 'none open', danger: openClaimsCount > 0 },
           { label: 'Coverage gaps', value: coverageAnalysis?.filter(c => !c.hasCoverage).length ?? 0, sub: 'products not covered', info: true },

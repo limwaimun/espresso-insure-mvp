@@ -18,6 +18,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     { data: allAlerts },
     { data: clientConvos },
     { data: { user } },
+    { data: holdings },
   ] = await Promise.all([
     supabase.from('clients').select('*').eq('id', id).single(),
     supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true }),
@@ -26,6 +27,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
     supabase.from('conversations').select('id').eq('client_id', id),
     supabase.auth.getUser(),
+    supabase.from('holdings').select('*').eq('client_id', id).order('current_value', { ascending: false }),
   ])
 
   const conversations = conversationsData?.[0] ?? null
@@ -184,6 +186,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
       calculatedTier={calculatedTier}
       ifaId={user?.id ?? ''}
       ifaName={ifaName}
+      holdings={holdings ?? []}
     />
   );
 }
