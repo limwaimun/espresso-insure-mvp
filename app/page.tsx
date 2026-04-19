@@ -90,35 +90,120 @@ export default function HomePage() {
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>Maya in action</p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>Maya handles the conversation.<br /><em style={{ color: '#BA7517' }}>You close the deal.</em></h2>
-          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 52 }}>All three conversations happen inside existing WhatsApp groups — with you, your client, and Maya together.</p>
-          <div className="demo-tabs" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 40 }}>
-            {['New client enquiry', 'Renewal follow-up', 'Claims support'].map((label, i) => (
-              <div key={label} style={{ background: i === 0 ? '#1A1410' : '#FFF', color: i === 0 ? '#F7F4F0' : '#3D3532', border: '0.5px solid #E8E2DA', borderColor: i === 0 ? '#1A1410' : '#E8E2DA', borderRadius: 8, padding: '10px 24px', fontSize: 13, fontWeight: 500 }}>{label}</div>
-            ))}
-          </div>
-          <div className="g3">
-            {[
-              { group: "Sarah's café — insurance group", members: 'David Tan · Sarah Lim · Maya', msgs: [{ from: 'client', name: 'Sarah', text: 'Hi David, saw your ad. Need insurance for my café.' }, { from: 'maya', text: "Hi Sarah! I'm Maya, David's assistant. Let me help. How many staff do you have?" }, { from: 'client', name: 'Sarah', text: '5 full-time, 2 part-time. We also do catering.' }, { from: 'maya', text: "Got it. I'll prepare a full brief for David — expect a call today!" }, { from: 'fa', name: 'David', text: "Thanks Maya. Sarah, I'll call you at 3pm!" }], footer: '✓ Client brief sent to your dashboard', footerBg: '#E1F5EE', footerBorder: '#9FE1CB', footerColor: '#0F6E56' },
-              { group: "Kevin's health plan group", members: 'David Tan · Kevin Teo · Maya', msgs: [{ from: 'maya', text: 'Hi Kevin! Your Great Eastern health plan renews on 21 April — just 10 days away.' }, { from: 'client', name: 'Kevin', text: 'Thanks for the heads up. Any better options?' }, { from: 'maya', text: "I've compared 3 plans. Prudential saves ~$400/yr with better coverage. I'll send David the comparison." }, { from: 'fa', name: 'David', text: "Kevin, I'll call you tomorrow to go through the options!" }, { from: 'client', name: 'Kevin', text: 'Perfect, thanks David!' }], footer: '✓ Comparison report ready in dashboard', footerBg: '#FEF3E2', footerBorder: '#FAC775', footerColor: '#854F0B' },
-              { group: "Priya's accident claim group", members: 'David Tan · Priya Nair · Maya', msgs: [{ from: 'client', name: 'Priya', text: 'David! I was in an accident. What do I do for the claim?' }, { from: 'maya', text: "Priya, don't worry — I'll guide you. Please send a photo of the damage and the police report." }, { from: 'client', name: 'Priya', text: '📎 photo_damage.jpg  📎 police_report.pdf' }, { from: 'maya', text: "Got them — saved to your claim file. David will pre-fill the AIA form for you." }, { from: 'fa', name: 'David', text: "Priya, form is ready. I'll submit it by end of today." }], footer: '✓ Attachments + claim alert in dashboard', footerBg: '#FCEBEB', footerBorder: '#F7C1C1', footerColor: '#A32D2D' },
-            ].map(card => (
-              <div key={card.group} className="lp-card" style={{ overflow: 'hidden' }}>
-                <div style={{ background: '#F7F4F0', padding: '12px 16px', borderBottom: '0.5px solid #E8E2DA' }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{card.group}</div>
-                  <div style={{ fontSize: 11, color: '#9B9088', marginTop: 2 }}>{card.members}</div>
-                </div>
-                <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {card.msgs.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: m.from === 'client' ? 'flex-start' : 'flex-end' }}>
-                      <div style={{ maxWidth: '82%', background: m.from === 'maya' ? '#BA7517' : m.from === 'fa' ? '#FEF3E2' : '#F1EFE8', borderRadius: m.from === 'client' ? '10px 10px 10px 2px' : '10px 10px 2px 10px', padding: '8px 11px', border: m.from === 'fa' ? '0.5px solid #FAC775' : 'none' }}>
-                        <div style={{ fontSize: 9, fontWeight: 500, color: m.from === 'maya' ? 'rgba(255,255,255,0.65)' : m.from === 'fa' ? '#854F0B' : '#9B9088', marginBottom: 3 }}>{m.from === 'maya' ? 'Maya' : (m as any).name}</div>
-                        <div style={{ fontSize: 13, color: m.from === 'maya' ? '#FFF' : '#1A1410', lineHeight: 1.45 }}>{m.text}</div>
+          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>All three conversations happen inside existing WhatsApp groups — with you, your client, and Maya together.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+            {([
+              {
+                label: 'New client enquiry',
+                group: "Sarah's café — insurance group",
+                members: 'David Tan · Sarah Lim · Maya',
+                msgs: [
+                  { from: 'client', name: 'Sarah', text: 'Hi David, saw your ad. Need insurance for my café.' },
+                  { from: 'maya', text: "Hi Sarah! I'm Maya, David's assistant. Let me help. How many staff do you have?" },
+                  { from: 'client', name: 'Sarah', text: '5 full-time, 2 part-time. We also do catering.' },
+                  { from: 'maya', text: "Got it. I'll prepare a full brief for David — expect a call today!" },
+                  { from: 'fa', name: 'David', text: "Thanks Maya. Sarah, I'll call you at 3pm!" },
+                ],
+                confirm: '✓ Client brief sent to your dashboard',
+                confirmColor: '#0F6E56',
+              },
+              {
+                label: 'Renewal follow-up',
+                group: "Kevin's health plan group",
+                members: 'David Tan · Kevin Teo · Maya',
+                msgs: [
+                  { from: 'maya', text: 'Hi Kevin! Your Great Eastern health plan renews on 21 April — just 10 days away.' },
+                  { from: 'client', name: 'Kevin', text: 'Thanks for the heads up. Any better options?' },
+                  { from: 'maya', text: "I've compared 3 plans. Prudential saves ~$400/yr with better coverage. I'll send David the comparison." },
+                  { from: 'fa', name: 'David', text: "Kevin, I'll call you tomorrow to go through the options!" },
+                  { from: 'client', name: 'Kevin', text: 'Perfect, thanks David!' },
+                ],
+                confirm: '✓ Comparison report ready in dashboard',
+                confirmColor: '#854F0B',
+              },
+              {
+                label: 'Claims support',
+                group: "Priya's accident claim group",
+                members: 'David Tan · Priya Nair · Maya',
+                msgs: [
+                  { from: 'client', name: 'Priya', text: 'David! I was in an accident. What do I do for the claim?' },
+                  { from: 'maya', text: "Priya, don't worry — I'll guide you. Please send a photo of the damage and the police report." },
+                  { from: 'client', name: 'Priya', text: '📎 photo_damage.jpg  📎 police_report.pdf' },
+                  { from: 'maya', text: "Got them — saved to your claim file. David will pre-fill the AIA form for you." },
+                  { from: 'fa', name: 'David', text: "Priya, form is ready. I'll submit it by end of today." },
+                ],
+                confirm: '✓ Attachments + claim alert in dashboard',
+                confirmColor: '#A32D2D',
+              },
+            ] as any[]).map((card: any) => (
+              <div key={card.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Label above phone */}
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#3D3532', marginBottom: 20, letterSpacing: '-0.01em' }}>{card.label}</div>
+
+                {/* iPhone frame */}
+                <div style={{ width: 300, background: '#1A1410', borderRadius: 44, padding: '12px 12px', boxShadow: '0 24px 64px rgba(26,20,16,0.18), 0 0 0 1px rgba(255,255,255,0.06) inset' }}>
+                  {/* Dynamic island */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                    <div style={{ width: 120, height: 34, background: '#000000', borderRadius: 20 }} />
+                  </div>
+
+                  {/* Screen */}
+                  <div style={{ background: '#ECE5DD', borderRadius: 34, overflow: 'hidden' }}>
+                    {/* WA Header */}
+                    <div style={{ background: '#075E54', padding: '10px 12px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 8L7 5M10 8L7 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#fff', fontWeight: 500 }}>G</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', fontFamily: 'system-ui, sans-serif', lineHeight: 1.2 }}>{card.group}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontFamily: 'system-ui, sans-serif' }}>{card.members}</div>
                       </div>
                     </div>
-                  ))}
+
+                    {/* WA date stamp */}
+                    <div style={{ background: '#ECE5DD', padding: '8px 12px 4px', display: 'flex', justifyContent: 'center' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.12)', borderRadius: 8, padding: '2px 10px', fontSize: 10, color: '#3D3D3D', fontFamily: 'system-ui, sans-serif' }}>Today</div>
+                    </div>
+
+                    {/* Messages */}
+                    <div style={{ padding: '4px 10px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {card.msgs.map((m: any, i: number) => {
+                        const isRight = m.from !== 'client'
+                        const bg = m.from === 'maya' ? '#BA7517' : m.from === 'fa' ? '#DCF8C6' : '#FFFFFF'
+                        const textColor = m.from === 'maya' ? '#FFFFFF' : '#111'
+                        const nameColor = m.from === 'maya' ? 'rgba(255,255,255,0.75)' : m.from === 'fa' ? '#128C7E' : '#BA7517'
+                        const displayName = m.from === 'maya' ? 'Maya' : m.name
+                        return (
+                          <div key={i} style={{ display: 'flex', justifyContent: isRight ? 'flex-end' : 'flex-start' }}>
+                            <div style={{ maxWidth: '78%', background: bg, borderRadius: isRight ? '8px 0px 8px 8px' : '0px 8px 8px 8px', padding: '5px 8px 4px', boxShadow: '0 1px 2px rgba(0,0,0,0.13)' }}>
+                              <div style={{ fontSize: 9, fontWeight: 600, color: nameColor, fontFamily: 'system-ui, sans-serif', marginBottom: 2 }}>{displayName}</div>
+                              <div style={{ fontSize: 11.5, color: textColor, lineHeight: 1.4, fontFamily: 'system-ui, sans-serif' }}>{m.text}</div>
+                              <div style={{ fontSize: 9, color: m.from === 'maya' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)', textAlign: 'right', marginTop: 2, fontFamily: 'system-ui, sans-serif' }}>
+                                {9 + i}:4{i} {i % 2 === 0 ? '✓✓' : '✓'}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* WA Input bar */}
+                    <div style={{ background: '#F0F0F0', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, background: '#FFFFFF', borderRadius: 20, padding: '6px 12px', fontSize: 11, color: '#999', fontFamily: 'system-ui, sans-serif' }}>Message</div>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#075E54', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 7L2 2l2 5-2 5 10-5z" fill="white"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Home indicator */}
+                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+                    <div style={{ width: 100, height: 4, background: 'rgba(255,255,255,0.25)', borderRadius: 2 }} />
+                  </div>
                 </div>
-                <div style={{ background: card.footerBg, padding: '10px 16px', borderTop: `0.5px solid ${card.footerBorder}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: card.footerColor }}>{card.footer}</div>
+
+                {/* Confirmation below phone */}
+                <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 500, color: card.confirmColor }}>
+                  {card.confirm}
                 </div>
               </div>
             ))}
