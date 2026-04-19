@@ -23,6 +23,8 @@ const TIER_STYLES: Record<string, { bg: string; color: string; border: string }>
   bronze:   { bg: '#FAECE7', color: '#712B13', border: '#F5C4B3' },
 }
 
+const CLIENT_LIMIT = 50
+
 export default function ClientsPage() {
   const supabase = createClient()
   const [clients, setClients] = useState<Client[]>([])
@@ -31,6 +33,8 @@ export default function ClientsPage() {
   const [tierFilter, setTierFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [connectionFilter, setConnectionFilter] = useState('all')
+  const [plan, setPlan] = useState('trial')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   useEffect(() => {
     async function load() {
