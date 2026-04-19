@@ -79,7 +79,7 @@ INVESTMENT HOLDINGS (save as holdings):
           "units_held": 1234.567 or null,
           "last_nav": 1.234 or null,
           "current_value": 15000.00 or null,
-          "risk_rating": "conservative" | "moderate" | "aggressive" | null
+          "risk_rating": "conservative" | "moderate" | "aggressive" | null  (always lowercase)
         }
       ]
     }

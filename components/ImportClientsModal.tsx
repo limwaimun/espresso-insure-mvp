@@ -287,7 +287,7 @@ export default function ImportClientsModal({
           provider: h.provider, platform: h.platform,
           units_held: h.units_held, last_nav: h.last_nav,
           current_value: h.current_value || (h.units_held && h.last_nav ? h.units_held * h.last_nav : null),
-          risk_rating: h.risk_rating,
+          risk_rating: h.risk_rating ? h.risk_rating.toLowerCase() : null,
         })
         if (hErr) errors.push(`${client.name} holding (${h.product_name}): ${hErr.message}`)
       }
