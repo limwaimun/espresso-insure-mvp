@@ -8,9 +8,17 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { clientId, ifaId, insurer, type, premium, renewal_date, status } = await request.json()
+    const {
+      clientId, ifaId,
+      policy_number,
+      insurer, type,
+      premium, premium_frequency,
+      sum_assured,
+      start_date, renewal_date,
+      status,
+    } = await request.json()
 
-    if (!clientId || !ifaId || !insurer || !type || !premium || !renewal_date) {
+    if (!clientId || !ifaId || !insurer || !type || !premium) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -19,10 +27,14 @@ export async function POST(request: NextRequest) {
       .insert({
         client_id: clientId,
         ifa_id: ifaId,
+        policy_number: policy_number || null,
         insurer,
         type,
         premium: Number(premium),
-        renewal_date,
+        premium_frequency: premium_frequency || 'annual',
+        sum_assured: sum_assured ? Number(sum_assured) : null,
+        start_date: start_date || null,
+        renewal_date: renewal_date || null,
         status: status || 'active',
       })
       .select()

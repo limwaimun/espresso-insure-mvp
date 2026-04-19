@@ -409,7 +409,7 @@ export default function ClientDetailPage({
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
-  const [policyForm, setPolicyForm] = useState({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' })
+  const [policyForm, setPolicyForm] = useState({ policy_number: '', insurer: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' })
   const [policySaving, setPolicySaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -460,11 +460,11 @@ export default function ClientDetailPage({
   }
 
   async function savePolicy() {
-    if (!policyForm.insurer || !policyForm.type || !policyForm.premium || !policyForm.renewal_date) { setPolicyError('Please fill in all fields'); return }
+    if (!policyForm.insurer || !policyForm.type || !policyForm.premium) { setPolicyError('Insurer, type and premium are required'); return }
     if (!resolvedIfaId) { setPolicyError('Session error — please refresh the page'); return }
     setPolicySaving(true)
     try {
-      const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...policyForm, premium: parseFloat(policyForm.premium) }) })
+      const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...policyForm, premium: parseFloat(policyForm.premium), sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null }) })
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
       const newPolicy = await res.json()
 
@@ -617,7 +617,7 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button onClick={() => { setPolicyForm({ insurer: '', type: '', premium: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <button onClick={() => { setPolicyForm({ policy_number: '', insurer: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
             + Add policy
           </button>
         </div>
@@ -627,12 +627,14 @@ export default function ClientDetailPage({
               <table style={{ width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '15%' }}>Insurer</th>
-                    <th style={{ width: '15%' }}>Type</th>
-                    <th style={{ width: '10%' }}>Premium</th>
-                    <th style={{ width: '13%' }}>Renewal Date</th>
-                    <th style={{ width: '16%' }}>Policy Doc</th>
-                    <th style={{ width: '18%' }}>Status</th>
+                    <th style={{ width: '12%' }}>Policy No.</th>
+                    <th style={{ width: '12%' }}>Insurer</th>
+                    <th style={{ width: '13%' }}>Type</th>
+                    <th style={{ width: '9%' }}>Premium</th>
+                    <th style={{ width: '10%' }}>Sum Assured</th>
+                    <th style={{ width: '10%' }}>Renewal</th>
+                    <th style={{ width: '12%' }}>Policy Doc</th>
+                    <th style={{ width: '14%' }}>Status</th>
                     <th style={{ width: '8%' }}></th>
                   </tr>
                 </thead>
@@ -650,9 +652,11 @@ export default function ClientDetailPage({
                     const isConfirming = confirmDeleteId === policy.id
                     return (
                       <tr key={policy.id}>
+                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#9B9088' }}>{policy.policy_number || '—'}</td>
                         <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.insurer || '—'}</td>
                         <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.type || '—'}</td>
-                        <td>${(Number(policy.premium) || 0).toLocaleString()}</td>
+                        <td>${(Number(policy.premium) || 0).toLocaleString()}{policy.premium_frequency && policy.premium_frequency !== 'annual' ? <span style={{ fontSize: 10, color: '#9B9088' }}> /{policy.premium_frequency.slice(0,1)}</span> : ''}</td>
+                        <td>{policy.sum_assured ? `$${(Number(policy.sum_assured) / 1000).toFixed(0)}k` : '—'}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><PolicyDocCell policyId={policy.id} ifaId={resolvedIfaId} existingFileName={policy.document_name} /></td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
@@ -920,6 +924,10 @@ export default function ClientDetailPage({
         <Modal title="Add Policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div><label style={labelStyle}>Insurer *</label>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Policy Number</label>
+                <input style={inputStyle} placeholder="e.g. AIA-2024-12345" value={policyForm.policy_number} onChange={e => setPolicyForm(p => ({ ...p, policy_number: e.target.value }))} />
+              </div>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.insurer} onChange={e => setPolicyForm(p => ({ ...p, insurer: e.target.value }))}>
                 <option value="">Select insurer…</option>{INSURERS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
@@ -930,8 +938,31 @@ export default function ClientDetailPage({
               </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={labelStyle}>Annual Premium (SGD) *</label><input style={inputStyle} type="number" placeholder="e.g. 3600" value={policyForm.premium} onChange={e => setPolicyForm(p => ({ ...p, premium: e.target.value }))} /></div>
-              <div><label style={labelStyle}>Renewal Date *</label><input style={{ ...inputStyle, colorScheme: 'dark' } as React.CSSProperties} type="date" value={policyForm.renewal_date} onChange={e => setPolicyForm(p => ({ ...p, renewal_date: e.target.value }))} /></div>
+              <div>
+                <label style={labelStyle}>Annual Premium (SGD) *</label>
+                <input style={inputStyle} type="number" placeholder="e.g. 3600" value={policyForm.premium} onChange={e => setPolicyForm(p => ({ ...p, premium: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>Frequency</label>
+                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.premium_frequency} onChange={e => setPolicyForm(p => ({ ...p, premium_frequency: e.target.value }))}>
+                  <option value="annual">Annual</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="half-yearly">Half-yearly</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Sum Assured (SGD)</label>
+                <input style={inputStyle} type="number" placeholder="e.g. 500000" value={policyForm.sum_assured} onChange={e => setPolicyForm(p => ({ ...p, sum_assured: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>Start Date</label>
+                <input style={inputStyle} type="date" value={policyForm.start_date} onChange={e => setPolicyForm(p => ({ ...p, start_date: e.target.value }))} />
+              </div>
+              <div>
+                <label style={labelStyle}>Renewal Date</label>
+                <input style={inputStyle} type="date" value={policyForm.renewal_date} onChange={e => setPolicyForm(p => ({ ...p, renewal_date: e.target.value }))} />
+              </div>
             </div>
             <div><label style={labelStyle}>Status</label>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.status} onChange={e => setPolicyForm(p => ({ ...p, status: e.target.value }))}>
