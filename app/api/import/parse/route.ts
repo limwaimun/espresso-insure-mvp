@@ -55,11 +55,14 @@ INVESTMENT HOLDINGS (save as holdings):
       "email": "email or null",
       "phone": "+65XXXXXXXX or null",
       "company": "employer/company or null",
+      "dob": "date of birth as YYYY-MM-DD or null — look for DOB, Birthday, Date of Birth columns or notes",
       "type": "individual" | "sme" | "corporate",
       "tier": "platinum" | "gold" | "silver" | "bronze",
+      "notes": "any general notes about this client from notes/remarks columns — or null",
       "policies": [
         {
           "policy_number": "policy number or null",
+          "product_name": "full product name as written e.g. AIA Life Treasure II, PRUGroup Health Select — or null",
           "insurer": "insurer name or null",
           "type": "standardised type — one of: Life, Critical Illness, Health, Personal Accident, Fire, Motor, Marine, Travel, Public Liability, Professional Indemnity, Directors & Officers, Keyman, Group Life, Group Health, Endowment, Investment-Linked, Annuity, Other",
           "premium": 1234.56,
@@ -67,6 +70,7 @@ INVESTMENT HOLDINGS (save as holdings):
           "sum_assured": 500000 or null,
           "start_date": "YYYY-MM-DD or null",
           "renewal_date": "YYYY-MM-DD or null",
+          "notes": "any notes, comments or remarks about this policy — or null",
           "status": "active"
         }
       ],
@@ -95,6 +99,9 @@ INVESTMENT HOLDINGS (save as holdings):
 - Type: default "individual". Company name → sme or corporate
 - Phone: format Singapore numbers as +65XXXXXXXX
 - If you cannot determine a field, use null — never guess
+- Always capture the Notes/Remarks column content into the relevant notes field
+- DOB may appear in Notes column e.g. "DOB: 15 Aug 1988" — extract as dob field in YYYY-MM-DD format
+- product_name is the full marketing name of the product, distinct from type
 - Empty file or no data: return {"clients":[],"warnings":["No client data found"],"summary":"File contained no recognisable records"}
 - Holdings with no units/NAV: still include if you can identify a fund name and provider
 - Return ONLY the JSON object. No markdown, no explanation, no preamble.`

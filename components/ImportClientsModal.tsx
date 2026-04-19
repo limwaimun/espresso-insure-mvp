@@ -251,6 +251,8 @@ export default function ImportClientsModal({
           ifa_id: ifaId, name: client.name, email: client.email,
           whatsapp: client.phone, company: client.company,
           type: client.type || 'individual', tier: client.tier || 'silver',
+          dob: (client as any).dob || null,
+          notes: (client as any).notes || null,
         }).select('id').single()
         if (clientErr) { errors.push(`${client.name}: ${clientErr.message}`); continue }
         clientId = nc?.id
@@ -271,10 +273,14 @@ export default function ImportClientsModal({
       for (const p of (policiesToAdd || [])) {
         const { error: pErr } = await supabase.from('policies').insert({
           ifa_id: ifaId, client_id: clientId,
-          policy_number: p.policy_number, insurer: p.insurer, type: p.type,
+          policy_number: p.policy_number,
+          product_name: (p as any).product_name || null,
+          insurer: p.insurer, type: p.type,
           premium: p.premium, premium_frequency: p.premium_frequency,
           sum_assured: p.sum_assured, start_date: p.start_date,
-          renewal_date: p.renewal_date, status: 'active',
+          renewal_date: p.renewal_date,
+          notes: (p as any).notes || null,
+          status: 'active',
         })
         if (pErr) errors.push(`${client.name} policy (${p.insurer}): ${pErr.message}`)
       }

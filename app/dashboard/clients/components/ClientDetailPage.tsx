@@ -12,6 +12,7 @@ import { createClient } from '../../../../lib/supabase/client'
 interface Policy {
   id: string
   policy_number?: string | null
+  product_name?: string | null
   insurer: string
   type: string
   premium: number
@@ -20,6 +21,7 @@ interface Policy {
   start_date?: string | null
   renewal_date: string
   status: string
+  notes?: string | null
   document_name?: string | null
   document_url?: string | null
 }
@@ -89,6 +91,8 @@ interface Props {
   coverageAnalysis: CoverageItem[]
   timeline: TimelineItem[]
   connectionStatus: 'connected' | 'pending' | 'not_connected'
+  dob?: string | null
+  notes?: string | null
   calculatedTier: string
   ifaId: string
   ifaName: string
@@ -632,15 +636,17 @@ export default function ClientDetailPage({
               <table style={{ width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '12%' }}>Policy No.</th>
-                    <th style={{ width: '12%' }}>Insurer</th>
-                    <th style={{ width: '13%' }}>Type</th>
-                    <th style={{ width: '9%' }}>Premium</th>
-                    <th style={{ width: '10%' }}>Sum Assured</th>
-                    <th style={{ width: '10%' }}>Renewal</th>
-                    <th style={{ width: '12%' }}>Policy Doc</th>
-                    <th style={{ width: '14%' }}>Status</th>
-                    <th style={{ width: '8%' }}></th>
+                    <th style={{ width: '10%' }}>Policy No.</th>
+                    <th style={{ width: '15%' }}>Product</th>
+                    <th style={{ width: '10%' }}>Insurer</th>
+                    <th style={{ width: '10%' }}>Type</th>
+                    <th style={{ width: '8%' }}>Premium</th>
+                    <th style={{ width: '9%' }}>Sum Assured</th>
+                    <th style={{ width: '8%' }}>Start</th>
+                    <th style={{ width: '8%' }}>Renewal</th>
+                    <th style={{ width: '10%' }}>Doc</th>
+                    <th style={{ width: '8%' }}>Status</th>
+                    <th style={{ width: '4%' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -658,10 +664,12 @@ export default function ClientDetailPage({
                     return (
                       <tr key={policy.id}>
                         <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#9B9088' }}>{policy.policy_number || '—'}</td>
+                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }} title={policy.product_name || ''}>{policy.product_name || policy.type || '—'}</td>
                         <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.insurer || '—'}</td>
-                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.type || '—'}</td>
+                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#5F5A57' }}>{policy.type || '—'}</td>
                         <td>${(Number(policy.premium) || 0).toLocaleString()}{policy.premium_frequency && policy.premium_frequency !== 'annual' ? <span style={{ fontSize: 10, color: '#9B9088' }}> /{policy.premium_frequency.slice(0,1)}</span> : ''}</td>
                         <td>{policy.sum_assured ? `$${(Number(policy.sum_assured) / 1000).toFixed(0)}k` : '—'}</td>
+                        <td style={{ fontSize: 12, color: '#5F5A57' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</td>
                         <td>{formatDate(policy.renewal_date)}</td>
                         <td><PolicyDocCell policyId={policy.id} ifaId={resolvedIfaId} existingFileName={policy.document_name} /></td>
                         <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
@@ -929,6 +937,10 @@ export default function ClientDetailPage({
         <Modal title="Add Policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div><label style={labelStyle}>Insurer *</label>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={labelStyle}>Product Name</label>
+                <input style={inputStyle} placeholder="e.g. AIA Life Treasure II" value={(policyForm as any).product_name || ''} onChange={e => setPolicyForm(p => ({ ...p, product_name: e.target.value } as any))} />
+              </div>
               <div style={{ gridColumn: '1/-1' }}>
                 <label style={labelStyle}>Policy Number</label>
                 <input style={inputStyle} placeholder="e.g. AIA-2024-12345" value={policyForm.policy_number} onChange={e => setPolicyForm(p => ({ ...p, policy_number: e.target.value }))} />
