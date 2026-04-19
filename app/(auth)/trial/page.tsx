@@ -20,10 +20,18 @@ export default function TrialPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (res.ok) setSubmitted(true)
-      else throw new Error()
+      if (res.ok) {
+        setSubmitted(true)
+      } else {
+        const data = await res.json()
+        if (res.status === 409) {
+          setError('An account with this email already exists. Please sign in instead.')
+        } else {
+          setError(data.error || 'Something went wrong. Please email hello@espresso.insure')
+        }
+      }
     } catch {
-      setError('Something went wrong. Email us at hello@espresso.insure')
+      setError('Something went wrong. Please email hello@espresso.insure and we\'ll get you set up.')
     }
     setLoading(false)
   }
