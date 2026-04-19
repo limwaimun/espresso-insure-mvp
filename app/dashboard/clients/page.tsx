@@ -35,20 +35,24 @@ export default function ClientsPage() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [connectionFilter, setConnectionFilter] = useState('all')
   const [plan, setPlan] = useState('trial')
+  const [ifaId, setIfaId] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showImport, setShowImport] = useState(false)
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('clients')
-        .select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id)')
-        .order('created_at', { ascending: false })
-      setClients((data || []) as any)
-      setLoading(false)
-    }
-    load()
-  }, [])
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setIfaId(user.id)
+    const [{ data: clientData }, { data: profile }] = await Promise.all([
+      supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id)').eq('ifa_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('plan').eq('id', user.id).single(),
+    ])
+    setClients((clientData || []) as any)
+    setPlan(profile?.plan || 'trial')
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase()
