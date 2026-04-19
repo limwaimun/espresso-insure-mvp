@@ -79,6 +79,11 @@ interface ClientData {
   email?: string
   birthday?: string
   address?: string
+  dob?: string | null
+  notes?: string | null
+  nok_name?: string | null
+  nok_relationship?: string | null
+  nok_phone?: string | null
 }
 
 interface Props {
@@ -588,15 +593,34 @@ export default function ClientDetailPage({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-        {metrics.map((m, i) => (
-          <div key={i} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{m.label}</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>{m.value}</div>
-            {m.subtitle && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 6 }}>{m.subtitle}</div>}
+      {(() => {
+        const totalPremium = policies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
+        const totalSA = policies.reduce((s, p) => s + (Number(p.sum_assured) || 0), 0)
+        const holdingsValue = (client as any).holdings?.reduce((s: number, h: any) => s + (Number(h.current_value) || 0), 0) || 0
+        const nextRenewal = policies.filter(p => p.renewal_date && new Date(p.renewal_date) >= new Date()).sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())[0]
+        const daysToRenewal = nextRenewal ? Math.ceil((new Date(nextRenewal.renewal_date).getTime() - Date.now()) / 86400000) : null
+        const openClaimsCount = claims.filter(c => !c.resolved).length
+
+        const kpis = [
+          { label: 'Annual premium', value: totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '—', sub: `${policies.length} polic${policies.length !== 1 ? 'ies' : 'y'}` },
+          { label: 'Sum assured', value: totalSA > 0 ? `$${(totalSA / 1000).toFixed(0)}k` : '—', sub: 'total coverage' },
+          { label: 'Holdings AUM', value: holdingsValue > 0 ? `$${holdingsValue.toLocaleString()}` : '—', sub: holdingsValue > 0 ? `${(client as any).holdings?.length || 0} holding${((client as any).holdings?.length || 0) !== 1 ? 's' : ''}` : 'no holdings' },
+          { label: 'Next renewal', value: nextRenewal ? (daysToRenewal !== null && daysToRenewal <= 30 ? `${daysToRenewal}d` : new Date(nextRenewal.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })) : '—', sub: nextRenewal ? `${nextRenewal.insurer} · ${nextRenewal.type}` : 'no upcoming renewals', warn: daysToRenewal !== null && daysToRenewal <= 30 },
+          { label: 'Open claims', value: openClaimsCount, sub: openClaimsCount > 0 ? `${claims.filter(c => !c.resolved && c.priority === 'high').length} high priority` : 'none open', danger: openClaimsCount > 0 },
+          { label: 'Coverage gaps', value: coverageAnalysis?.filter(c => !c.hasCoverage).length ?? 0, sub: 'products not covered', info: true },
+        ]
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            {kpis.map((m, i) => (
+              <div key={i} style={{ background: '#FFFFFF', border: `0.5px solid ${m.danger ? '#F7C1C1' : m.warn ? '#FAC775' : '#E8E2DA'}`, borderRadius: 8, padding: '16px 20px' }}>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{m.label}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: m.danger ? '#A32D2D' : m.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{m.value}</div>
+                {m.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 6 }}>{m.sub}</div>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )
+      })()}
 
       {/* == SECTION 3: WHATSAPP == */}
       <div className="panel" style={{ marginBottom: 24 }}>
