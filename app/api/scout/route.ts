@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       const base64 = Buffer.from(bytes).toString('base64')
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1200,
         messages: [
           {
@@ -89,7 +89,7 @@ Use null for any fields not found in the document.`,
     if (!query) return NextResponse.json({ error: 'query is required' }, { status: 400 })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 800,
       messages: [
         {

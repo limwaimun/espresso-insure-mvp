@@ -1,94 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
-)
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+
+// Sage — Espresso's internal actuary agent
+// Called by Maya when a client asks about pricing or coverage costs
+// Never speaks to clients directly — returns estimates to Maya
 
 export async function POST(request: NextRequest) {
   try {
-    const { ifaId, clientId, client, query, coverageType, sumAssured, riders } = await request.json()
-
-    if (!ifaId) return NextResponse.json({ error: 'Missing ifaId' }, { status: 400 })
-
-    let clientData = client
-    if (!clientData && clientId) {
-      const { data } = await supabase.from('clients').select('*').eq('id', clientId).single()
-      clientData = data
+    const {
+      coverageType,
+      clientAge,
+      clientGender,
+      clientType,
+      sumAssured,
+      existingConditions,
+      preferredInsurers,
+    } = await request.json() as {
+      coverageType: string
+      clientAge?: number
+      clientGender?: string
+      clientType?: 'individual' | 'sme' | 'corporate'
+      sumAssured?: number
+      existingConditions?: string[]
+      preferredInsurers?: string[]
     }
 
-    const { data: ifa } = await supabase.from('profiles').select('preferred_insurers').eq('id', ifaId).single()
-    const preferredInsurers: string[] = ifa?.preferred_insurers || []
+    if (!coverageType) {
+      return NextResponse.json({ error: 'coverageType is required' }, { status: 400 })
+    }
 
-    const age = clientData?.birthday
-      ? Math.floor((Date.now() - new Date(clientData.birthday).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      : null
+    const preferredContext = preferredInsurers && preferredInsurers.length > 0
+      ? `The IFA's preferred insurers are: ${preferredInsurers.join(', ')}. Mention these first where relevant.`
+      : ''
+
+    const prompt = `You are Sage, an internal actuary agent for Espresso, an insurance back-office platform in Singapore.
+
+Your job is to give Maya (the client-facing AI) a quick premium estimate for a client enquiry. You are NOT speaking to the client directly — your output will be passed to Maya who will then add a disclaimer.
+
+COVERAGE REQUESTED: ${coverageType}
+CLIENT AGE: ${clientAge ?? 'unknown'}
+CLIENT GENDER: ${clientGender ?? 'unknown'}
+CLIENT TYPE: ${clientType ?? 'individual'}
+SUM ASSURED: ${sumAssured ? `SGD ${sumAssured.toLocaleString()}` : 'standard coverage'}
+EXISTING CONDITIONS: ${existingConditions && existingConditions.length > 0 ? existingConditions.join(', ') : 'none declared'}
+${preferredContext}
+
+Provide a premium estimate based on Singapore market rates. Always give a RANGE not a single number. Be specific and realistic. Reference actual Singapore insurers and products where possible.
+
+Respond in this exact JSON format with no other text:
+{
+  "monthlyRange": { "min": number, "max": number },
+  "annualRange": { "min": number, "max": number },
+  "basis": "brief explanation of what drives this range",
+  "recommendedInsurers": ["insurer 1", "insurer 2"],
+  "keyFactors": ["factor 1", "factor 2", "factor 3"],
+  "confidence": "high | medium | low",
+  "caveat": "one sentence caveat Maya should add when presenting this"
+}`
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
-      system: `You are Sage, an expert insurance actuary and pricing specialist for Singapore.
-You provide premium estimates based on Singapore market rates (2025-2026).
-Always caveat that these are indicative ranges — actual premiums require formal underwriting.
-Preferred insurers: ${preferredInsurers.length > 0 ? preferredInsurers.join(', ') : 'all major SG insurers'}.`,
-      messages: [{
-        role: 'user',
-        content: `Estimate premiums for this insurance request.
-
-CLIENT:
-Name: ${clientData?.name || 'Unknown'}
-Age: ${age !== null ? age : 'Unknown'}
-Company: ${clientData?.company || 'N/A'}
-
-REQUEST: "${query}"
-Coverage type: ${coverageType || 'as described in request'}
-${sumAssured ? `Sum assured: SGD ${sumAssured}` : ''}
-${riders ? `Riders requested: ${riders}` : ''}
-
-Provide premium estimates from 3-4 major SG insurers. Return JSON only:
-{
-  "coverage_type": "",
-  "sum_assured": "",
-  "estimates": [
-    {
-      "insurer": "",
-      "product_name": "",
-      "annual_premium": {"min": 0, "max": 0},
-      "monthly_premium": {"min": 0, "max": 0},
-      "key_inclusions": [],
-      "notes": ""
-    }
-  ],
-  "factors_affecting_premium": [],
-  "recommendation": "",
-  "disclaimer": "Indicative estimates only. Actual premiums subject to underwriting.",
-  "mayaMessage": ""
-}
-
-For mayaMessage: short WhatsApp message under 80 words with the estimate. End with: "These are rough estimates — your advisor will confirm exact figures after a formal quote."`
-      }],
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 600,
+      messages: [{ role: 'user', content: prompt }],
     })
 
-    const rawText = response.content.find(b => b.type === 'text')?.text || ''
-    let estimates = null
+    const rawText = response.content.find(b => b.type === 'text')?.text ?? ''
+
+    let estimate
     try {
-      estimates = JSON.parse(rawText.replace(/```json|```/g, '').trim())
+      estimate = JSON.parse(rawText.replace(/```json|```/g, '').trim())
     } catch {
-      estimates = { raw: rawText }
+      return NextResponse.json({
+        error: 'Sage could not generate an estimate for this coverage type',
+      }, { status: 422 })
     }
 
     return NextResponse.json({
       success: true,
-      agent: 'sage',
-      client: clientData ? { name: clientData.name, age } : null,
-      estimates,
+      estimate,
+      coverageType,
     })
-
   } catch (err) {
     console.error('[sage] error:', err)
-    return NextResponse.json({ error: 'Sage failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Sage failed to respond' }, { status: 500 })
   }
 }

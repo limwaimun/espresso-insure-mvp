@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SECRET_KEY!
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
         })),
       },
       tiers: tierCounts,
-      topClients: clientPremiums.slice(0, 5),
+      topClients: clientPremiums.slice(0, 10),
       insurerBreakdown,
       coverageBreakdown,
     }
@@ -131,7 +134,7 @@ export async function POST(request: NextRequest) {
     let narrative = null
     if (reportType === 'portfolio' || query) {
       const narrativeRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 600,
         system: 'You are Lens, an analytics agent for Singapore financial advisors. Write in clean flowing prose — no markdown, no headers, no bullet points, no bold text. Just clear, direct sentences an FA can read at a glance. Be specific with numbers and names. Highlight the single most urgent action first.',
         messages: [{

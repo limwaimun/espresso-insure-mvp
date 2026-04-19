@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
   let mayaReply = ''
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500, // Keep WhatsApp replies concise
       system: systemPrompt,
       messages: claudeMessages,

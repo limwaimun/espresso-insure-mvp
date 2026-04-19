@@ -169,7 +169,7 @@ Provide a structured comparison. Format as JSON:
     }
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
@@ -187,7 +187,7 @@ Provide a structured comparison. Format as JSON:
 
     // ── Format a Maya-readable summary ────────────────────────────────────
     const mayaSummaryRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 300,
       messages: [{
         role: 'user',
