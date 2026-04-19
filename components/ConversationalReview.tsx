@@ -154,11 +154,11 @@ export default function ConversationalReview({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {issue.inputType === 'confirm' ? (
               <>
-                <button onClick={confirm} style={{ background: '#1A1410', border: 'none', borderRadius: 8, padding: '12px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#FFF', textAlign: 'center' }}>
-                  Yes, import anyway
+                <button onClick={skip} style={{ background: '#1A1410', border: 'none', borderRadius: 8, padding: '12px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#FFF', textAlign: 'center' }}>
+                  Yes, same person — skip duplicate
                 </button>
-                <button onClick={skip} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', textAlign: 'center' }}>
-                  No, skip this client
+                <button onClick={confirm} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', textAlign: 'center' }}>
+                  No, different people — import both
                 </button>
               </>
             ) : (
@@ -254,7 +254,7 @@ export function extractIssues(clients: any[]): ImportIssue[] {
         policyIndex: null,
         field: '_duplicate',
         label: 'Possible duplicate',
-        question: `"${client.name}" looks ${client._matchScore}% similar to existing client "${client._existingName}". Are these the same person?`,
+        question: `"${client.name}" looks like it could be the same person as existing client "${client._existingName}" (${client._matchScore}% name match). Are they the same person?`,
         currentValue: null,
         inputType: 'confirm',
         severity: 'warning',
