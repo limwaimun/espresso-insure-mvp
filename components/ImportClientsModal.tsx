@@ -3,21 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-interface ParsedClient {
-  name: string
-  email: string | null
-  phone: string | null
-  company: string | null
-  type: 'individual' | 'sme' | 'corporate'
-  tier: 'gold' | 'silver' | 'bronze' | 'platinum'
-  policies: ParsedPolicy[]
-  holdings: ParsedHolding[]
-  _selected: boolean
-  _flagged: boolean
-  _flagReasons: string[]
-  _id: string
-}
-
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface ParsedPolicy {
   policy_number: string | null
   insurer: string | null
@@ -27,7 +13,6 @@ interface ParsedPolicy {
   sum_assured: number | null
   start_date: string | null
   renewal_date: string | null
-  status: string
 }
 
 interface ParsedHolding {
@@ -41,33 +26,91 @@ interface ParsedHolding {
   risk_rating: string | null
 }
 
-type Step = 'upload' | 'parsing' | 'summary' | 'flagged' | 'importing' | 'done'
-
-function flagClient(client: ParsedClient, existingNames: Set<string>): string[] {
-  const reasons: string[] = []
-  if (!client.name || client.name.length < 2) reasons.push('Name missing or too short')
-  if (existingNames.has(client.name?.toLowerCase())) reasons.push('Already in your book')
-  if (!client.policies?.length && !client.holdings?.length) reasons.push('No policies or holdings found')
-  client.policies?.forEach(p => {
-    if (!p.premium || p.premium <= 0) reasons.push('Premium is zero or missing')
-    if (!p.renewal_date) reasons.push('Renewal date missing')
-    else if (new Date(p.renewal_date) < new Date()) reasons.push('Renewal date is in the past')
-    if (!p.insurer) reasons.push('Insurer not identified')
-  })
-  return [...new Set(reasons)]
+interface ExistingClient {
+  id: string
+  name: string
+  email: string | null
+  whatsapp: string | null
+  policies: { id: string; policy_number: string | null; insurer: string | null; type: string | null }[]
+  holdings: { id: string; product_name: string; provider: string | null }[]
 }
 
+type MatchType = 'exact' | 'phone' | 'email' | 'fuzzy' | 'new'
+
+interface ParsedClient {
+  name: string
+  email: string | null
+  phone: string | null
+  company: string | null
+  type: string
+  tier: string
+  policies: ParsedPolicy[]
+  holdings: ParsedHolding[]
+  // dedup fields
+  _id: string
+  _selected: boolean
+  _matchType: MatchType
+  _matchScore: number
+  _existingId: string | null
+  _existingName: string | null
+  _flagReasons: string[]
+  _newPolicies: ParsedPolicy[]   // policies not yet in the book
+  _newHoldings: ParsedHolding[]  // holdings not yet in the book
+}
+
+type Step = 'upload' | 'parsing' | 'summary' | 'importing' | 'done'
+type ImportMode = 'new_only' | 'new_and_update' | null
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function norm(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+function normPhone(p: string) { return p.replace(/\D/g, '').replace(/^65/, '') }
+
+function nameSimilarity(a: string, b: string) {
+  const na = norm(a), nb = norm(b)
+  if (na === nb) return 100
+  if (na.includes(nb) || nb.includes(na)) return 85
+  const ta = new Set(na.split(' ')), tb = new Set(nb.split(' '))
+  const inter = [...ta].filter(t => tb.has(t)).length
+  const union = new Set([...ta, ...tb]).size
+  return Math.round((inter / union) * 100)
+}
+
+function findMatch(parsed: ParsedClient, existing: ExistingClient[]): { type: MatchType; score: number; match: ExistingClient | null } {
+  for (const ec of existing) {
+    if (norm(ec.name) === norm(parsed.name)) return { type: 'exact', score: 100, match: ec }
+    if (parsed.phone && ec.whatsapp) {
+      const pa = normPhone(parsed.phone), pb = normPhone(ec.whatsapp)
+      if (pa && pb && pa === pb && pa.length >= 8) return { type: 'phone', score: 95, match: ec }
+    }
+    if (parsed.email && ec.email && parsed.email.toLowerCase() === ec.email.toLowerCase())
+      return { type: 'email', score: 95, match: ec }
+  }
+  let best = { type: 'new' as MatchType, score: 0, match: null as ExistingClient | null }
+  for (const ec of existing) {
+    const score = nameSimilarity(parsed.name, ec.name)
+    if (score >= 75 && score > best.score) best = { type: 'fuzzy', score, match: ec }
+  }
+  return best
+}
+
+function policyNew(p: ParsedPolicy, existing: ExistingClient['policies']) {
+  if (p.policy_number) return !existing.some(e => e.policy_number?.toLowerCase().trim() === p.policy_number!.toLowerCase().trim())
+  return !existing.some(e => e.insurer?.toLowerCase() === p.insurer?.toLowerCase() && e.type?.toLowerCase() === p.type?.toLowerCase())
+}
+
+function holdingNew(h: ParsedHolding, existing: ExistingClient['holdings']) {
+  return !existing.some(e => norm(e.product_name) === norm(h.product_name))
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ImportClientsModal({
-  ifaId, plan, currentCount, clientLimit, existingClientNames,
+  ifaId, plan, currentCount, clientLimit,
   onClose, onImported,
 }: {
-  ifaId: string
-  plan: string
-  currentCount: number
-  clientLimit: number
-  existingClientNames: string[]
-  onClose: () => void
-  onImported: () => void
+  ifaId: string; plan: string; currentCount: number; clientLimit: number
+  onClose: () => void; onImported: () => void
 }) {
   const supabase = createClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -76,43 +119,39 @@ export default function ImportClientsModal({
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState<ParsedClient[]>([])
   const [parseError, setParseError] = useState('')
+  const [importMode, setImportMode] = useState<ImportMode>(null)
   const [importProgress, setImportProgress] = useState(0)
   const [importedCount, setImportedCount] = useState(0)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [updatedCount, setUpdatedCount] = useState(0)
 
   const isSoftLimited = plan === 'solo' || plan === 'trial'
   const slotsLeft = isSoftLimited ? clientLimit - currentCount : 9999
-  const existingSet = new Set(existingClientNames.map(n => n.toLowerCase()))
 
-  const clean = parsed.filter(c => !c._flagged && c._selected)
-  const flagged = parsed.filter(c => c._flagged)
-  const totalPremium = parsed.filter(c => c._selected).reduce((s, c) =>
-    s + (c.policies || []).reduce((ps, p) => ps + (p.premium || 0), 0), 0)
+  // Derived groups
+  const newClients    = parsed.filter(c => c._matchType === 'new' && c._selected)
+  const exactMatches  = parsed.filter(c => (c._matchType === 'exact' || c._matchType === 'phone' || c._matchType === 'email') && c._selected)
+  const fuzzyMatches  = parsed.filter(c => c._matchType === 'fuzzy')
+  const withUpdates   = exactMatches.filter(c => c._newPolicies.length > 0 || c._newHoldings.length > 0)
 
   async function processFile(file: File) {
     setFileName(file.name)
     setStep('parsing')
     setParseError('')
     try {
+      // 1. Parse file with Claude
       const isText = file.name.endsWith('.csv') || file.name.endsWith('.txt')
-      let fileContent = ''
-      let isBase64 = false
-      let mediaType = 'text/plain'
+      let fileContent = '', isBase64 = false, mediaType = 'text/plain'
       if (isText) {
         fileContent = await file.text()
       } else {
         const buf = await file.arrayBuffer()
-        const bytes = new Uint8Array(buf)
-        let bin = ''
-        bytes.forEach(b => bin += String.fromCharCode(b))
-        fileContent = btoa(bin)
-        isBase64 = true
-        mediaType = file.name.endsWith('.pdf') ? 'application/pdf'
-          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        let bin = ''; new Uint8Array(buf).forEach(b => bin += String.fromCharCode(b))
+        fileContent = btoa(bin); isBase64 = true
+        mediaType = file.name.endsWith('.pdf') ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       }
+
       const res = await fetch('/api/import/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name, fileContent, isBase64, mediaType }),
       })
       if (!res.ok) throw new Error('Parsing failed')
@@ -120,102 +159,158 @@ export default function ImportClientsModal({
       if (data.error) throw new Error(data.error)
       if (!data.clients?.length) throw new Error('No clients found. Check the file has client or policy data.')
 
+      // 2. Load existing clients from Supabase for dedup
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('id, name, email, whatsapp, policies(id, policy_number, insurer, type), holdings(id, product_name, provider)')
+        .eq('ifa_id', ifaId)
+
+      const existingClients: ExistingClient[] = (existing || []).map((c: any) => ({
+        id: c.id, name: c.name, email: c.email, whatsapp: c.whatsapp,
+        policies: c.policies || [], holdings: c.holdings || [],
+      }))
+
+      // 3. Match each parsed client against existing book
       const clients: ParsedClient[] = data.clients.map((c: any, i: number) => {
-        const flagReasons = flagClient({ ...c, _flagged: false, _flagReasons: [], _selected: true, _id: '', holdings: c.holdings || [] }, existingSet)
+        const flagReasons: string[] = []
+        if (!c.name || c.name.length < 2) flagReasons.push('Name missing')
+        c.policies?.forEach((p: any) => {
+          if (!p.premium || p.premium <= 0) flagReasons.push('Premium missing')
+          if (p.renewal_date && new Date(p.renewal_date) < new Date()) flagReasons.push('Renewal date in past')
+        })
+
+        const { type: matchType, score: matchScore, match } = findMatch(
+          { ...c, _id: '', _selected: true, _matchType: 'new', _matchScore: 0, _existingId: null, _existingName: null, _flagReasons: [], _newPolicies: [], _newHoldings: [], holdings: c.holdings || [] },
+          existingClients
+        )
+
+        const newPolicies = match ? (c.policies || []).filter((p: any) => policyNew(p, match.policies)) : (c.policies || [])
+        const newHoldings = match ? (c.holdings || []).filter((h: any) => holdingNew(h, match.holdings)) : (c.holdings || [])
+
         return {
           ...c,
           holdings: c.holdings || [],
           _id: `c${i}`,
-          _flagged: flagReasons.length > 0,
+          _selected: isSoftLimited && matchType === 'new' ? i < slotsLeft : true,
+          _matchType: matchType as MatchType,
+          _matchScore: matchScore,
+          _existingId: match?.id || null,
+          _existingName: match?.name || null,
           _flagReasons: flagReasons,
-          _selected: isSoftLimited ? i < slotsLeft : true,
+          _newPolicies: newPolicies,
+          _newHoldings: newHoldings,
         }
       })
+
       setParsed(clients)
       setStep('summary')
     } catch (err: any) {
-      setParseError(err.message || 'Failed to parse file. Try saving as CSV.')
+      setParseError(err.message || 'Failed to parse. Try saving as CSV.')
       setStep('upload')
     }
   }
 
-  async function runImport(toImport: ParsedClient[]) {
+  async function runImport(mode: ImportMode) {
+    setImportMode(mode)
     setStep('importing')
-    let count = 0
-    for (const client of toImport) {
-      const { data: existing } = await supabase.from('clients').select('id').eq('ifa_id', ifaId).eq('name', client.name).single()
-      let clientId = existing?.id
-      if (!clientId) {
-        const { data: newClient } = await supabase.from('clients').insert({
+    let imported = 0, updated = 0
+
+    const toProcess = mode === 'new_only'
+      ? parsed.filter(c => c._matchType === 'new' && c._selected)
+      : parsed.filter(c => c._selected && c._matchType !== 'fuzzy')
+
+    for (const client of toProcess) {
+      const isNew = client._matchType === 'new'
+      let clientId = client._existingId
+
+      if (isNew) {
+        // Insert new client
+        const { data: nc } = await supabase.from('clients').insert({
           ifa_id: ifaId, name: client.name, email: client.email,
           whatsapp: client.phone, company: client.company,
           type: client.type || 'individual', tier: client.tier || 'silver',
         }).select('id').single()
-        clientId = newClient?.id
+        clientId = nc?.id
+        if (clientId) imported++
+      } else if (mode === 'new_and_update' && clientId) {
+        // Update existing client contact info if we have better data
+        const updates: any = {}
+        if (client.email && !client._existingId) updates.email = client.email
+        if (client.phone) updates.whatsapp = client.phone
+        if (Object.keys(updates).length) await supabase.from('clients').update(updates).eq('id', clientId)
+        updated++
       }
-      if (clientId && client.policies?.length) {
-        for (const p of client.policies) {
-          await supabase.from('policies').insert({
-            ifa_id: ifaId,
-            client_id: clientId,
-            policy_number: p.policy_number,
-            insurer: p.insurer,
-            type: p.type,
-            premium: p.premium,
-            premium_frequency: p.premium_frequency,
-            sum_assured: p.sum_assured,
-            start_date: p.start_date,
-            renewal_date: p.renewal_date,
-            status: 'active',
-          })
-        }
+
+      if (!clientId) continue
+
+      // Add new policies only
+      const policiesToAdd = isNew ? client.policies : client._newPolicies
+      for (const p of (policiesToAdd || [])) {
+        await supabase.from('policies').insert({
+          ifa_id: ifaId, client_id: clientId,
+          policy_number: p.policy_number, insurer: p.insurer, type: p.type,
+          premium: p.premium, premium_frequency: p.premium_frequency,
+          sum_assured: p.sum_assured, start_date: p.start_date,
+          renewal_date: p.renewal_date, status: 'active',
+        })
       }
-      // Write investment holdings
-      if (clientId && client.holdings?.length) {
-        for (const h of client.holdings) {
-          await supabase.from('holdings').insert({
-            ifa_id: ifaId,
-            client_id: clientId,
-            product_type: h.product_type || 'other',
-            product_name: h.product_name,
-            provider: h.provider,
-            platform: h.platform,
-            units_held: h.units_held,
-            last_nav: h.last_nav,
-            current_value: h.current_value || (h.units_held && h.last_nav ? h.units_held * h.last_nav : null),
-            risk_rating: h.risk_rating,
-          })
-        }
+
+      // Add new holdings only
+      const holdingsToAdd = isNew ? client.holdings : client._newHoldings
+      for (const h of (holdingsToAdd || [])) {
+        await supabase.from('holdings').insert({
+          ifa_id: ifaId, client_id: clientId,
+          product_type: h.product_type || 'other', product_name: h.product_name,
+          provider: h.provider, platform: h.platform,
+          units_held: h.units_held, last_nav: h.last_nav,
+          current_value: h.current_value || (h.units_held && h.last_nav ? h.units_held * h.last_nav : null),
+          risk_rating: h.risk_rating,
+        })
       }
-      count++
-      setImportProgress(Math.round((count / toImport.length) * 100))
+
+      setImportProgress(Math.round((toProcess.indexOf(client) + 1) / toProcess.length * 100))
     }
-    setImportedCount(count)
+
+    setImportedCount(imported)
+    setUpdatedCount(updated)
     setStep('done')
   }
 
-  const inp: React.CSSProperties = { width: '100%', padding: '7px 10px', border: '0.5px solid #E8E2DA', borderRadius: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', background: '#FFF', outline: 'none', boxSizing: 'border-box' as const }
+  const cardStyle: React.CSSProperties = { background: '#F7F4F0', borderRadius: 8, padding: '12px 16px' }
+  const matchBadge = (type: MatchType) => {
+    const s: Record<MatchType, { label: string; bg: string; color: string }> = {
+      exact: { label: 'Exact match', bg: '#E1F5EE', color: '#0F6E56' },
+      phone: { label: 'Phone match', bg: '#E1F5EE', color: '#0F6E56' },
+      email: { label: 'Email match', bg: '#E1F5EE', color: '#0F6E56' },
+      fuzzy: { label: 'Possible match', bg: '#FAEEDA', color: '#854F0B' },
+      new:   { label: 'New client', bg: '#E6F1FB', color: '#185FA5' },
+    }
+    const st = s[type]
+    return <span style={{ background: st.bg, color: st.color, fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 100 }}>{st.label}</span>
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#FFF', borderRadius: 14, width: '100%', maxWidth: step === 'flagged' ? 780 : 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 16px 48px rgba(0,0,0,0.14)' }}>
+      <div style={{ background: '#FFF', borderRadius: 14, width: '100%', maxWidth: 580, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 16px 48px rgba(0,0,0,0.14)' }}>
 
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '0.5px solid #E8E2DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 17, fontWeight: 500, color: '#1A1410', margin: 0 }}>
-            {step === 'upload' && 'Import clients'}
-            {step === 'parsing' && 'Reading your file…'}
-            {step === 'summary' && 'Ready to import'}
-            {step === 'flagged' && `Review ${flagged.length} flagged client${flagged.length !== 1 ? 's' : ''}`}
-            {step === 'importing' && 'Importing…'}
-            {step === 'done' && 'Import complete'}
-          </h2>
+          <div>
+            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 17, fontWeight: 500, color: '#1A1410', margin: 0 }}>
+              {step === 'upload' && 'Import clients'}
+              {step === 'parsing' && 'Reading your file…'}
+              {step === 'summary' && 'Review import'}
+              {step === 'importing' && 'Importing…'}
+              {step === 'done' && 'Import complete'}
+            </h2>
+            {step === 'summary' && <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', margin: '2px 0 0' }}>{fileName}</p>}
+          </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9B9088' }}>✕</button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
 
-          {/* UPLOAD */}
+          {/* ── UPLOAD ── */}
           {step === 'upload' && (
             <>
               <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.pdf,.txt" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f) }} style={{ display: 'none' }} />
@@ -224,17 +319,18 @@ export default function ImportClientsModal({
                 onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
                 onClick={() => fileRef.current?.click()}
-                style={{ border: `1.5px dashed ${dragOver ? '#BA7517' : '#E8E2DA'}`, borderRadius: 10, padding: '48px 24px', textAlign: 'center', cursor: 'pointer', background: dragOver ? '#FEF3E2' : '#FAFAF8' }}
+                style={{ border: `1.5px dashed ${dragOver ? '#BA7517' : '#E8E2DA'}`, borderRadius: 10, padding: '48px 24px', textAlign: 'center', cursor: 'pointer', background: dragOver ? '#FEF3E2' : '#FAFAF8', transition: 'all 0.15s' }}
               >
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📂</div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Drop your file here or click to browse</div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>CSV, Excel, PDF — any format, any layout</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', marginTop: 8 }}>Existing clients will be detected and updated — no duplicates</div>
               </div>
               {parseError && <div style={{ background: '#FCEBEB', border: '0.5px solid #F7C1C1', borderRadius: 8, padding: '12px 14px', marginTop: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#A32D2D' }}>{parseError}</div>}
               <div style={{ marginTop: 20, background: '#F7F4F0', borderRadius: 10, padding: '14px 18px' }}>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>Maya can read</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }}>
-                  {['Agency system exports', 'Your own Excel files', 'Messy column names', 'Mixed date formats', 'Currency like $3,200', 'Multiple policies per client'].map(i => (
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>Maya handles</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 20px' }}>
+                  {['Any column names', 'Any date format', 'Currency symbols', 'Multiple policies per client', 'Investment holdings', 'Duplicate detection'].map(i => (
                     <div key={i} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', display: 'flex', gap: 6 }}><span style={{ color: '#0F6E56' }}>✓</span>{i}</div>
                   ))}
                 </div>
@@ -242,141 +338,110 @@ export default function ImportClientsModal({
             </>
           )}
 
-          {/* PARSING */}
+          {/* ── PARSING ── */}
           {step === 'parsing' && (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 16 }}>☕</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Maya is reading your file…</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088' }}>{fileName}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', marginBottom: 4 }}>{fileName}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>Matching against your existing book…</div>
             </div>
           )}
 
-          {/* SUMMARY */}
+          {/* ── SUMMARY ── */}
           {step === 'summary' && (
             <>
-              {isSoftLimited && parsed.filter(c => c._selected).length >= slotsLeft && (
-                <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
-                  ⚠️ Solo plan allows {clientLimit} clients. You have {currentCount} — only {slotsLeft} more can be imported. Upgrade to Pro for unlimited.
-                </div>
-              )}
-
-              {/* Big summary */}
-              <div style={{ textAlign: 'center', padding: '8px 0 24px' }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>
-                  Maya read your file
-                </div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57' }}>
-                  {fileName}
-                </div>
-              </div>
-
-              {/* Stats row */}
+              {/* Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
                 {[
-                  { label: 'Clients ready', value: clean.length, color: '#0F6E56' },
-                  { label: 'Need a check', value: flagged.length, color: flagged.length > 0 ? '#854F0B' : '#9B9088' },
-                  { label: 'Holdings found', value: parsed.reduce((s, c) => s + (c.holdings?.length || 0), 0), color: '#185FA5' },
+                  { label: 'New clients', value: newClients.length, color: '#185FA5', sub: 'will be added' },
+                  { label: 'Existing clients', value: exactMatches.length, color: '#0F6E56', sub: `${withUpdates.length} have updates` },
+                  { label: 'Need review', value: fuzzyMatches.length, color: fuzzyMatches.length > 0 ? '#854F0B' : '#9B9088', sub: 'possible duplicates' },
                 ].map(s => (
-                  <div key={s.label} style={{ background: '#F7F4F0', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: s.color }}>{s.value}</div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 3 }}>{s.label}</div>
+                  <div key={s.label} style={cardStyle}>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginTop: 4 }}>{s.label}</div>
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
 
-              {/* Clean clients preview */}
-              {clean.length > 0 && (
-                <div style={{ background: '#F7F4F0', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>Ready to import</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 160, overflowY: 'auto' }}>
-                    {clean.slice(0, 8).map((c, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#3D3532' }}>
-                        <span>{c.name}{c.company ? ` · ${c.company}` : ''}</span>
-                        <span style={{ color: '#9B9088' }}>{c.policies?.length || 0} polic{c.policies?.length === 1 ? 'y' : 'ies'}{c.holdings?.length ? ` · ${c.holdings.length} holding${c.holdings.length !== 1 ? 's' : ''}` : ''}</span>
+              {/* Limit warning */}
+              {isSoftLimited && newClients.length > slotsLeft && (
+                <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
+                  ⚠️ Solo plan allows {clientLimit} clients. You have {currentCount} — only {slotsLeft} new clients can be imported. Updates to existing clients are unlimited.
+                </div>
+              )}
+
+              {/* New clients list */}
+              {newClients.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>New clients</span>
+                    <span style={{ color: '#9B9088', fontWeight: 400 }}>{newClients.length} will be added</span>
+                  </div>
+                  <div style={{ background: '#F7F4F0', borderRadius: 8, padding: '10px 14px', maxHeight: 140, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {newClients.slice(0, 10).map(c => (
+                      <div key={c._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{c.name}</span>
+                        <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>{c.policies.length} polic{c.policies.length !== 1 ? 'ies' : 'y'}{c.holdings.length ? ` · ${c.holdings.length} holdings` : ''}</span>
                       </div>
                     ))}
-                    {clean.length > 8 && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>+{clean.length - 8} more</div>}
+                    {newClients.length > 10 && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>+{newClients.length - 10} more</div>}
                   </div>
                 </div>
               )}
 
-              {/* Flagged preview */}
-              {flagged.length > 0 && (
+              {/* Existing clients with updates */}
+              {withUpdates.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#1A1410', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Existing clients with new data</span>
+                    <span style={{ color: '#9B9088', fontWeight: 400 }}>{withUpdates.length} clients</span>
+                  </div>
+                  <div style={{ background: '#F7F4F0', borderRadius: 8, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {withUpdates.slice(0, 5).map(c => (
+                      <div key={c._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{c.name}</span>
+                          {c._existingName && c._existingName !== c.name && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginLeft: 6 }}>→ {c._existingName}</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {c._newPolicies.length > 0 && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#185FA5', background: '#E6F1FB', padding: '1px 7px', borderRadius: 100 }}>+{c._newPolicies.length} polic{c._newPolicies.length !== 1 ? 'ies' : 'y'}</span>}
+                          {c._newHoldings.length > 0 && <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', padding: '1px 7px', borderRadius: 100 }}>+{c._newHoldings.length} holding{c._newHoldings.length !== 1 ? 's' : ''}</span>}
+                          {matchBadge(c._matchType)}
+                        </div>
+                      </div>
+                    ))}
+                    {withUpdates.length > 5 && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>+{withUpdates.length - 5} more</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Fuzzy matches needing review */}
+              {fuzzyMatches.length > 0 && (
                 <div style={{ background: '#FEF3E2', border: '0.5px solid #FAC775', borderRadius: 8, padding: '12px 14px' }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#854F0B', marginBottom: 6 }}>⚠️ {flagged.length} need a quick check</div>
-                  {flagged.slice(0, 3).map((c, i) => (
-                    <div key={i} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#854F0B', marginBottom: 2 }}>
-                      {c.name || '(no name)'} — {c._flagReasons[0]}
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500, color: '#854F0B', marginBottom: 8 }}>
+                    ⚠️ {fuzzyMatches.length} possible duplicate{fuzzyMatches.length !== 1 ? 's' : ''} — will be skipped
+                  </div>
+                  {fuzzyMatches.map(c => (
+                    <div key={c._id} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#854F0B', marginBottom: 3 }}>
+                      "{c.name}" looks like existing "{c._existingName}" ({c._matchScore}% match) — importing as new client anyway
                     </div>
                   ))}
-                  {flagged.length > 3 && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 4 }}>+{flagged.length - 3} more</div>}
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', marginTop: 6 }}>These will be imported as new clients. You can merge them manually from the client detail page.</div>
                 </div>
               )}
             </>
           )}
 
-          {/* FLAGGED REVIEW */}
-          {step === 'flagged' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', margin: 0 }}>
-                Fix or skip these before importing. Untick any you want to skip.
-              </p>
-              {flagged.map((client) => (
-                <div key={client._id} style={{ border: '0.5px solid #FAC775', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ background: '#FEF3E2', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <input type="checkbox" checked={client._selected} onChange={e => setParsed(prev => prev.map(c => c._id === client._id ? { ...c, _selected: e.target.checked } : c))} style={{ cursor: 'pointer' }} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client.name || '(no name)'}</span>
-                    </div>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#854F0B' }}>
-                      {client._flagReasons.join(' · ')}
-                    </div>
-                  </div>
-                  {editingId === client._id ? (
-                    <div style={{ padding: '12px 14px', background: '#FFFFFF', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <div>
-                        <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', display: 'block', marginBottom: 3 }}>NAME</label>
-                        <input value={client.name} onChange={e => setParsed(prev => prev.map(c => c._id === client._id ? { ...c, name: e.target.value } : c))} style={inp} />
-                      </div>
-                      <div>
-                        <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', display: 'block', marginBottom: 3 }}>PHONE</label>
-                        <input value={client.phone || ''} onChange={e => setParsed(prev => prev.map(c => c._id === client._id ? { ...c, phone: e.target.value } : c))} style={inp} placeholder="+65..." />
-                      </div>
-                      {client.policies?.map((p, pi) => (
-                        <React.Fragment key={pi}>
-                          <div>
-                            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', display: 'block', marginBottom: 3 }}>PREMIUM (SGD/yr)</label>
-                            <input type="number" value={p.premium || ''} onChange={e => setParsed(prev => prev.map(c => c._id === client._id ? { ...c, policies: c.policies.map((pp, ppi) => ppi === pi ? { ...pp, premium: Number(e.target.value) } : pp) } : c))} style={inp} />
-                          </div>
-                          <div>
-                            <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', display: 'block', marginBottom: 3 }}>RENEWAL DATE</label>
-                            <input type="date" value={p.renewal_date || ''} onChange={e => setParsed(prev => prev.map(c => c._id === client._id ? { ...c, policies: c.policies.map((pp, ppi) => ppi === pi ? { ...pp, renewal_date: e.target.value } : pp) } : c))} style={inp} />
-                          </div>
-                        </React.Fragment>
-                      ))}
-                      <div style={{ gridColumn: '1/-1' }}>
-                        <button onClick={() => setEditingId(null)} style={{ background: '#1A1410', border: 'none', borderRadius: 6, padding: '7px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#FFF' }}>Done editing</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ padding: '8px 14px', background: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>
-                        {client.policies?.map(p => `${p.type || 'Policy'} · ${p.insurer || '?'} · $${(p.premium || 0).toLocaleString()}/yr · ${p.renewal_date || 'no date'}`).join(', ') || 'No policies'}
-                      </div>
-                      <button onClick={() => setEditingId(client._id)} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#3D3532' }}>Edit</button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* IMPORTING */}
+          {/* ── IMPORTING ── */}
           {step === 'importing' && (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{ fontSize: 36, marginBottom: 16 }}>⏳</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 16 }}>Importing…</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 16 }}>
+                {importMode === 'new_only' ? 'Adding new clients…' : 'Importing and updating…'}
+              </div>
               <div style={{ background: '#F1EFE8', borderRadius: 100, height: 6, overflow: 'hidden', maxWidth: 280, margin: '0 auto' }}>
                 <div style={{ background: '#BA7517', height: '100%', width: `${importProgress}%`, borderRadius: 100, transition: 'width 0.3s' }} />
               </div>
@@ -384,12 +449,24 @@ export default function ImportClientsModal({
             </div>
           )}
 
-          {/* DONE */}
+          {/* ── DONE ── */}
           {step === 'done' && (
-            <div style={{ textAlign: 'center', padding: '48px 0' }}>
-              <div style={{ width: 56, height: 56, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>✓</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>{importedCount} clients imported</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.7 }}>Maya is now tracking all renewals. You'll see alerts as dates approach.</div>
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 56, height: 56, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 24 }}>✓</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 500, color: '#1A1410', marginBottom: 8 }}>Done</div>
+              <div style={{ display: 'flex', gap: 24, justifyContent: 'center', margin: '16px 0' }}>
+                {importedCount > 0 && <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#185FA5' }}>{importedCount}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>new clients added</div>
+                </div>}
+                {updatedCount > 0 && <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#0F6E56' }}>{updatedCount}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088' }}>existing updated</div>
+                </div>}
+              </div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', lineHeight: 1.7 }}>
+                Maya is now tracking all renewals.<br />Alerts will appear on your dashboard as dates approach.
+              </div>
             </div>
           )}
         </div>
@@ -402,29 +479,30 @@ export default function ImportClientsModal({
 
           {step === 'summary' && (
             <>
-              <button onClick={() => { setStep('upload'); setParsed([]) }} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>← Upload different file</button>
-              {flagged.length > 0 && (
-                <button onClick={() => setStep('flagged')} style={{ background: 'transparent', border: '0.5px solid #FAC775', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
-                  Review {flagged.length} flagged
-                </button>
-              )}
-              {flagged.length > 0 && clean.length > 0 && (
-                <button onClick={() => runImport(clean)} style={{ background: 'transparent', border: '0.5px solid #0F6E56', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#0F6E56' }}>
-                  Import {clean.length} clean now
-                </button>
-              )}
-              <button onClick={() => runImport(parsed.filter(c => c._selected))} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
-                Import all {parsed.filter(c => c._selected).length} →
-              </button>
-            </>
-          )}
+              <button onClick={() => { setStep('upload'); setParsed([]) }} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>← Different file</button>
 
-          {step === 'flagged' && (
-            <>
-              <button onClick={() => setStep('summary')} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>← Back</button>
-              <button onClick={() => runImport(parsed.filter(c => c._selected))} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
-                Import {parsed.filter(c => c._selected).length} clients →
-              </button>
+              {newClients.length > 0 && exactMatches.length === 0 && (
+                <button onClick={() => runImport('new_only')} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
+                  Import {newClients.length} new clients →
+                </button>
+              )}
+
+              {exactMatches.length > 0 && newClients.length === 0 && (
+                <button onClick={() => runImport('new_and_update')} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
+                  Update {withUpdates.length} existing clients →
+                </button>
+              )}
+
+              {newClients.length > 0 && exactMatches.length > 0 && (
+                <>
+                  <button onClick={() => runImport('new_only')} style={{ background: 'transparent', border: '0.5px solid #185FA5', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#185FA5' }}>
+                    New only ({newClients.length})
+                  </button>
+                  <button onClick={() => runImport('new_and_update')} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
+                    Import + update all →
+                  </button>
+                </>
+              )}
             </>
           )}
 
