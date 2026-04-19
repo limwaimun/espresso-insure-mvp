@@ -10,7 +10,7 @@ export default async function DashboardHome() {
   const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-  // Get IFA name for greeting
+  // Get FA name for greeting
   const { data: { user } } = await supabase.auth.getUser()
   const { data: ifaProfile } = user ? await supabase.from('profiles').select('name').eq('id', user.id).single() : { data: null }
 

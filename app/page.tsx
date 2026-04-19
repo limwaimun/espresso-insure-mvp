@@ -296,7 +296,7 @@ export default function HomePage() {
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>What Espresso does</p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>Everything you need.<br /><em style={{ color: '#BA7517' }}>Nothing you don't.</em></h2>
-          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Built for the IFA who works alone but needs to perform like a full team.</p>
+          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Built for financial advisers who work alone but needs to perform like a full team.</p>
           <div className="g3">
             {[
               { title: 'Client intake', body: 'Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.', svg: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="5.5" r="3" stroke="#BA7517" strokeWidth="1.3"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg> },
@@ -350,13 +350,13 @@ export default function HomePage() {
       <section style={{ background: '#FFFFFF', padding: '96px 40px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>FAQs</p>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 56 }}>Common questions from <em style={{ color: '#BA7517' }}>IFAs like you.</em></h2>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 56 }}>Common questions from <em style={{ color: '#BA7517' }}>advisers like you.</em></h2>
           {[
             { q: "Do my clients know they're talking to an AI?", a: "Maya introduces herself as your AI assistant. She's warm, conversational, and helpful. Clients experience her as a responsive assistant who works for you. You're always in the group and can jump in anytime." },
             { q: 'Do I need to ask my clients to download anything?', a: "No. Everything runs inside WhatsApp. You add Maya to a group with your client. No app, no account, no friction." },
             { q: 'Is my client data safe?', a: "All client data is encrypted, isolated to your account, and stored in Singapore. We comply with PDPA. Your data is yours — Espresso is your personal tool, not a data aggregator." },
             { q: 'What happens if Maya says something wrong?', a: 'You see every message in real time. Type "Maya pause" and she goes silent immediately. Maya never makes product recommendations or commits to financial terms without your review.' },
-            { q: "I'm a tied agent — can I still use Espresso?", a: "Absolutely. Maya adds value through intake, renewal management, claims support, and document handling — all independent of which insurer you represent." },
+            { q: "I'm a tied agent or independent adviser — can I still use Espresso?", a: "Absolutely. Maya adds value through intake, renewal management, claims support, and document handling — all independent of which insurer you represent." },
             { q: 'Can I cancel anytime?', a: "Yes, completely. No lock-in. Cancel from your dashboard at any time. Your data remains accessible for 30 days so you can export everything." },
             { q: 'Which markets does Espresso support?', a: "Espresso is live in Singapore. Malaysia and Philippines launch in 2026. Email hello@espresso.insure for early access elsewhere." },
           ].map((f, i, arr) => (

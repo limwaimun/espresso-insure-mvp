@@ -182,10 +182,10 @@ export default function SettingsPage() {
             )
           })}
         </div>
-        <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', marginTop: 14, textAlign: 'center' }}>
-          All plans include a 14-day free trial · Cancel anytime · hello@espresso.insure
-        </p>
       </div>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#9B9088', marginTop: 14, textAlign: 'center' }}>
+        All plans include a 14-day free trial · Cancel anytime · hello@espresso.insure
+      </p>
     </div>
   </div>
   )

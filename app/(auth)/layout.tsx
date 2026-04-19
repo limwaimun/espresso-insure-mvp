@@ -1,22 +1,7 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#1C0F0A',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      position: 'relative',
-      zIndex: 1,
-      isolation: 'isolate',
-    }}>
+    <div style={{ minHeight: '100vh', background: '#F7F4F0' }}>
       {children}
     </div>
-  );
+  )
 }
