@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import ConversationalReview, { extractIssues, ImportIssue } from '@/components/ConversationalReview'
 import { createClient } from '@/lib/supabase/client'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ interface ParsedClient {
   _newHoldings: ParsedHolding[]  // holdings not yet in the book
 }
 
-type Step = 'upload' | 'parsing' | 'summary' | 'importing' | 'done'
+type Step = 'upload' | 'parsing' | 'summary' | 'review' | 'importing' | 'done'
 type ImportMode = 'new_only' | 'new_and_update' | null
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -123,6 +124,7 @@ export default function ImportClientsModal({
   const [importProgress, setImportProgress] = useState(0)
   const [importedCount, setImportedCount] = useState(0)
   const [updatedCount, setUpdatedCount] = useState(0)
+  const [issues, setIssues] = useState<ImportIssue[]>([])
 
   const isSoftLimited = plan === 'solo' || plan === 'trial'
   const slotsLeft = isSoftLimited ? clientLimit - currentCount : 9999
@@ -300,6 +302,7 @@ export default function ImportClientsModal({
               {step === 'upload' && 'Import clients'}
               {step === 'parsing' && 'Reading your file…'}
               {step === 'summary' && 'Review import'}
+              {step === 'review' && `Review ${issues.length} issue${issues.length !== 1 ? 's' : ''}`}
               {step === 'importing' && 'Importing…'}
               {step === 'done' && 'Import complete'}
             </h2>
@@ -435,6 +438,39 @@ export default function ImportClientsModal({
             </>
           )}
 
+          {/* ── REVIEW ── */}
+          {step === 'review' && (
+            <ConversationalReview
+              issues={issues}
+              onComplete={(answers) => {
+                // Apply fixes back to parsed clients
+                const updated = [...parsed]
+                answers.forEach(ans => {
+                  if (ans.action === 'fixed' && ans.value) {
+                    const issue = issues[ans.issueIndex]
+                    const clientIdx = updated.findIndex(c => c._id === issue.clientId)
+                    if (clientIdx === -1) return
+                    if (issue.field === '_duplicate') return
+                    if (issue.policyIndex !== null) {
+                      updated[clientIdx] = {
+                        ...updated[clientIdx],
+                        policies: updated[clientIdx].policies.map((p, pi) =>
+                          pi === issue.policyIndex ? { ...p, [issue.field]: issue.field === 'premium' ? Number(ans.value) : ans.value } : p
+                        )
+                      }
+                    }
+                  } else if (ans.action === 'skipped') {
+                    const issue = issues[ans.issueIndex]
+                    const clientIdx = updated.findIndex(c => c._id === issue.clientId)
+                    if (clientIdx !== -1) updated[clientIdx] = { ...updated[clientIdx], _selected: false }
+                  }
+                })
+                setParsed(updated)
+                runImport(importMode || 'new_and_update')
+              }}
+            />
+          )}
+
           {/* ── IMPORTING ── */}
           {step === 'importing' && (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
@@ -481,6 +517,11 @@ export default function ImportClientsModal({
             <>
               <button onClick={() => { setStep('upload'); setParsed([]) }} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>← Different file</button>
 
+              {extractIssues(parsed).length > 0 && (
+                <button onClick={() => { setIssues(extractIssues(parsed)); setStep('review') }} style={{ background: 'transparent', border: '0.5px solid #854F0B', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
+                  Review {extractIssues(parsed).length} issue{extractIssues(parsed).length !== 1 ? 's' : ''} first
+                </button>
+              )}
               {newClients.length > 0 && exactMatches.length === 0 && (
                 <button onClick={() => runImport('new_only')} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#FFF' }}>
                   Import {newClients.length} new clients →
