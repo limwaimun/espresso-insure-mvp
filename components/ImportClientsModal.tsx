@@ -238,10 +238,11 @@ export default function ImportClientsModal({
 
     const toProcess = mode === 'new_only'
       ? parsed.filter(c => c._matchType === 'new' && c._selected)
-      : parsed.filter(c => c._selected && c._matchType !== 'fuzzy')
+      : parsed.filter(c => c._selected && (c._matchType !== 'fuzzy' || true))
+    // Note: fuzzy matches are always treated as new clients (no existing record to update)
 
     for (const client of toProcess) {
-      const isNew = client._matchType === 'new'
+      const isNew = client._matchType === 'new' || client._matchType === 'fuzzy'
       let clientId = client._existingId
 
       if (isNew) {
@@ -469,23 +470,31 @@ export default function ImportClientsModal({
                 // Apply fixes back to parsed clients
                 const updated = [...parsed]
                 answers.forEach(ans => {
+                  const issue = issues[ans.issueIndex]
+                  const clientIdx = updated.findIndex(c => c._id === issue.clientId)
+                  if (clientIdx === -1) return
+
                   if (ans.action === 'fixed' && ans.value) {
-                    const issue = issues[ans.issueIndex]
-                    const clientIdx = updated.findIndex(c => c._id === issue.clientId)
-                    if (clientIdx === -1) return
                     if (issue.field === '_duplicate') return
                     if (issue.policyIndex !== null) {
                       updated[clientIdx] = {
                         ...updated[clientIdx],
                         policies: updated[clientIdx].policies.map((p, pi) =>
-                          pi === issue.policyIndex ? { ...p, [issue.field]: issue.field === 'premium' ? Number(ans.value) : ans.value } : p
+                          pi === issue.policyIndex
+                            ? { ...p, [issue.field]: issue.field === 'premium' ? Number(ans.value) : ans.value }
+                            : p
                         )
                       }
                     }
+                  } else if (ans.action === 'confirmed' && issue.field === '_duplicate') {
+                    // FA said "different people" — promote fuzzy to new so it gets imported
+                    updated[clientIdx] = {
+                      ...updated[clientIdx],
+                      _matchType: 'new',
+                      _existingId: null,
+                    }
                   } else if (ans.action === 'skipped') {
-                    const issue = issues[ans.issueIndex]
-                    const clientIdx = updated.findIndex(c => c._id === issue.clientId)
-                    if (clientIdx !== -1) updated[clientIdx] = { ...updated[clientIdx], _selected: false }
+                    updated[clientIdx] = { ...updated[clientIdx], _selected: false }
                   }
                 })
                 setParsed(updated)
