@@ -35,7 +35,7 @@ export default function TrialPage() {
     <>
       <style>{`html,body,#__next{background:#F7F4F0!important;margin:0;padding:0;}`}</style>
       <div style={{ minHeight: '100vh', background: '#F7F4F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48 }}>espresso<span style={{ color: '#BA7517' }}>.</span></a>
+        <a href="/" className="trial-logo" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48, display: 'block', textAlign: 'center' }}>espresso<span style={{ color: '#BA7517' }}>.</span></a>
         <div style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, background: '#FEF3E2', border: '0.5px solid #FAC775', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 22 }}>☕</div>
           <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, fontWeight: 500, color: '#1A1410', margin: '0 0 8px' }}>You're on the list</h2>
@@ -52,17 +52,23 @@ export default function TrialPage() {
         html, body, #__next { background: #F7F4F0 !important; margin: 0; padding: 0; min-height: 100%; }
         * { box-sizing: border-box; }
         input:focus { outline: none; border-color: #BA7517 !important; }
+        .trial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 480px) {
+          .trial-card { padding: 28px 22px !important; border-radius: 12px !important; }
+          .trial-logo { font-size: 26px !important; margin-bottom: 32px !important; }
+          .trial-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       <div style={{ minHeight: '100vh', background: '#F7F4F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
 
         {/* Logo */}
-        <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48 }}>
+        <a href="/" className="trial-logo" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48, display: 'block', textAlign: 'center' }}>
           espresso<span style={{ color: '#BA7517' }}>.</span>
         </a>
 
         {/* Form card */}
-        <div style={{ width: '100%', maxWidth: 420, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
+        <div className="trial-card" style={{ width: '100%', maxWidth: 420, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
           <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Start your free trial</h1>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', margin: '0 0 32px' }}>14 days free · No credit card · Full access</p>
 

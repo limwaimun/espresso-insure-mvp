@@ -25,17 +25,21 @@ export default function LoginPage() {
         html, body, #__next { background: #F7F4F0 !important; margin: 0; padding: 0; min-height: 100%; }
         * { box-sizing: border-box; }
         input:focus { outline: none; border-color: #BA7517 !important; }
+        @media (max-width: 480px) {
+          .login-card { padding: 28px 22px !important; border-radius: 12px !important; }
+          .login-logo { font-size: 26px !important; margin-bottom: 32px !important; }
+        }
       `}</style>
 
       <div style={{ minHeight: '100vh', background: '#F7F4F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
 
         {/* Logo */}
-        <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48 }}>
+        <a href="/" className="login-logo" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48, display: 'block', textAlign: 'center' }}>
           espresso<span style={{ color: '#BA7517' }}>.</span>
         </a>
 
         {/* Form card */}
-        <div style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
+        <div className="login-card" style={{ width: '100%', maxWidth: 400, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
           <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Sign in</h1>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', margin: '0 0 32px' }}>Enter your email and password to continue</p>
 

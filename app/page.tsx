@@ -21,52 +21,75 @@ export default function HomePage() {
         .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
         .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
         .g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: #2E1A0E; }
+        .iphone-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; }
         .stats-row { display: flex; justify-content: center; gap: 64px; }
         .hero-btns { display: flex; gap: 12px; justify-content: center; align-items: center; }
         .footer-inner { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 28px; }
+        .nav-links { display: flex; gap: 32px; }
+        .lp-section { padding: 96px 40px; }
+
+        /* Tablet */
+        @media (max-width: 1024px) {
+          .iphone-grid { gap: 16px; }
+        }
         @media (max-width: 900px) {
           .g3 { grid-template-columns: 1fr 1fr; }
           .g4 { grid-template-columns: 1fr 1fr; }
           .g2 { grid-template-columns: 1fr; }
+          .iphone-grid { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; }
         }
+        /* Mobile */
         @media (max-width: 640px) {
           .g3 { grid-template-columns: 1fr; }
-          .g4 { grid-template-columns: 1fr; }
-          .stats-row { flex-wrap: wrap; gap: 28px; }
-          .stats-row > div { width: 42%; }
-          .hero-btns { flex-direction: column; }
-          .hero-btns a { width: 100%; text-align: center; }
-          .nav-links { display: none; }
-          .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
-          .footer-links { flex-wrap: wrap; justify-content: center; }
+          .g4 { grid-template-columns: 1fr 1fr; }
+          .stats-row { flex-wrap: wrap; gap: 24px; justify-content: space-around; }
+          .stats-row > div { width: 40%; }
+          .hero-btns { flex-direction: column; width: 100%; }
+          .hero-btns a, .hero-btns button { width: 100%; text-align: center !important; }
+          .nav-links { display: none !important; }
+          .nav-login { display: none !important; }
+          .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
+          .footer-links { flex-wrap: wrap; justify-content: center; gap: 14px; }
           .demo-tabs { flex-direction: column; }
+          .lp-section { padding: 64px 20px !important; }
+          .lp-h1 { font-size: 44px !important; }
+          .lp-h2 { font-size: 36px !important; }
+          .lp-hero { padding: 52px 20px 48px !important; }
+          .lp-nav { padding: 0 20px !important; }
+          .g2 > div { padding: 28px 24px !important; }
+          .g4 { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 400px) {
+          .g4 { grid-template-columns: 1fr; }
+          .stats-row > div { width: 45%; }
         }
       `}</style>
 
       {/* NAV */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(247,244,240,0.95)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid #E8E2DA' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>
+        <div className="lp-nav" style={{ maxWidth: 1080, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>
           <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 24, fontWeight: 400, color: '#1A1410' }}>espresso<span style={{ color: '#BA7517' }}>.</span></a>
-          <div className="nav-links" style={{ display: 'flex', gap: 32 }}>
+          <div className="nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
             {[['How it works', '#how-it-works'], ['Features', '#features'], ['Pricing', '#pricing']].map(([l, h]) => (
               <a key={l} href={h} className="lp-nav-link" style={{ fontSize: 14, color: '#3D3532' }}>{l}</a>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <Link href="/login" style={{ fontSize: 14, color: '#3D3532', padding: '8px 14px' }}>Login</Link>
+            <Link href="/login" className="nav-login" style={{ fontSize: 14, color: '#3D3532', padding: '8px 14px' }}>Login</Link>
             <Link href="/trial" className="lp-btn-amber" style={{ fontSize: 14, padding: '9px 20px' }}>Start free trial</Link>
           </div>
         </div>
       </nav>
 
       {/* HERO */}
-      <section style={{ background: '#F7F4F0', padding: '80px 40px 72px' }}>
+      <section className="lp-hero" style={{ background: '#F7F4F0', padding: '80px 40px 72px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 100, padding: '6px 16px', marginBottom: 32 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D9E75' }} />
             <span style={{ fontSize: 13, color: '#0F6E56' }}>Now live in Singapore</span>
           </div>
-          <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 68, fontWeight: 400, color: '#1A1410', lineHeight: 1.08, marginBottom: 24, letterSpacing: '-0.01em' }}>
+          <h1 className="lp-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 68, fontWeight: 400, color: '#1A1410', lineHeight: 1.08, marginBottom: 24, letterSpacing: '-0.01em' }}>
             Your AI back-office.<br /><em style={{ color: '#BA7517' }}>Inside WhatsApp.</em>
           </h1>
           <p style={{ fontSize: 19, color: '#5F5A57', maxWidth: 540, margin: '0 auto 40px', lineHeight: 1.75 }}>Maya handles intake, renewals, and claims — 24/7, inside the WhatsApp groups you already use with clients.</p>
@@ -86,12 +109,12 @@ export default function HomePage() {
       </section>
 
       {/* MAYA IN ACTION */}
-      <section style={{ background: '#FFFFFF', padding: '96px 40px' }}>
+      <section className="lp-section" style={{ background: '#FFFFFF', padding: '96px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>Maya in action</p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>Maya handles the conversation.<br /><em style={{ color: '#BA7517' }}>You close the deal.</em></h2>
           <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>All three conversations happen inside existing WhatsApp groups — with you, your client, and Maya together.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+          <div className="iphone-grid">
             {([
               {
                 label: 'New client enquiry',
@@ -212,10 +235,10 @@ export default function HomePage() {
       </section>
 
       {/* PROBLEM */}
-      <section style={{ background: '#1A1410', padding: '96px 40px' }}>
+      <section className="lp-section" style={{ background: '#1A1410', padding: '96px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>The problem</p>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#F7F4F0', textAlign: 'center', lineHeight: 1.15, marginBottom: 64 }}>You're running a 500-client business<br /><em style={{ color: '#BA7517' }}>on WhatsApp and Excel.</em></h2>
+          <h2 className="lp-h2" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#F7F4F0', textAlign: 'center', lineHeight: 1.15, marginBottom: 64 }}>You're running a 500-client business<br /><em style={{ color: '#BA7517' }}>on WhatsApp and Excel.</em></h2>
           <div className="g2">
             {[
               { title: 'New enquiries go cold', body: "Prospects message while you're busy. By the time you respond, they've moved on to someone else.", svg: <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#BA7517" strokeWidth="1.4"/><path d="M11 6v5l3.5 3.5" stroke="#BA7517" strokeWidth="1.4" strokeLinecap="round"/></svg> },
@@ -234,7 +257,7 @@ export default function HomePage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" style={{ background: '#F7F4F0', padding: '96px 40px' }}>
+      <section id="how-it-works" className="lp-section" style={{ background: '#F7F4F0', padding: '96px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>How it works</p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>From sign-up to first client.<br /><em style={{ color: '#BA7517' }}>Under 30 minutes.</em></h2>
