@@ -38,13 +38,23 @@ INVESTMENT HOLDINGS (save as holdings):
 - Sum assured: "SA", "Sum Assured", "Coverage", "Face Amount", "Cover Amount"
 - Premium: "$3,200.00", "SGD3200", "3,200 p.a.", "3200/yr", "267/mth" — convert to annual SGD number
 - Dates: 15/3/2026, 15-Mar-26, March 15 2026, 15.03.26 — always output YYYY-MM-DD
-- Frequency: "Monthly", "Mthly", "M", "Annual", "Ann", "A", "Quarterly", "Q" — normalise to: monthly/quarterly/half-yearly/annual
+- Frequency: "Monthly", "Mthly", "M", "Annual", "Ann", "A", "Quarterly", "Q", "Semi-Annual", "Half-Yearly", "Yearly" — normalise to: monthly/quarterly/half-yearly/annual/single. Map "Annual", "ANN", "ANNUAL", "yearly", "Yearly" → annual; "Semi-Annual", "Half-Yearly", "Half Yearly", "Semi Annual" → half-yearly; "Quarterly", "Q", "Quarter" → quarterly; "Monthly", "M", "Mthly" → monthly; "Single", "One-time", "Lump Sum" → single
 - Policy types: "WL" = Whole Life, "TL" = Term Life, "CI" = Critical Illness, "PA" = Personal Accident, "GH" = Group Health, "GL" = Group Life
 - NAV: "$1.234", "1.234", "SGD 1.23" — extract number only
 - Units: "1,234.567 units", "1234.567" — extract number only
 - Multiple policies per client: group into ONE client with multiple policies
 - Blank rows, totals rows, header rows — ignore them
 - Merged cells — use last seen value
+
+## FIELD MAPPING — read from correct CSV columns:
+- policy_number: from "Policy No" / "Policy Number" / "PN" / "Cert No" column. String. Null if blank.
+- product_name: from "Product" / "Product Name" / "Plan" column. This is the branded product name (e.g. "AIA Pro Achiever 2.0", "PRUCritical Care"). Distinct from type.
+- type: from "Coverage Type" / "Type" / "Category" column. The insurance category (e.g. "Life", "Investment-Linked", "Critical Illness", "Health", "Motor", "Fire", "D&O", "Cyber", "Public Liability", "Group Health", "Professional Indemnity", "Endowment", "PA"). Normalize variants: "PI" → "Professional Indemnity", "CI" → "Critical Illness", "D&O" → "Directors & Officers", "GL" → "Group Life", "GH" → "Group Health".
+- start_date: from "Start Date" / "Inception Date" / "Commencement Date" column. Parse all common formats (DD/MM/YYYY, DD-Mon-YYYY, YYYY-MM-DD, "15 Jul 2025"). Output ISO YYYY-MM-DD. Null if blank.
+- premium_frequency: from "Freq" / "Frequency" / "Payment Mode" / "Premium Mode" column. Normalize to one of: annual, half-yearly, quarterly, monthly, single. Map as described in Frequency section above. Default to annual if blank.
+- notes: from "Remarks" / "Notes" / "Comments" / "Additional Info" column. Preserve as-is, trim whitespace.
+
+CRITICAL: type reads from "Coverage Type" column, product_name reads from "Product" column. Do not duplicate Product into type field.
 
 ## OUTPUT FORMAT — return ONLY valid JSON, no other text:
 
@@ -69,7 +79,7 @@ INVESTMENT HOLDINGS (save as holdings):
           "insurer": "insurer name or null",
           "type": "standardised type — one of: Life, Critical Illness, Health, Personal Accident, Fire, Motor, Marine, Travel, Public Liability, Professional Indemnity, Directors & Officers, Keyman, Group Life, Group Health, Endowment, Investment-Linked, Annuity, Other",
           "premium": 1234.56,
-          "premium_frequency": "monthly" | "quarterly" | "half-yearly" | "annual" | null,
+          "premium_frequency": "annual" | "half-yearly" | "quarterly" | "monthly" | "single" | null,
           "sum_assured": 500000 or null,
           "start_date": "YYYY-MM-DD or null",
           "renewal_date": "YYYY-MM-DD or null",

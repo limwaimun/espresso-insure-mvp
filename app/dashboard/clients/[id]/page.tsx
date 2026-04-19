@@ -63,7 +63,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
   let nextRenewalDate = null;
   let daysUntilRenewal = null;
   if (policies && policies.length > 0) {
-    const dates = policies.filter(p => p.renewal_date).map(p => new Date(p.renewal_date)).sort((a, b) => a.getTime() - b.getTime());
+    const dates = policies.filter(p => p.renewal_date && p.status === 'active').map(p => new Date(p.renewal_date)).sort((a, b) => a.getTime() - b.getTime());
     if (dates.length > 0) {
       nextRenewalDate = dates[0];
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -129,7 +129,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
   }
 
   const coverageAnalysis = coverageTypes.map(ct => {
-    const match = policies?.find(p => p.type && p.type.toLowerCase().includes(ct.key.toLowerCase()));
+    const match = policies?.find(p => p.type && p.type.toLowerCase().includes(ct.key.toLowerCase()) && p.status === 'active');
     return { ...ct, hasCoverage: !!match, insurer: match?.insurer || null };
   });
 
@@ -143,7 +143,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     ...(allAlerts || []).map((a: any) => ({ date: a.created_at, text: a.title || 'Alert', type: 'alert' })),
     ...(policies || []).map((p: any) => ({
       date: p.created_at,
-      text: `${p.insurer || 'Unknown'} ${p.type || 'policy'} added ($${(Number(p.premium) || 0).toLocaleString()}/yr)`,
+      text: `${p.insurer || 'Unknown'} ${p.product_name || p.type || 'policy'} added ($${(Number(p.premium) || 0).toLocaleString()}/yr)`,
       type: 'policy',
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 15);
@@ -176,6 +176,11 @@ export default async function ClientProfilePage({ params }: PageProps) {
         status: p.status,
         document_name: p.document_name ?? null,
         document_url: p.document_url ?? null,
+        policy_number: p.policy_number ?? null,
+        product_name: p.product_name ?? null,
+        start_date: p.start_date ?? null,
+        premium_frequency: p.premium_frequency ?? null,
+        notes: p.notes ?? null,
       }))}
       holdings={holdings ?? []}
       conversations={conversations}

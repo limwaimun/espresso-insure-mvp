@@ -721,15 +721,20 @@ export default function ClientDetailPage({
                 </thead>
                 <tbody>
                   {policies.map(policy => {
-                    let pillClass = 'pill-ok', statusText = 'Active'
-                    if (policy.renewal_date) {
-                      const today = new Date(); today.setHours(0, 0, 0, 0)
-                      const rd = new Date(policy.renewal_date); rd.setHours(0, 0, 0, 0)
-                      const days = Math.ceil((rd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                      if (days < 0) { pillClass = 'pill-danger'; statusText = 'Lapsed' }
-                      else if (days <= 30) { pillClass = 'pill-danger'; statusText = `Due in ${days} days` }
-                      else if (days <= 90) { pillClass = 'pill-amber'; statusText = `Renews in ${days} days` }
+                    // Render policy status badge with correct logic
+                    function renderPolicyStatus(p: Policy) {
+                      if (p.status === 'lapsed') return { pillClass: 'pill-red', statusText: 'Lapsed' }
+                      if (p.status === 'cancelled') return { pillClass: 'pill-neutral', statusText: 'Cancelled' }
+                      if (p.status === 'pending') return { pillClass: 'pill-amber', statusText: 'Pending' }
+                      // active — compute from renewal_date
+                      if (!p.renewal_date) return { pillClass: 'pill-green', statusText: 'Active' }
+                      const days = Math.ceil((new Date(p.renewal_date).getTime() - Date.now()) / 86400000)
+                      if (days < 0) return { pillClass: 'pill-amber', statusText: 'Overdue renewal' }
+                      if (days <= 30) return { pillClass: 'pill-red', statusText: `Due in ${days} days` }
+                      if (days <= 90) return { pillClass: 'pill-amber', statusText: `Renews in ${days} days` }
+                      return { pillClass: 'pill-green', statusText: `Renews in ${days} days` }
                     }
+                    const { pillClass, statusText } = renderPolicyStatus(policy)
                     const isConfirming = confirmDeleteId === policy.id
                     return (
                       <tr key={policy.id}>
