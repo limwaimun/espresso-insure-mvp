@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
 
       // Fallback: build metrics directly from Supabase
       const [{ data: clients }, { data: policies }, { data: alerts }] = await Promise.all([
-        supabase.from('clients').select('id, tier').eq('ifa_id', user.id),
+        supabase.from('clients').select('id, name, company, tier').eq('ifa_id', user.id),
         supabase.from('policies').select('id, premium, renewal_date, type, insurer, client_id, clients(name)').eq('ifa_id', user.id),
         supabase.from('alerts').select('id, priority, resolved, created_at, title, clients(name)').eq('ifa_id', user.id).eq('resolved', false),
       ])
@@ -132,8 +132,8 @@ export default function AnalyticsPage() {
         tiers: tierCounts,
         topClients: (clients || []).map((c: any) => {
           const cp = (policies || []).filter((p: any) => p.client_id === c.id)
-          return { name: c.id, totalPremium: cp.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policyCount: cp.length }
-        }).sort((a: any, b: any) => b.totalPremium - a.totalPremium).slice(0, 5),
+          return { name: c.name || c.id, company: c.company || undefined, totalPremium: cp.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policyCount: cp.length }
+        }).sort((a: any, b: any) => b.totalPremium - a.totalPremium).slice(0, 10),
         insurerBreakdown: insurerBreakdownRecord,
         coverageBreakdown: {},
       })
@@ -251,6 +251,24 @@ export default function AnalyticsPage() {
       </p>
 
       {/* Narrative */}
+      {/* Generate a simple insight if Lens didn't provide one */}
+      {!narrative && metrics && (
+        <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: '20px 24px', marginBottom: 24 }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+            ✨ Maya insight
+          </div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', lineHeight: 1.75 }}>
+            Your portfolio is tracking {metrics.portfolio.totalClients} clients across {metrics.portfolio.totalPolicies} policies
+            {metrics.portfolio.totalAnnualPremium > 0 ? ` with SGD ${metrics.portfolio.totalAnnualPremium.toLocaleString()} in annual premium` : ''}.
+            {metrics.renewals.next30Days.count > 0
+              ? ` ${metrics.renewals.next30Days.count} polic${metrics.renewals.next30Days.count === 1 ? 'y' : 'ies'} renew in the next 30 days — follow up early to protect your renewal rate.`
+              : ' No renewals due in the next 30 days — good position to be in.'}
+            {metrics.claims.highPriority > 0
+              ? ` You have ${metrics.claims.highPriority} high-priority claim${metrics.claims.highPriority > 1 ? 's' : ''} that need attention.`
+              : ''}
+          </div>
+        </div>
+      )}
       {narrative && (
         <div style={{ ...panelStyle, background: '#FFFFFF', borderColor: '#E8E2DA', marginBottom: 24 }}>
           <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
@@ -364,22 +382,22 @@ export default function AnalyticsPage() {
               </div>
             </div>
             {metrics.claims.details.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {metrics.claims.details.slice(0, 4).map((c, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#FAFAF8', borderRadius: 6, border: '0.5px solid #E8E2DA' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {metrics.claims.details.slice(0, 5).map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FAFAF8', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                     <div>
-                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410' }}>{c.client}</div>
-                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{c.title}</div>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{c.client}</div>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{c.title}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 10, color: c.priority === 'high' ? '#A32D2D' : c.priority === 'medium' ? '#854F0B' : '#6B6460', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}>{c.priority}</span>
-                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#3D3532' }}>{c.daysOpen}d</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: c.priority === 'high' ? '#A32D2D' : c.priority === 'medium' ? '#854F0B' : '#5F5A57', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{c.priority}</div>
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{c.daysOpen}d open</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', textAlign: 'center', padding: '12px 0' }}>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#0F6E56', textAlign: 'center', padding: '20px 0' }}>
                 No open claims ✓
               </div>
             )}
@@ -413,7 +431,7 @@ export default function AnalyticsPage() {
             Top clients
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {metrics.topClients.map((c, i) => (
+            {metrics.topClients.slice(0, 10).map((c, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FAFAF8', borderRadius: 8, border: '0.5px solid #E8E2DA' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', width: 16 }}>{i + 1}</span>
