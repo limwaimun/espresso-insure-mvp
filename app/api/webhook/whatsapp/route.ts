@@ -1,6 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+
+// ── Abuse protection constants ────────────────────────────────────────────
+const RATE_LIMIT_PER_HOUR = 20        // max messages per sender per hour
+const RATE_LIMIT_PER_DAY_FA = 200     // max Maya messages per FA per day
+const DAILY_SPEND_CAP_MESSAGES = 150  // soft cap before Maya pauses
+const MAX_MESSAGE_LENGTH = 2000       // ignore suspiciously long messages
+
+// ── Signature verification ─────────────────────────────────────────────────
+function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
+  if (!signature || !process.env.WHATSAPP_APP_SECRET) return false
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', process.env.WHATSAPP_APP_SECRET)
+    .update(rawBody)
+    .digest('hex')
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+  } catch { return false }
+}
+
+// ── Deduplication ──────────────────────────────────────────────────────────
+async function isDuplicate(messageId: string): Promise<boolean> {
+  // Try to insert — if it already exists, it's a duplicate
+  const { error } = await supabase
+    .from('webhook_processed_messages')
+    .insert({ message_id: messageId })
+  return !!error // error means already exists
+}
+
+// ── Rate limiting ──────────────────────────────────────────────────────────
+async function checkRateLimit(phone: string, ifaId: string | null): Promise<{
+  allowed: boolean
+  reason: string | null
+}> {
+  const hourWindow = new Date()
+  hourWindow.setMinutes(0, 0, 0)
+
+  // Per-sender hourly limit
+  const { data: existing } = await supabase
+    .from('webhook_rate_limits')
+    .select('id, message_count')
+    .eq('phone', phone)
+    .gte('window_start', hourWindow.toISOString())
+    .single()
+
+  if (existing) {
+    if (existing.message_count >= RATE_LIMIT_PER_HOUR) {
+      return { allowed: false, reason: 'sender_hourly_limit' }
+    }
+    await supabase.from('webhook_rate_limits')
+      .update({ message_count: existing.message_count + 1, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+  } else {
+    await supabase.from('webhook_rate_limits')
+      .insert({ phone, ifa_id: ifaId, message_count: 1, window_start: hourWindow.toISOString() })
+  }
+
+  // Per-FA daily cap
+  if (ifaId) {
+    const today = new Date().toISOString().slice(0, 10)
+    const { data: spend } = await supabase
+      .from('fa_daily_spend')
+      .select('id, message_count')
+      .eq('ifa_id', ifaId)
+      .eq('date', today)
+      .single()
+
+    if (spend) {
+      if (spend.message_count >= DAILY_SPEND_CAP_MESSAGES) {
+        return { allowed: false, reason: 'fa_daily_cap' }
+      }
+      await supabase.from('fa_daily_spend')
+        .update({ message_count: spend.message_count + 1 })
+        .eq('id', spend.id)
+    } else {
+      await supabase.from('fa_daily_spend')
+        .insert({ ifa_id: ifaId, date: today, message_count: 1 })
+    }
+  }
+
+  return { allowed: true, reason: null }
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -113,6 +195,12 @@ function detectInjectionAttempt(message: string): boolean {
 
 // ── Webhook verification (Meta) ────────────────────────────────────────────
 
+// ── Cleanup old dedup records (called lazily) ────────────────────────────
+async function cleanupOldDedupRecords() {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  await supabase.from('webhook_processed_messages').delete().lt('processed_at', cutoff)
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
@@ -129,14 +217,25 @@ export async function GET(request: NextRequest) {
 // ── Main webhook handler ───────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // ── DEFENCE 1: Meta signature verification ────────────────────────────────
+  const rawBody = await request.text()
+  const signature = request.headers.get('x-hub-signature-256')
+
+  // In production, reject unverified requests
+  // In dev/staging, log but allow through (WHATSAPP_APP_SECRET not set)
+  if (process.env.WHATSAPP_APP_SECRET && !verifyMetaSignature(rawBody, signature)) {
+    console.warn('[webhook] Invalid signature — possible spoofed request')
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   let body: any
   try {
-    body = await request.json()
+    body = JSON.parse(rawBody)
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Meta sends test pings with object entries, ignore them
+  // Meta sends test pings with no messages, ignore them
   if (!body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
     return NextResponse.json({ status: 'ok' })
   }
@@ -144,17 +243,45 @@ export async function POST(request: NextRequest) {
   const message = body.entry[0].changes[0].value.messages[0]
   const senderNumber = message.from
   const messageText = message.text?.body || ''
-  const messageType = message.type // text, image, document, audio, etc.
+  const messageType = message.type
 
-  // ── STEP 1: Verify sender ────────────────────────────────────────────────
+  // ── DEFENCE 2: Message deduplication ─────────────────────────────────────
+  if (message.id && await isDuplicate(message.id)) {
+    console.log(`[webhook] Duplicate message ignored: ${message.id}`)
+    return NextResponse.json({ status: 'duplicate' })
+  }
+
+  // ── DEFENCE 3: Message length guard ──────────────────────────────────────
+  if (messageText.length > MAX_MESSAGE_LENGTH) {
+    console.warn(`[webhook] Oversized message from ${senderNumber} (${messageText.length} chars)`)
+    return NextResponse.json({ status: 'ignored_oversized' })
+  }
+
+  // ── STEP 1: Verify sender ─────────────────────────────────────────────────
   const sender = await verifySender(senderNumber)
 
   // Unknown sender — send polite rejection, do not engage
   if (sender.type === 'unknown') {
-    // TODO: Send via Meta API when live
     console.log(`[webhook] Rejected unknown sender ${senderNumber}`)
-    // Reply: "Hi! This is a private assistant. If you need help, please contact your financial advisor."
     return NextResponse.json({ status: 'rejected_unknown_sender' })
+  }
+
+  // ── DEFENCE 4: Rate limiting ──────────────────────────────────────────────
+  const rateCheck = await checkRateLimit(senderNumber, sender.ifaId)
+  if (!rateCheck.allowed) {
+    console.warn(`[webhook] Rate limited: ${senderNumber} reason=${rateCheck.reason}`)
+    if (rateCheck.reason === 'fa_daily_cap') {
+      // Log alert for FA — Maya is paused for the day
+      await supabase.from('alerts').insert({
+        ifa_id: sender.ifaId,
+        type: 'system',
+        title: 'Maya daily message limit reached',
+        body: 'Maya has reached today\'s message limit and is paused until midnight. Upgrade your plan for a higher limit.',
+        priority: 'medium',
+        resolved: false,
+      }).select()
+    }
+    return NextResponse.json({ status: 'rate_limited', reason: rateCheck.reason })
   }
 
   // ── STEP 2: Check for injection attempts ─────────────────────────────────
