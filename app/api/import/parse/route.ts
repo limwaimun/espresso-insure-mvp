@@ -38,7 +38,6 @@ INVESTMENT HOLDINGS (save as holdings):
 - Sum assured: "SA", "Sum Assured", "Coverage", "Face Amount", "Cover Amount"
 - Premium: "$3,200.00", "SGD3200", "3,200 p.a.", "3200/yr", "267/mth" — convert to annual SGD number
 - Dates: 15/3/2026, 15-Mar-26, March 15 2026, 15.03.26 — always output YYYY-MM-DD
-- Frequency: "Monthly", "Mthly", "M", "Annual", "Ann", "A", "Quarterly", "Q", "Semi-Annual", "Half-Yearly", "Yearly" — normalise to: monthly/quarterly/half-yearly/annual/single. Map "Annual", "ANN", "ANNUAL", "yearly", "Yearly" → annual; "Semi-Annual", "Half-Yearly", "Half Yearly", "Semi Annual" → half-yearly; "Quarterly", "Q", "Quarter" → quarterly; "Monthly", "M", "Mthly" → monthly; "Single", "One-time", "Lump Sum" → single
 - Policy types: "WL" = Whole Life, "TL" = Term Life, "CI" = Critical Illness, "PA" = Personal Accident, "GH" = Group Health, "GL" = Group Life
 - NAV: "$1.234", "1.234", "SGD 1.23" — extract number only
 - Units: "1,234.567 units", "1234.567" — extract number only
@@ -51,10 +50,13 @@ INVESTMENT HOLDINGS (save as holdings):
 - product_name: from "Product" / "Product Name" / "Plan" column. This is the branded product name (e.g. "AIA Pro Achiever 2.0", "PRUCritical Care"). Distinct from type.
 - type: from "Coverage Type" / "Type" / "Category" column. The insurance category (e.g. "Life", "Investment-Linked", "Critical Illness", "Health", "Motor", "Fire", "D&O", "Cyber", "Public Liability", "Group Health", "Professional Indemnity", "Endowment", "PA"). Normalize variants: "PI" → "Professional Indemnity", "CI" → "Critical Illness", "D&O" → "Directors & Officers", "GL" → "Group Life", "GH" → "Group Health".
 - start_date: from "Start Date" / "Inception Date" / "Commencement Date" column. Parse all common formats (DD/MM/YYYY, DD-Mon-YYYY, YYYY-MM-DD, "15 Jul 2025"). Output ISO YYYY-MM-DD. Null if blank.
-- premium_frequency: from "Freq" / "Frequency" / "Payment Mode" / "Premium Mode" column. Normalize to one of: annual, half-yearly, quarterly, monthly, single. Map as described in Frequency section above. Default to annual if blank.
+- premium_frequency: COPY THE RAW VALUE verbatim from the "Freq" / "Frequency" / "Payment Mode" / "Premium Mode" column. Do NOT normalize or change the value. Examples to pass through as-is: "Monthly", "M", "Mthly", "Annual", "ANN", "Yearly", "Quarterly", "Q", "Semi-Annual", "Half-Yearly", "Single", "Lump Sum". Null if column blank or missing.
+- status: COPY THE RAW VALUE verbatim from the "Status" / "Policy Status" column. Do NOT normalize or change the value. Examples to pass through as-is: "Active", "ACTIVE", "In Force", "In-Force", "Inforce", "Lapsed", "Lapsed - paying from grace period", "Pending", "Cancelled", "Surrendered", "In Progress". Null if column blank or missing.
 - notes: from "Remarks" / "Notes" / "Comments" / "Additional Info" column. Preserve as-is, trim whitespace.
 
 CRITICAL: type reads from "Coverage Type" column, product_name reads from "Product" column. Do not duplicate Product into type field.
+
+CRITICAL: For status and premium_frequency, your job is to READ the column and COPY the value exactly as written. Do not translate, map, or normalize — that is handled downstream. If the CSV says "Lapsed - paying from grace period", output that exact string. If the CSV says "Mthly", output "Mthly".
 
 ## OUTPUT FORMAT — return ONLY valid JSON, no other text:
 
@@ -79,12 +81,12 @@ CRITICAL: type reads from "Coverage Type" column, product_name reads from "Produ
           "insurer": "insurer name or null",
           "type": "standardised type — one of: Life, Critical Illness, Health, Personal Accident, Fire, Motor, Marine, Travel, Public Liability, Professional Indemnity, Directors & Officers, Keyman, Group Life, Group Health, Endowment, Investment-Linked, Annuity, Other",
           "premium": 1234.56,
-          "premium_frequency": "annual" | "half-yearly" | "quarterly" | "monthly" | "single" | null,
+          "premium_frequency": "VERBATIM value from CSV — copy exactly what you see. e.g. 'Monthly', 'M', 'Annual', 'ANN', 'Yearly', 'Quarterly', 'Semi-Annual'. Null if column blank.",
           "sum_assured": 500000 or null,
           "start_date": "YYYY-MM-DD or null",
           "renewal_date": "YYYY-MM-DD or null",
           "notes": "any notes, comments or remarks about this policy — or null",
-          "status": "active" | "lapsed" | "pending" | "cancelled" — parse from status column (case-insensitive): Active / ACTIVE / In Force / In-Force / Inforce → active; Lapsed / contains "lapsed" or "grace" → lapsed; Pending / In Progress → pending; Cancelled / Surrendered → cancelled; blank or unknown → active
+          "status": "VERBATIM value from CSV — copy exactly what you see. e.g. 'Active', 'In Force', 'Lapsed', 'Lapsed - paying from grace period', 'Cancelled', 'Pending', 'Surrendered'. Null if column blank."
         }
       ],
       "holdings": [
@@ -120,6 +122,51 @@ CRITICAL: type reads from "Coverage Type" column, product_name reads from "Produ
 - Empty file or no data: return {"clients":[],"warnings":["No client data found"],"summary":"File contained no recognisable records"}
 - Holdings with no units/NAV: still include if you can identify a fund name and provider
 - Return ONLY the JSON object. No markdown, no explanation, no preamble.`
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deterministic post-normalizers
+//
+// The LLM's job is to COPY status and premium_frequency values verbatim from
+// the CSV. These functions map the raw strings to the constrained enums the
+// DB expects. Keeping normalization here (not in the prompt) means:
+//   - Reliable: no LLM variability on enum mapping
+//   - Testable: plain string-in/enum-out
+//   - Extensible: new status variants = one-line code change
+// ─────────────────────────────────────────────────────────────────────────────
+
+type PolicyStatus = 'active' | 'lapsed' | 'pending' | 'cancelled'
+type PremiumFrequency = 'annual' | 'half-yearly' | 'quarterly' | 'monthly' | 'single'
+
+function normalizeStatus(raw: unknown): PolicyStatus {
+  if (typeof raw !== 'string') return 'active'
+  const s = raw.toLowerCase().trim()
+  if (!s) return 'active'
+
+  // Order matters — most specific / strongest signals first.
+  // "Lapsed - paying from grace period" should hit 'lapsed' not any other bucket.
+  if (s.includes('lapsed') || s.includes('grace') || s.includes('expired')) return 'lapsed'
+  if (s.includes('cancel') || s.includes('surrender') || s.includes('terminated')) return 'cancelled'
+  if (s.includes('pending') || s.includes('in progress') || s.includes('processing') || s.includes('underwriting')) return 'pending'
+  if (s.includes('active') || s.includes('force') || s.includes('inforce') || s.includes('current') || s === 'a') return 'active'
+
+  // Unknown non-empty string — default to active. Safer than hiding a real policy.
+  return 'active'
+}
+
+function normalizeFrequency(raw: unknown): PremiumFrequency | null {
+  if (typeof raw !== 'string') return null
+  const s = raw.toLowerCase().trim()
+  if (!s) return null
+
+  if (s.includes('month') || s === 'm' || s === 'mth' || s === 'mthly') return 'monthly'
+  if (s.includes('quarter') || s === 'q' || s === 'qtr') return 'quarterly'
+  if (s.includes('half') || s.includes('semi') || s === 'h' || s === 'sa') return 'half-yearly'
+  if (s.includes('single') || s.includes('one-time') || s.includes('one time') || s.includes('lump')) return 'single'
+  if (s.includes('annual') || s.includes('year') || s === 'a' || s === 'ann' || s === 'y' || s === 'p.a.' || s === 'pa') return 'annual'
+
+  // Unknown non-empty string — default to annual (most common in SG market).
+  return 'annual'
+}
 
 export async function POST(req: Request) {
   try {
@@ -163,11 +210,24 @@ export async function POST(req: Request) {
     const raw = message.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
     const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
-    let parsed
+    let parsed: any
     try {
       parsed = JSON.parse(cleaned)
     } catch {
       return NextResponse.json({ error: 'Failed to parse response. Please try again.' }, { status: 500 })
+    }
+
+    // ─── Deterministic post-normalization ──────────────────────────────────
+    // Overwrite LLM-emitted raw strings with enum values the DB can accept.
+    if (parsed?.clients && Array.isArray(parsed.clients)) {
+      for (const client of parsed.clients) {
+        if (client?.policies && Array.isArray(client.policies)) {
+          for (const policy of client.policies) {
+            policy.status = normalizeStatus(policy.status)
+            policy.premium_frequency = normalizeFrequency(policy.premium_frequency)
+          }
+        }
+      }
     }
 
     return NextResponse.json(parsed)
