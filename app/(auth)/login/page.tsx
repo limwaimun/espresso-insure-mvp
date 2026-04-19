@@ -12,11 +12,22 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      await login(formData)
+      const result = await login(formData)
+      // login() returns { error } on failure, redirects on success
+      if (result?.error) {
+        setError('Incorrect email or password. Please try again.')
+        setLoading(false)
+      }
+      // On success, login() calls redirect() internally — page navigates away
     } catch (e: any) {
-      // Re-throw Next.js redirect — it's not an error
-      if (e?.message === 'NEXT_REDIRECT' || e?.digest?.startsWith('NEXT_REDIRECT')) throw e
-      setError(e?.message || 'Incorrect email or password.')
+      // Re-throw Next.js redirect (it's thrown internally by redirect())
+      if (
+        e?.digest?.startsWith('NEXT_REDIRECT') ||
+        String(e).includes('NEXT_REDIRECT')
+      ) {
+        throw e
+      }
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }
@@ -45,7 +56,7 @@ export default function LoginPage() {
           <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Sign in</h1>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', margin: '0 0 32px' }}>Enter your email and password to continue</p>
 
-          <form action={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <form onSubmit={async (e) => { e.preventDefault(); await handleLogin(new FormData(e.currentTarget)) }} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
               <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500, color: '#3D3532', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 7 }}>Email</label>
               <input name="email" type="email" placeholder="you@email.com" required style={{ width: '100%', height: 46, padding: '0 14px', border: '0.5px solid #E8E2DA', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', background: '#FFFFFF', transition: 'border-color 0.15s' }} />
