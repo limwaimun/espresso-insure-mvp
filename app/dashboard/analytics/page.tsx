@@ -47,17 +47,73 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
       setIfaId(user.id)
 
-      const res = await fetch('/api/lens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ifaId: user.id, reportType: 'portfolio' }),
+      // Try Lens agent first
+      try {
+        const res = await fetch('/api/lens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ifaId: user.id, reportType: 'portfolio' }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.metrics) {
+            setMetrics(data.metrics)
+            if (data.narrative) setNarrative(data.narrative)
+            setLoading(false)
+            return
+          }
+        }
+      } catch (_) {}
+
+      // Fallback: build metrics directly from Supabase
+      const [{ data: clients }, { data: policies }, { data: alerts }] = await Promise.all([
+        supabase.from('clients').select('id, tier').eq('ifa_id', user.id),
+        supabase.from('policies').select('id, premium, renewal_date, type, insurer, client_id, clients(name)').eq('ifa_id', user.id),
+        supabase.from('alerts').select('id, priority, resolved, created_at, title, clients(name)').eq('ifa_id', user.id).eq('resolved', false),
+      ])
+
+      const now = new Date()
+      const in30 = new Date(now.getTime() + 30 * 86400000)
+      const in90 = new Date(now.getTime() + 90 * 86400000)
+      const totalPremium = (policies || []).reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0)
+      const next30 = (policies || []).filter((p: any) => p.renewal_date && new Date(p.renewal_date) >= now && new Date(p.renewal_date) <= in30)
+      const next90 = (policies || []).filter((p: any) => p.renewal_date && new Date(p.renewal_date) >= now && new Date(p.renewal_date) <= in90)
+      const tierCounts: Record<string, number> = {}
+      ;(clients || []).forEach((c: any) => { tierCounts[c.tier] = (tierCounts[c.tier] || 0) + 1 })
+      const insurerMap: Record<string, { count: number; premium: number }> = {}
+      ;(policies || []).forEach((p: any) => {
+        if (!p.insurer) return
+        if (!insurerMap[p.insurer]) insurerMap[p.insurer] = { count: 0, premium: 0 }
+        insurerMap[p.insurer].count++
+        insurerMap[p.insurer].premium += Number(p.premium) || 0
       })
-      const data = await res.json()
-      if (data.metrics) setMetrics(data.metrics)
-      if (data.narrative) setNarrative(data.narrative)
+
+      setMetrics({
+        portfolio: {
+          totalClients: (clients || []).length,
+          totalPolicies: (policies || []).length,
+          totalAnnualPremium: totalPremium,
+          avgPremiumPerClient: (clients || []).length ? Math.round(totalPremium / (clients || []).length) : 0,
+        },
+        renewals: {
+          next30Days: { count: next30.length, premium: next30.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policies: next30.slice(0, 5).map((p: any) => ({ clientName: (p.clients as any)?.name || '-', type: p.type, insurer: p.insurer, premium: Number(p.premium), renewalDate: p.renewal_date })) },
+          next90Days: { count: next90.length, premium: next90.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policies: [] },
+        },
+        claims: {
+          open: (alerts || []).length,
+          high: (alerts || []).filter((a: any) => a.priority === 'high').length,
+          recent: (alerts || []).slice(0, 3).map((a: any) => ({ clientName: (a.clients as any)?.name || '-', description: a.title, priority: a.priority, daysOpen: Math.floor((now.getTime() - new Date(a.created_at).getTime()) / 86400000) })),
+        },
+        clientTiers: tierCounts,
+        topClients: (clients || []).map((c: any) => {
+          const cp = (policies || []).filter((p: any) => p.client_id === c.id)
+          return { clientName: c.id, totalPremium: cp.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policyCount: cp.length, tier: c.tier }
+        }).sort((a: any, b: any) => b.totalPremium - a.totalPremium).slice(0, 5),
+        insurerBreakdown: Object.entries(insurerMap).map(([name, d]) => ({ insurer: name, ...d })).sort((a, b) => b.premium - a.premium),
+      } as LensMetrics)
       setLoading(false)
     }
     load()
