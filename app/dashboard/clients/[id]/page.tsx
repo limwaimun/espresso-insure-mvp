@@ -13,21 +13,21 @@ export default async function ClientProfilePage({ params }: PageProps) {
   const [
     { data: client },
     { data: policies },
+    { data: holdings },
     { data: conversationsData },
     { data: claims },
     { data: allAlerts },
     { data: clientConvos },
     { data: { user } },
-    { data: holdings },
   ] = await Promise.all([
     supabase.from('clients').select('*').eq('id', id).single(),
     supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true }),
+    supabase.from('holdings').select('*').eq('client_id', id).order('created_at', { ascending: false }),
     supabase.from('conversations').select('*, messages(id, role, content, created_at)').eq('client_id', id).order('last_message_at', { ascending: false }).limit(1),
     supabase.from('alerts').select('*').eq('client_id', id).eq('type', 'claim').order('created_at', { ascending: false }),
     supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
     supabase.from('conversations').select('id').eq('client_id', id),
     supabase.auth.getUser(),
-    supabase.from('holdings').select('*').eq('client_id', id).order('current_value', { ascending: false }),
   ])
 
   const conversations = conversationsData?.[0] ?? null
@@ -171,11 +171,13 @@ export default async function ClientProfilePage({ params }: PageProps) {
         insurer: p.insurer,
         type: p.type,
         premium: p.premium,
+        sum_assured: p.sum_assured,
         renewal_date: p.renewal_date,
         status: p.status,
         document_name: p.document_name ?? null,
         document_url: p.document_url ?? null,
       }))}
+      holdings={holdings ?? []}
       conversations={conversations}
       claims={claims ?? []}
       metrics={metrics}
@@ -186,7 +188,6 @@ export default async function ClientProfilePage({ params }: PageProps) {
       calculatedTier={calculatedTier}
       ifaId={user?.id ?? ''}
       ifaName={ifaName}
-      holdings={holdings ?? []}
     />
   );
 }

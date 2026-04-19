@@ -15,6 +15,7 @@ interface Client {
   whatsapp: string | null
   created_at: string
   conversations?: { id: string }[]
+  policies?: { premium: number | null; status: string }[]
 }
 
 const TIER_STYLES: Record<string, { bg: string; color: string; border: string }> = {
@@ -44,7 +45,7 @@ export default function ClientsPage() {
     if (!user) return
     setIfaId(user.id)
     const [{ data: clientData }, { data: profile }] = await Promise.all([
-      supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id)').eq('ifa_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id), policies(premium, status)').eq('ifa_id', user.id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('plan').eq('id', user.id).single(),
     ])
     setClients((clientData || []) as any)
@@ -213,7 +214,14 @@ export default function ClientsPage() {
           <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>No clients found</div>
         ) : (
           filtered.map((client, i) => {
-            const ts = TIER_STYLES[client.tier] || TIER_STYLES.silver
+            // Compute tier live from policies (client.tier is stale snapshot)
+            const totalPremium = (client.policies ?? [])
+              .filter((p: any) => p.status === 'active')
+              .reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0)
+            const tier = totalPremium >= 10000 ? 'platinum'
+              : totalPremium >= 5000 ? 'gold'
+              : totalPremium >= 1000 ? 'silver' : 'bronze'
+            const ts = TIER_STYLES[tier] || TIER_STYLES.silver
             const isConnected = !!client.whatsapp
             const convs = (client.conversations as any) || []
             const hasConversation = convs.length > 0
@@ -232,7 +240,7 @@ export default function ClientsPage() {
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', textTransform: 'capitalize' }}>{client.type}</div>
                   <div>
                     <span style={{ background: ts.bg, color: ts.color, border: `0.5px solid ${ts.border}`, fontSize: 11, fontWeight: 500, padding: '2px 9px', borderRadius: 100, textTransform: 'capitalize' }}>
-                      {client.tier}
+                      {tier}
                     </span>
                   </div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.company || '—'}</div>

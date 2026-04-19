@@ -74,7 +74,7 @@ INVESTMENT HOLDINGS (save as holdings):
           "start_date": "YYYY-MM-DD or null",
           "renewal_date": "YYYY-MM-DD or null",
           "notes": "any notes, comments or remarks about this policy — or null",
-          "status": "active"
+          "status": "active" | "lapsed" | "pending" | "cancelled" — parse from status column (case-insensitive): Active / ACTIVE / In Force / In-Force / Inforce → active; Lapsed / contains "lapsed" or "grace" → lapsed; Pending / In Progress → pending; Cancelled / Surrendered → cancelled; blank or unknown → active
         }
       ],
       "holdings": [
