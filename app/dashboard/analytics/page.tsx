@@ -91,29 +91,52 @@ export default function AnalyticsPage() {
         insurerMap[p.insurer].premium += Number(p.premium) || 0
       })
 
+      const insurerBreakdownRecord: Record<string, { count: number; premium: number }> = {}
+      Object.entries(insurerMap).forEach(([k, v]) => { insurerBreakdownRecord[k] = v })
+
       setMetrics({
         portfolio: {
           totalClients: (clients || []).length,
           totalPolicies: (policies || []).length,
           totalAnnualPremium: totalPremium,
           avgPremiumPerClient: (clients || []).length ? Math.round(totalPremium / (clients || []).length) : 0,
+          avgPoliciesPerClient: (clients || []).length ? Math.round((policies || []).length / (clients || []).length * 10) / 10 : 0,
         },
         renewals: {
-          next30Days: { count: next30.length, premium: next30.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policies: next30.slice(0, 5).map((p: any) => ({ clientName: (p.clients as any)?.name || '-', type: p.type, insurer: p.insurer, premium: Number(p.premium), renewalDate: p.renewal_date })) },
-          next90Days: { count: next90.length, premium: next90.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policies: [] },
+          next30Days: {
+            count: next30.length,
+            totalPremium: next30.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0),
+            policies: next30.slice(0, 5).map((p: any) => ({
+              client: (p.clients as any)?.name || '-',
+              type: p.type || '-',
+              insurer: p.insurer || '-',
+              premium: Number(p.premium) || 0,
+              renewalDate: p.renewal_date || '',
+            })),
+          },
+          next90Days: {
+            count: next90.length,
+            totalPremium: next90.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0),
+          },
         },
         claims: {
           open: (alerts || []).length,
-          high: (alerts || []).filter((a: any) => a.priority === 'high').length,
-          recent: (alerts || []).slice(0, 3).map((a: any) => ({ clientName: (a.clients as any)?.name || '-', description: a.title, priority: a.priority, daysOpen: Math.floor((now.getTime() - new Date(a.created_at).getTime()) / 86400000) })),
+          highPriority: (alerts || []).filter((a: any) => a.priority === 'high').length,
+          details: (alerts || []).slice(0, 3).map((a: any) => ({
+            client: (a.clients as any)?.name || '-',
+            title: a.title || '-',
+            priority: a.priority || 'info',
+            daysOpen: Math.floor((now.getTime() - new Date(a.created_at).getTime()) / 86400000),
+          })),
         },
-        clientTiers: tierCounts,
+        tiers: tierCounts,
         topClients: (clients || []).map((c: any) => {
           const cp = (policies || []).filter((p: any) => p.client_id === c.id)
-          return { clientName: c.id, totalPremium: cp.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policyCount: cp.length, tier: c.tier }
+          return { name: c.id, totalPremium: cp.reduce((s: number, p: any) => s + (Number(p.premium) || 0), 0), policyCount: cp.length }
         }).sort((a: any, b: any) => b.totalPremium - a.totalPremium).slice(0, 5),
-        insurerBreakdown: Object.entries(insurerMap).map(([name, d]) => ({ insurer: name, ...d })).sort((a, b) => b.premium - a.premium),
-      } as LensMetrics)
+        insurerBreakdown: insurerBreakdownRecord,
+        coverageBreakdown: {},
+      })
       setLoading(false)
     }
     load()
