@@ -7,8 +7,8 @@ export default async function DashboardHome() {
   const supabase = await createClient()
 
   const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-  const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   // Get FA name for greeting
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,7 +22,7 @@ export default async function DashboardHome() {
     { data: overdueHoldings },
   ] = await Promise.all([
     supabase.from('clients').select('*', { count: 'exact', head: true }),
-    supabase.from('policies').select('id, type, insurer, premium, renewal_date, status, created_at, client_id, clients!inner(id, name, company)'),
+    supabase.from('policies').select('id, type, product_name, insurer, premium, renewal_date, start_date, status, created_at, client_id, clients!inner(id, name, company)'),
     supabase.from('alerts').select('id, title, type, priority, resolved, created_at, client_id, clients(id, name)').eq('resolved', false).order('created_at', { ascending: false }),
     supabase.from('clients').select('id, name, birthday'),
     supabase.from('holdings')
@@ -34,21 +34,35 @@ export default async function DashboardHome() {
   const allPolicies = policies || []
   const allAlerts = alerts || []
   const allClients = clients || []
+  const activePolicies = allPolicies.filter(p => p.status === 'active')
 
-  const totalPremium = allPolicies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
-  const renewingIn30 = allPolicies.filter(p => {
+  // Helper: days until next anniversary of a given month/day, handling year wrap.
+  // Returns 0 if today is the anniversary.
+  const daysUntilNext = (month: number, day: number): number => {
+    const thisYear = new Date(now.getFullYear(), month, day)
+    const target = thisYear >= today ? thisYear : new Date(now.getFullYear() + 1, month, day)
+    return Math.round((target.getTime() - today.getTime()) / 86400000)
+  }
+
+  // KPI metrics — active policies only
+  const totalPremium = activePolicies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
+  const renewingIn30 = activePolicies.filter(p => {
     if (!p.renewal_date) return false
     const d = new Date(p.renewal_date)
     return d >= now && d <= thirtyDays
   })
   const openClaims = allAlerts.filter(a => a.priority === 'high' || a.type === 'claim')
 
-  // Urgent column: lapsed + due ≤7 days + high priority claims
-  const lapsed = allPolicies.filter(p => {
+  // ── URGENT ─────────────────────────────────────────────────────────────────
+  // Lapsed = DB status is lapsed (contract is dead)
+  const lapsed = allPolicies.filter(p => p.status === 'lapsed')
+  // Overdue = status is active but renewal_date has passed (needs chasing)
+  const overdue = activePolicies.filter(p => {
     if (!p.renewal_date) return false
     return new Date(p.renewal_date) < now
   })
-  const dueSoon = allPolicies.filter(p => {
+  // Due soon = active, renewal in next 7 days
+  const dueSoon = activePolicies.filter(p => {
     if (!p.renewal_date) return false
     const d = new Date(p.renewal_date)
     const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
@@ -56,33 +70,42 @@ export default async function DashboardHome() {
   })
   const highClaims = allAlerts.filter(a => a.priority === 'high' && !a.resolved)
 
-  // Relationship column: birthdays + policy anniversaries + quiet conversations
-  const birthdaysThisWeek = allClients.filter(c => {
-    if (!c.birthday) return false
-    const bday = new Date(c.birthday)
-    const thisYear = new Date(now.getFullYear(), bday.getMonth(), bday.getDate())
-    const diff = Math.ceil((thisYear.getTime() - now.getTime()) / 86400000)
-    return diff >= 0 && diff <= 7
-  })
-  const policyAnniversaries = allPolicies.filter(p => {
-    if (!p.created_at) return false
-    const created = new Date(p.created_at)
-    const anniv = new Date(now.getFullYear(), created.getMonth(), created.getDate())
-    const diff = Math.ceil((anniv.getTime() - now.getTime()) / 86400000)
-    return diff >= 0 && diff <= 3
-  })
+  // ── RELATIONSHIPS ──────────────────────────────────────────────────────────
+  const birthdaysThisWeek = allClients
+    .filter(c => c.birthday)
+    .map(c => {
+      const bday = new Date(c.birthday)
+      return { client: c, daysUntil: daysUntilNext(bday.getMonth(), bday.getDate()) }
+    })
+    .filter(b => b.daysUntil <= 7)
+    .sort((a, b) => a.daysUntil - b.daysUntil)
 
-  // Pipeline column: renewals 8–30 days + coverage gaps
-  const pipeline = allPolicies.filter(p => {
-    if (!p.renewal_date) return false
-    const d = new Date(p.renewal_date)
-    const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
-    return days > 7 && days <= 30
-  }).sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())
+  const policyAnniversaries = activePolicies
+    .filter(p => p.start_date)
+    .map(p => {
+      const start = new Date(p.start_date)
+      const days = daysUntilNext(start.getMonth(), start.getDate())
+      // Years of ownership: if this year's anniversary has passed, they're in the next year
+      const thisYearAnniv = new Date(now.getFullYear(), start.getMonth(), start.getDate())
+      const baseYears = now.getFullYear() - start.getFullYear()
+      const years = thisYearAnniv < today
+        ? baseYears + 1   // anniversary already passed this year — upcoming anniv is next year
+        : baseYears        // upcoming this year (or today) — count to this year
+      return { policy: p, daysUntil: days, years }
+    })
+    .filter(a => a.daysUntil <= 7 && a.years > 0)
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+
+  // ── PIPELINE ───────────────────────────────────────────────────────────────
+  const pipeline = activePolicies
+    .filter(p => {
+      if (!p.renewal_date) return false
+      const d = new Date(p.renewal_date)
+      const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
+      return days > 7 && days <= 30
+    })
+    .sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())
   const gaps = allAlerts.filter(a => a.type === 'gap' && !a.resolved)
-
-  const hour = now.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const getDays = (date: string) => Math.ceil((new Date(date).getTime() - now.getTime()) / 86400000)
 
@@ -141,7 +164,7 @@ export default async function DashboardHome() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
         {[
           { label: 'Clients', value: String(clientCount || 0), sub: 'total book', href: '/dashboard/clients', warn: false },
-          { label: 'Annual premium', value: `$${totalPremium.toLocaleString()}`, sub: `${allPolicies.length} policies`, href: '/dashboard/analytics', warn: false },
+          { label: 'Annual premium', value: `$${totalPremium.toLocaleString()}`, sub: `${activePolicies.length} active policies`, href: '/dashboard/analytics', warn: false },
           { label: 'Renewing', value: String(renewingIn30.length), sub: 'next 30 days', href: '/dashboard/renewals', warn: renewingIn30.length > 0 },
           { label: 'Open claims', value: String(openClaims.length), sub: 'needs follow-up', href: '/dashboard/claims', warn: openClaims.length > 0 },
         ].map(k => (
@@ -167,7 +190,18 @@ export default async function DashboardHome() {
               {secLabel('Lapsed')}
               {lapsed.slice(0, 3).map(p => {
                 const c = p.clients as any
-                return card(`lapsed-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · ${p.insurer}`, pill('Lapsed', 'red'), `/dashboard/clients/${c?.id || ''}`)
+                return card(`lapsed-${p.id}`, '📅', c?.name || 'Unknown', `${p.product_name || p.type} · ${p.insurer}`, pill('Lapsed', 'red'), `/dashboard/clients/${c?.id || ''}`)
+              })}
+            </>
+          )}
+
+          {overdue.length > 0 && (
+            <>
+              {secLabel('Overdue renewal')}
+              {overdue.slice(0, 3).map(p => {
+                const c = p.clients as any
+                const days = Math.abs(getDays(p.renewal_date))
+                return card(`overdue-${p.id}`, '⏰', c?.name || 'Unknown', `${p.product_name || p.type} · ${p.insurer}`, pill(`${days}d late`, 'red'), `/dashboard/clients/${c?.id || ''}`)
               })}
             </>
           )}
@@ -178,7 +212,7 @@ export default async function DashboardHome() {
               {dueSoon.slice(0, 3).map(p => {
                 const c = p.clients as any
                 const days = getDays(p.renewal_date)
-                return card(`due-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · ${p.insurer}`, pill(`${days}d`, 'amber'), `/dashboard/clients/${c?.id || ''}`)
+                return card(`due-${p.id}`, '📅', c?.name || 'Unknown', `${p.product_name || p.type} · ${p.insurer}`, pill(`${days}d`, 'amber'), `/dashboard/clients/${c?.id || ''}`)
               })}
             </>
           )}
@@ -193,7 +227,7 @@ export default async function DashboardHome() {
             </>
           )}
 
-          {lapsed.length === 0 && dueSoon.length === 0 && highClaims.length === 0 && (
+          {lapsed.length === 0 && overdue.length === 0 && dueSoon.length === 0 && highClaims.length === 0 && (
             <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
               Nothing urgent today ✓
             </div>
@@ -207,12 +241,9 @@ export default async function DashboardHome() {
           {birthdaysThisWeek.length > 0 && (
             <>
               {secLabel('Birthdays this week')}
-              {birthdaysThisWeek.map(c => {
-                const bday = new Date(c.birthday)
-                const anniv = new Date(now.getFullYear(), bday.getMonth(), bday.getDate())
-                const diff = Math.ceil((anniv.getTime() - now.getTime()) / 86400000)
-                const when = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : `in ${diff}d`
-                return card(`bday-${c.id}`, '🎂', c.name, `Birthday ${when}`, pill('Birthday', 'amber'), `/dashboard/clients/${c.id}`)
+              {birthdaysThisWeek.map(b => {
+                const when = b.daysUntil === 0 ? 'today' : b.daysUntil === 1 ? 'tomorrow' : `in ${b.daysUntil}d`
+                return card(`bday-${b.client.id}`, '🎂', b.client.name, `Birthday ${when}`, pill('Birthday', 'amber'), `/dashboard/clients/${b.client.id}`)
               })}
             </>
           )}
@@ -220,10 +251,10 @@ export default async function DashboardHome() {
           {policyAnniversaries.length > 0 && (
             <>
               {secLabel('Policy anniversaries')}
-              {policyAnniversaries.slice(0, 2).map(p => {
-                const c = p.clients as any
-                const years = now.getFullYear() - new Date(p.created_at).getFullYear()
-                return card(`anniv-${p.id}`, '🔁', c?.name || 'Unknown', `${p.type} · ${years} year${years !== 1 ? 's' : ''} today`, pill(`${years}yr`, 'blue'), `/dashboard/clients/${c?.id || ''}`)
+              {policyAnniversaries.slice(0, 3).map(a => {
+                const c = a.policy.clients as any
+                const when = a.daysUntil === 0 ? 'today' : a.daysUntil === 1 ? 'tomorrow' : `in ${a.daysUntil}d`
+                return card(`anniv-${a.policy.id}`, '🔁', c?.name || 'Unknown', `${a.policy.product_name || a.policy.type} · ${a.years} year${a.years !== 1 ? 's' : ''} ${when}`, pill(`${a.years}yr`, 'blue'), `/dashboard/clients/${c?.id || ''}`)
               })}
             </>
           )}
@@ -245,7 +276,7 @@ export default async function DashboardHome() {
               {pipeline.slice(0, 4).map(p => {
                 const c = p.clients as any
                 const days = getDays(p.renewal_date)
-                return card(`pipe-${p.id}`, '📅', c?.name || 'Unknown', `${p.type} · $${Number(p.premium).toLocaleString()}/yr`, pill(`${days}d`, 'teal'), `/dashboard/clients/${c?.id || ''}`)
+                return card(`pipe-${p.id}`, '📅', c?.name || 'Unknown', `${p.product_name || p.type} · $${Number(p.premium).toLocaleString()}/yr`, pill(`${days}d`, 'teal'), `/dashboard/clients/${c?.id || ''}`)
               })}
             </>
           )}
@@ -259,12 +290,6 @@ export default async function DashboardHome() {
               })}
             </>
           )}
-
-          {pipeline.length === 0 && gaps.length === 0 && (!overdueHoldings || overdueHoldings.length === 0) ? (
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
-              Pipeline clear for now
-            </div>
-          ) : null}
 
           {overdueHoldings && overdueHoldings.length > 0 && (
             <>
@@ -283,6 +308,12 @@ export default async function DashboardHome() {
                 )
               })}
             </>
+          )}
+
+          {pipeline.length === 0 && gaps.length === 0 && (!overdueHoldings || overdueHoldings.length === 0) && (
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '24px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
+              Pipeline clear for now
+            </div>
           )}
         </div>
       </div>
