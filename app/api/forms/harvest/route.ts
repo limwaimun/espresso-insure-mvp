@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const runtime = 'nodejs'
+export const maxDuration = 300 // 5 minutes — harvest loops through ~20 PDFs
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SECRET_KEY!
@@ -39,10 +42,31 @@ const CLAIM_FORMS = [
 
 const BUCKET = 'claim-forms'
 
-export async function GET(request: NextRequest) {
+// ── Auth helper for cron endpoints ─────────────────────────────────────────
+// Accepts either:
+//   1. Vercel cron invocation (has x-vercel-cron-signature header)
+//   2. Manual invocation with `Authorization: Bearer ${CRON_SECRET}` header
+// Does NOT accept the Supabase service-role key — that was a misuse.
+function isAuthorized(request: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error('[harvest] CRON_SECRET not configured')
+    return false
+  }
+
+  // Vercel cron — Vercel signs its requests with this header. Its mere
+  // presence is not proof, but combined with the Authorization header
+  // also being set to `Bearer ${CRON_SECRET}` (which Vercel does when
+  // the route is configured as a cron), it's a solid check.
   const authHeader = request.headers.get('authorization')
-  const cronSecret = request.headers.get('x-vercel-cron')
-  if (!cronSecret && authHeader !== `Bearer ${process.env.SUPABASE_SECRET_KEY}`) {
+  const expected = `Bearer ${cronSecret}`
+  if (authHeader === expected) return true
+
+  return false
+}
+
+export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
