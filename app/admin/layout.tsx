@@ -1,18 +1,10 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-
-const ADMIN_USER_IDS = [
-  '1a5b902c-9e3a-44cd-970a-bb852b1cd5e4',
-]
+import { getAdminUser } from '@/lib/admin'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user || !ADMIN_USER_IDS.includes(user.id)) {
-    redirect('/dashboard')
-  }
+  const user = await getAdminUser()
+  if (!user) redirect('/dashboard')
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#0D0603' }}>

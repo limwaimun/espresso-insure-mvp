@@ -12,7 +12,7 @@ const AGENTS = [
   { name: 'Atlas', route: '/api/atlas', status: 'live', role: 'Claims pre-fill' },
   { name: 'Lens', route: '/api/lens', status: 'live', role: 'FA analytics' },
   { name: 'Harvester', route: '/api/forms/harvest', status: 'live', role: 'Form collection' },
-  { name: 'Webhook', route: '/api/webhook/whatsapp', status: 'pending_meta', role: 'WhatsApp handler' },
+  { name: 'Webhook', route: '/api/whatsapp/webhook', status: 'pending_meta', role: 'WhatsApp handler' },
 ]
 
 export default function AdminPage() {

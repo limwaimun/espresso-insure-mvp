@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
-
-const ADMIN_USER_IDS = ['1a5b902c-9e3a-44cd-970a-bb852b1cd5e4']
+import { isAdminUserId } from '@/lib/admin'
 
 // Service client bypasses RLS — only used server-side
 const serviceSupabase = createServiceClient(
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+  if (!isAdminUserId(user?.id)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
