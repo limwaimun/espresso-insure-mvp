@@ -55,18 +55,57 @@ const RISK_LABELS: Record<string, string> = {
   very_high: 'Very high risk',
 }
 
-// Shared grid template for column alignment between header and data rows.
-// chevron · product · type+risk · value (right) · units@NAV (right) · review pill · menu
-const GRID_COLS = '14px minmax(0,2.4fr) 1.1fr 0.9fr 1.1fr 0.9fr 28px'
+// ── Styles — matched 1:1 to ClientDetailPage so Holdings looks native to the card ──
+
+// Column header cell — exact match to Policies table <th> styling
+const thBase: React.CSSProperties = {
+  textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088',
+  textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500,
+  borderBottom: '0.5px solid #E8E2DA',
+}
+const thCell = (widthPct: number, rightAlign = false): React.CSSProperties => ({
+  ...thBase, width: `${widthPct}%`, textAlign: rightAlign ? 'right' : 'left',
+})
+
+// Outlined amber "+ Add X" button — exact match to ClientDetailPage's btnAddSection
+const btnAddSection: React.CSSProperties = {
+  fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517',
+  background: 'transparent', border: '1px solid #BA7517', borderRadius: 6,
+  padding: '6px 12px', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', gap: 4,
+}
+
+// Modal form styles — match ClientDetailPage exactly
+const inputStyle: React.CSSProperties = {
+  width: '100%', background: '#FFFFFF', border: '0.5px solid #E8E2DA',
+  borderRadius: 8, padding: '10px 13px', fontSize: 13, color: '#1A1410',
+  outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box',
+}
+const labelStyle: React.CSSProperties = {
+  fontSize: 11, color: '#6B6460', textTransform: 'uppercase',
+  letterSpacing: '0.08em', marginBottom: 5, display: 'block',
+}
+const btnPrimary: React.CSSProperties = {
+  background: '#BA7517', color: '#F7F4F0', border: 'none',
+  borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500,
+  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+  display: 'flex', alignItems: 'center', gap: 6,
+}
+const btnOutline: React.CSSProperties = {
+  background: 'transparent', color: '#6B6460', border: '0.5px solid #E8E2DA',
+  borderRadius: 8, padding: '10px 20px', fontSize: 13,
+  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function reviewPill(last_reviewed_at: string | null): { bg: string; color: string; text: string } {
-  if (!last_reviewed_at) return { bg: '#FCEBEB', color: '#A32D2D', text: 'Never reviewed' }
+// Returns a pill class name matching the global pill-* CSS classes Policies uses.
+function reviewPill(last_reviewed_at: string | null): { cls: string; text: string } {
+  if (!last_reviewed_at) return { cls: 'pill-red', text: 'Never reviewed' }
   const days = Math.floor((Date.now() - new Date(last_reviewed_at).getTime()) / 86400000)
-  if (days <= 30)  return { bg: '#E1F5EE', color: '#0F6E56', text: days === 0 ? 'Today' : `${days}d ago` }
-  if (days <= 180) return { bg: '#FAEEDA', color: '#854F0B', text: `${days}d ago` }
-  return                   { bg: '#FCEBEB', color: '#A32D2D', text: `${days}d ago` }
+  if (days <= 30)  return { cls: 'pill-green', text: days === 0 ? 'Today' : `Reviewed ${days}d ago` }
+  if (days <= 180) return { cls: 'pill-amber', text: `Reviewed ${days}d ago` }
+  return                   { cls: 'pill-red',   text: `Reviewed ${days}d ago` }
 }
 
 function formatDate(d: string | null | undefined): string {
@@ -76,9 +115,8 @@ function formatDate(d: string | null | undefined): string {
 
 // ── HoldingRow ─────────────────────────────────────────────────────────────
 
-function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
+function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
   holding: Holding
-  isLast: boolean
   onEdit: (h: Holding) => void
   onAskMaya: (h: Holding, action: 'review' | 'client_update') => void
   onMarkReviewed: (id: string) => void
@@ -92,88 +130,88 @@ function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDele
   const typeLabel = TYPE_LABELS[holding.product_type] || 'Other'
   const pill = reviewPill(holding.last_reviewed_at)
 
-  const bottomBorder = !isLast ? '0.5px solid #F1EFE8' : 'none'
-
   return (
-    <div>
+    <>
       {/* Main row */}
-      <div
+      <tr
         onClick={() => setExpanded(v => !v)}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: GRID_COLS,
-          gap: 10,
-          alignItems: 'center',
-          padding: '14px 16px',
-          borderBottom: expanded ? '0.5px solid #F1EFE8' : bottomBorder,
-          cursor: 'pointer',
-        }}
+        style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '0.5px solid #F1EFE8' }}
       >
-        {expanded
-          ? <ChevronDown size={12} color="#9B9088" />
-          : <ChevronRight size={12} color="#9B9088" />}
-
-        <div style={{ minWidth: 0 }}>
-          <div style={{
-            fontSize: 13, fontWeight: 500, color: '#1A1410',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {holding.product_name}
+        {/* Product (chevron + name + provider/platform subtitle) */}
+        <td style={{ padding: '12px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {expanded
+              ? <ChevronDown size={12} color="#9B9088" />
+              : <ChevronRight size={12} color="#9B9088" />}
+            <div style={{ minWidth: 0 }}>
+              <div style={{
+                fontSize: 13, fontWeight: 500, color: '#1A1410',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {holding.product_name}
+              </div>
+              <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>
+                {holding.provider}{holding.platform ? ` · ${holding.platform}` : ''}
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>
-            {holding.provider}{holding.platform ? ` · ${holding.platform}` : ''}
-          </div>
-        </div>
+        </td>
 
-        <div>
+        {/* Type · Risk */}
+        <td style={{ padding: '12px 10px' }}>
           <span style={{
             background: typeColor.bg, color: typeColor.text,
             fontSize: 11, fontWeight: 500,
-            padding: '2px 8px', borderRadius: 4, display: 'inline-block',
+            padding: '3px 9px', borderRadius: 4, display: 'inline-block',
           }}>
             {typeLabel}
           </span>
           {holding.risk_rating && (
-            <div style={{ fontSize: 11, color: '#6B6460', marginTop: 3 }}>
+            <div style={{ fontSize: 11, color: '#6B6460', marginTop: 4 }}>
               {RISK_LABELS[holding.risk_rating] || holding.risk_rating}
             </div>
           )}
-        </div>
+        </td>
 
-        <div style={{ textAlign: 'right', fontSize: 13, color: '#1A1410' }}>
-          {holding.current_value != null
-            ? `${holding.currency} ${Number(holding.current_value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-            : <span style={{ color: '#9B9088' }}>—</span>}
-        </div>
+        {/* Value */}
+        <td style={{ padding: '12px 10px' }}>
+          <div style={{ fontSize: 13, color: '#1A1410' }}>
+            {holding.current_value != null
+              ? `${holding.currency} ${Number(holding.current_value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+              : '—'}
+          </div>
+        </td>
 
-        <div style={{ textAlign: 'right', fontSize: 11, color: '#6B6460' }}>
+        {/* Units @ NAV */}
+        <td style={{ padding: '12px 10px' }}>
           {holding.units_held != null && holding.last_nav != null ? (
             <>
-              {Number(holding.units_held).toLocaleString(undefined, { maximumFractionDigits: 3 })}
-              <span style={{ color: '#9B9088' }}> @ {Number(holding.last_nav).toFixed(4)}</span>
+              <div style={{ fontSize: 13, color: '#1A1410' }}>
+                {Number(holding.units_held).toLocaleString(undefined, { maximumFractionDigits: 3 })}
+              </div>
+              <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>
+                @ {Number(holding.last_nav).toFixed(4)}
+              </div>
             </>
           ) : (
-            <span style={{ color: '#9B9088' }}>—</span>
+            <span style={{ fontSize: 13, color: '#9B9088' }}>—</span>
           )}
-        </div>
+        </td>
 
-        <div>
-          <span style={{
-            background: pill.bg, color: pill.color,
-            fontSize: 10, fontWeight: 500,
-            padding: '2px 7px', borderRadius: 10, whiteSpace: 'nowrap',
-          }}>
-            {pill.text}
-          </span>
-        </div>
+        {/* Reviewed pill — uses global pill classes for parity with Policies status pill */}
+        <td style={{ padding: '12px 10px' }}>
+          <span className={`pill ${pill.cls}`}>{pill.text}</span>
+        </td>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
+        {/* ⋮ menu */}
+        <td style={{ padding: '12px 10px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
           <button
             ref={menuRef}
             onClick={() => setMenuOpen(o => !o)}
             style={{
               background: 'transparent', border: 'none', cursor: 'pointer',
               padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center',
+              marginLeft: 'auto',
             }}
             title="Actions"
           >
@@ -186,57 +224,55 @@ function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDele
             items={[
               { icon: <Bot size={12} color="#BA7517" />, label: 'Review with Maya',       onClick: () => onAskMaya(holding, 'review'),        accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft client update',    onClick: () => onAskMaya(holding, 'client_update'), accent: true },
-              { icon: <Check size={12} color="#0F6E56" />,  label: 'Mark reviewed',       onClick: () => onMarkReviewed(holding.id),         dividerBefore: true },
+              { icon: <Check size={12} color="#0F6E56" />,  label: 'Mark reviewed',       onClick: () => onMarkReviewed(holding.id),          dividerBefore: true },
               { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit holding',        onClick: () => onEdit(holding) },
-              { icon: <Trash2 size={12} />,                 label: 'Delete holding',      onClick: () => onDelete(holding.id),               danger: true, dividerBefore: true },
+              { icon: <Trash2 size={12} />,                 label: 'Delete holding',      onClick: () => onDelete(holding.id),                danger: true, dividerBefore: true },
             ]}
           />
-        </div>
-      </div>
+        </td>
+      </tr>
 
-      {/* Expanded detail — fields spread evenly across the row via auto-fit grid */}
+      {/* Expanded detail — fields spread evenly via auto-fit grid so 5+ fields balance */}
       {expanded && (
-        <div style={{
-          background: '#FBFAF7',
-          padding: '18px 20px 20px 40px',
-          borderBottom: bottomBorder,
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-            gap: '14px 20px',
-            marginBottom: holding.notes ? 16 : 0,
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Inception</span>
-              <span style={{ fontSize: 12, color: '#1A1410' }}>{formatDate(holding.inception_date)}</span>
+        <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
+          <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '16px 24px',
+              marginBottom: holding.notes ? 16 : 0,
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Inception</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.inception_date)}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Currency</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.currency}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Platform</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.platform || '—'}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk rating</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Last NAV date</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.last_nav_date)}</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Currency</span>
-              <span style={{ fontSize: 12, color: '#1A1410' }}>{holding.currency}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Platform</span>
-              <span style={{ fontSize: 12, color: '#1A1410' }}>{holding.platform || '—'}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk rating</span>
-              <span style={{ fontSize: 12, color: '#1A1410' }}>{holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Last NAV date</span>
-              <span style={{ fontSize: 12, color: '#1A1410' }}>{formatDate(holding.last_nav_date)}</span>
-            </div>
-          </div>
-          {holding.notes && (
-            <div style={{ paddingTop: 12, borderTop: '0.5px solid #F1EFE8' }}>
-              <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>Notes</div>
-              <div style={{ fontSize: 12, color: '#6B6460', lineHeight: 1.6 }}>{holding.notes}</div>
-            </div>
-          )}
-        </div>
+            {holding.notes && (
+              <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
+                <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{holding.notes}</div>
+              </div>
+            )}
+          </td>
+        </tr>
       )}
-    </div>
+    </>
   )
 }
 
@@ -441,55 +477,16 @@ Keep it under 150 words. Tone: professional but personal.`,
   const totalValue = holdings.reduce((s, h) => s + (Number(h.current_value) || 0), 0)
   const headerCurrency = holdings[0]?.currency || 'SGD'
 
-  // ── Styles ───────────────────────────────────────────────────────────────
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '9px 12px', border: '0.5px solid #E8E2DA',
-    borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-    background: '#FFFFFF', color: '#1A1410', outline: 'none',
-    boxSizing: 'border-box',
-  }
-  const labelStyle: React.CSSProperties = {
-    fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460',
-    marginBottom: 5, display: 'block',
-    textTransform: 'uppercase', letterSpacing: '0.07em',
-  }
-  const btnOutlineAmber: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '7px 14px', fontSize: 12, color: '#BA7517',
-    background: 'transparent', border: '0.5px solid #BA7517',
-    borderRadius: 8, cursor: 'pointer',
-    fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
-  }
-  const btnPrimary: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '9px 18px', fontSize: 13, color: '#FFFFFF',
-    background: '#BA7517', border: 'none', borderRadius: 8,
-    cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
-  }
-  const btnOutline: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '9px 18px', fontSize: 13, color: '#6B6460',
-    background: 'transparent', border: '0.5px solid #E8E2DA',
-    borderRadius: 8, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-  }
-
   if (loading) return null
 
   const hasRows = holdings.length > 0
 
   return (
-    <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, marginBottom: 20 }}>
-
-      {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px',
-        borderBottom: (hasRows || harbourScript) ? '0.5px solid #E8E2DA' : 'none',
-      }}>
+    <div className="panel" style={{ marginBottom: 24 }}>
+      {/* Header — matches Policies panel-header structure */}
+      <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410' }}>
-            Investments & holdings
-          </span>
+          <span className="panel-title">Investments &amp; holdings</span>
           {hasRows && (
             <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
               {headerCurrency} {totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -501,94 +498,92 @@ Keep it under 150 words. Tone: professional but personal.`,
             <button
               onClick={getHarbourScript}
               disabled={loadingHarbour}
-              style={{ ...btnOutlineAmber, opacity: loadingHarbour ? 0.6 : 1 }}
+              style={{ ...btnAddSection, opacity: loadingHarbour ? 0.6 : 1 }}
             >
               <Compass size={12} />
               {loadingHarbour ? 'Loading…' : 'Review script'}
             </button>
           )}
-          <button onClick={openAdd} style={btnOutlineAmber}>
+          <button onClick={openAdd} style={btnAddSection}>
             <Plus size={12} />
             Add holding
           </button>
         </div>
       </div>
 
-      {/* Harbour review script card — cream palette matching Coverage analysis */}
-      {harbourScript && (
-        <div style={{ margin: '16px 20px 0', padding: '14px 16px', background: '#FAEEDA', borderRadius: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <Bot size={12} color="#BA7517" />
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#854F0B',
-              fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em',
+      <div className="panel-body">
+        {/* Harbour review script card — cream palette matching Coverage analysis */}
+        {harbourScript && (
+          <div style={{ padding: '14px 16px', background: '#FAEEDA', borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Bot size={12} color="#BA7517" />
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#854F0B',
+                fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em',
+              }}>
+                Harbour · review script for Maya
+              </span>
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410',
+              lineHeight: 1.6, fontStyle: 'italic', marginBottom: 10,
             }}>
-              Harbour · review script for Maya
-            </span>
+              &ldquo;{harbourScript}&rdquo;
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={copyHarbour} style={{ ...btnAddSection, padding: '5px 12px', fontSize: 11 }}>
+                {copiedHarbour ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
+              </button>
+              <button
+                onClick={() => setHarbourScript(null)}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088',
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410',
-            lineHeight: 1.6, fontStyle: 'italic', marginBottom: 10,
-          }}>
-            &ldquo;{harbourScript}&rdquo;
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={copyHarbour} style={{ ...btnOutlineAmber, padding: '5px 12px', fontSize: 11 }}>
-              {copiedHarbour ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
-            </button>
-            <button
-              onClick={() => setHarbourScript(null)}
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088',
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Holdings list */}
-      {!hasRows ? (
-        <div style={{
-          padding: '28px 20px', textAlign: 'center',
-          fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#B4B2A9',
-        }}>
-          No investment holdings recorded yet
-        </div>
-      ) : (
-        <div>
-          {/* Column headers */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: GRID_COLS, gap: 10,
-            padding: '10px 16px',
-            borderBottom: '0.5px solid #F1EFE8',
-            fontSize: 10, color: '#9B9088',
-            textTransform: 'uppercase', letterSpacing: '0.07em',
-            fontFamily: 'DM Sans, sans-serif',
-          }}>
-            <span></span>
-            <span>Product</span>
-            <span>Type · risk</span>
-            <span style={{ textAlign: 'right' }}>Value</span>
-            <span style={{ textAlign: 'right' }}>Units @ NAV</span>
-            <span>Reviewed</span>
-            <span></span>
+        {/* Holdings table — exact parity with Policies table structure */}
+        {hasRows ? (
+          <div className="table">
+            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={thCell(28)}>Product</th>
+                  <th style={thCell(18)}>Type · Risk</th>
+                  <th style={thCell(16)}>Value</th>
+                  <th style={thCell(14)}>Units @ NAV</th>
+                  <th style={thCell(18)}>Reviewed</th>
+                  <th style={{ ...thBase, width: '6%' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {holdings.map(h => (
+                  <HoldingRow
+                    key={h.id}
+                    holding={h}
+                    onEdit={openEdit}
+                    onAskMaya={askMayaStub}
+                    onMarkReviewed={markReviewed}
+                    onDelete={(id) => setConfirmDeleteId(id)}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
-          {holdings.map((h, i) => (
-            <HoldingRow
-              key={h.id}
-              holding={h}
-              isLast={i === holdings.length - 1}
-              onEdit={openEdit}
-              onAskMaya={askMayaStub}
-              onMarkReviewed={markReviewed}
-              onDelete={(id) => setConfirmDeleteId(id)}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div style={{
+            padding: 20, textAlign: 'center',
+            fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460',
+          }}>
+            No investment holdings recorded yet
+          </div>
+        )}
+      </div>
 
       {/* == ADD / EDIT HOLDING MODAL == */}
       {showForm && (
