@@ -7,6 +7,7 @@ import HoldingsSection from '@/components/HoldingsSection'
 import CountryCodeSelect from '@/components/CountryCodeSelect'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
+import DocUploadField from '@/components/DocUploadField'
 import {
   X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -371,6 +372,201 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
   )
 }
 
+// ── ClaimDocList ───────────────────────────────────────────────────────────
+// Lists attached documents for a claim, with download + delete per doc and an
+// inline uploader for adding more. Self-contained: fetches its own data from
+// /api/claim-doc on mount and refreshes after add/delete.
+
+function ClaimDocList({ claimId }: { claimId: string }) {
+  interface Doc {
+    id: string
+    fileName: string
+    fileSize: number | null
+    mimeType: string | null
+    downloadUrl: string | null
+  }
+  const [docs, setDocs] = useState<Doc[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/claim-doc?claimId=${claimId}`)
+      const data = await res.json()
+      setDocs(data.docs ?? [])
+    } catch {
+      setDocs([])
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claimId])
+
+  async function handleDownload(doc: Doc) {
+    if (!doc.downloadUrl) return
+    try {
+      const fileRes = await fetch(doc.downloadUrl)
+      const blob = await fileRes.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = doc.fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      setErr('Download failed')
+      setTimeout(() => setErr(''), 2500)
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (!confirm('Remove this document?')) return
+    setBusy(true)
+    await fetch(`/api/claim-doc?docId=${docId}`, { method: 'DELETE' })
+    await load()
+    setBusy(false)
+  }
+
+  async function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (inputRef.current) inputRef.current.value = ''
+    if (files.length === 0) return
+    setBusy(true); setErr('')
+    const failures: string[] = []
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('claimId', claimId)
+      const res = await fetch('/api/claim-doc', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        failures.push(`${file.name}: ${d.error ?? 'failed'}`)
+      }
+    }
+    if (failures.length) {
+      setErr(failures.join('; '))
+      setTimeout(() => setErr(''), 4000)
+    }
+    await load()
+    setBusy(false)
+  }
+
+  function formatSize(bytes: number | null): string {
+    if (bytes == null) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  if (loading) return null
+  if (docs.length === 0 && !busy) {
+    return (
+      <div style={{ marginTop: 10, marginBottom: 10 }}>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleAdd}
+        />
+        <button
+          onClick={() => inputRef.current?.click()}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '4px 10px', fontSize: 11, color: '#BA7517',
+            background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
+            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+          }}
+        >
+          <Upload size={11} />
+          Add document
+        </button>
+        {err && <span style={{ marginLeft: 10, fontSize: 11, color: '#A32D2D' }}>{err}</span>}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 10, marginBottom: 10 }}>
+      <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+        Documents ({docs.length})
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
+        {docs.map(doc => (
+          <div key={doc.id} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 10px', background: '#FBFAF7',
+            border: '0.5px solid #E8E2DA', borderRadius: 6,
+            fontFamily: 'DM Sans, sans-serif',
+          }}>
+            <button
+              onClick={() => handleDownload(doc)}
+              style={{
+                flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6, padding: 0, textAlign: 'left',
+                fontFamily: 'DM Sans, sans-serif', minWidth: 0,
+              }}
+              title="Download"
+            >
+              <Download size={12} color="#BA7517" />
+              <span style={{
+                fontSize: 12, color: '#BA7517',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {doc.fileName}
+              </span>
+            </button>
+            <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
+            <button
+              onClick={() => handleDelete(doc.id)}
+              disabled={busy}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                padding: 2, opacity: 0.5,
+              }}
+              title="Delete"
+              aria-label="Delete document"
+            >
+              <Trash2 size={12} color="#6B6460" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleAdd}
+      />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '4px 10px', fontSize: 11, color: '#BA7517',
+          background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
+          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        <Upload size={11} />
+        {busy ? 'Uploading…' : 'Add document'}
+      </button>
+      {err && <span style={{ marginLeft: 10, fontSize: 11, color: '#A32D2D' }}>{err}</span>}
+    </div>
+  )
+}
+
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
 function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
@@ -491,6 +687,8 @@ function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
         </div>
       )}
 
+      <ClaimDocList claimId={claim.id} />
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>Status:</span>
@@ -575,6 +773,7 @@ export default function ClientDetailPage({
 
   // Claim modal state
   const [claimForm, setClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
+  const [claimFiles, setClaimFiles] = useState<File[]>([])
   const [claimSaving, setClaimSaving] = useState(false)
   const [claimError, setClaimError] = useState('')
   const [confirmDeleteClaimId, setConfirmDeleteClaimId] = useState<string | null>(null)
@@ -727,8 +926,36 @@ export default function ClientDetailPage({
         setClaimSaving(false)
         return
       }
+      // Grab the new claim ID for doc upload. Route may return { claim: {...} }
+      // or the row directly — handle both shapes.
+      const payload = await res.json().catch(() => ({}))
+      const newClaimId: string | undefined = payload?.claim?.id ?? payload?.id ?? payload?.alert?.id
+
+      // Upload queued documents sequentially. A failure on any one doesn't
+      // block the claim itself — we surface a soft error and continue.
+      if (newClaimId && claimFiles.length > 0) {
+        const failures: string[] = []
+        for (const file of claimFiles) {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('claimId', newClaimId)
+          const up = await fetch('/api/claim-doc', { method: 'POST', body: fd })
+          if (!up.ok) {
+            const d = await up.json().catch(() => ({}))
+            failures.push(`${file.name}: ${d.error ?? 'upload failed'}`)
+          }
+        }
+        if (failures.length) {
+          setClaimError(`Claim created, but some uploads failed — ${failures.join('; ')}`)
+          setClaimSaving(false)
+          // Leave modal open so Wayne can retry or dismiss
+          return
+        }
+      }
+
       setShowAddClaim(false)
       setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
+      setClaimFiles([])
       setClaimSaving(false)
       setLocalActivity(prev => [{
         date: new Date().toISOString(),
@@ -1116,6 +1343,7 @@ export default function ClientDetailPage({
           <span className="panel-title">Claims</span>
           <button onClick={() => {
             setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
+            setClaimFiles([])
             setClaimError(''); setShowAddClaim(true)
           }} style={btnAddSection}>
             <Plus size={12} /> New claim
@@ -1349,7 +1577,7 @@ export default function ClientDetailPage({
 
       {/* == ADD CLAIM MODAL (new) == */}
       {showAddClaim && (
-        <Modal title="New claim" onClose={() => { setShowAddClaim(false); setClaimError('') }}>
+        <Modal title="New claim" onClose={() => { setShowAddClaim(false); setClaimError(''); setClaimFiles([]) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={labelStyle}>Claim title *</label>
@@ -1378,13 +1606,21 @@ export default function ClientDetailPage({
               <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={4} value={claimForm.body} onChange={e => setClaimForm(p => ({ ...p, body: e.target.value }))} placeholder="What happened? Any context that will help track this claim." />
             </div>
 
+            <DocUploadField
+              multi
+              label="Documents"
+              files={claimFiles}
+              onFilesChange={setClaimFiles}
+              onError={msg => setClaimError(msg)}
+            />
+
             {claimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{claimError}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={saveClaim} disabled={claimSaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: claimSaving ? 0.7 : 1 }}>
                 <Plus size={14} />{claimSaving ? 'Creating…' : 'Create claim'}
               </button>
-              <button onClick={() => setShowAddClaim(false)} style={btnOutline}>Cancel</button>
+              <button onClick={() => { setShowAddClaim(false); setClaimFiles([]) }} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>

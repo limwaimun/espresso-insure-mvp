@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
+import DocUploadField from '@/components/DocUploadField'
 import {
-  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
+  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass, Download,
   ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 
@@ -26,6 +27,8 @@ interface Holding {
   last_reviewed_at: string | null
   inception_date: string | null
   notes: string | null
+  document_name: string | null
+  document_url: string | null
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -111,6 +114,54 @@ function reviewPill(last_reviewed_at: string | null): { cls: string; text: strin
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// ── HoldingDocCell ─────────────────────────────────────────────────────────
+// Shows the attached document (if any) in the expanded row. Download via a
+// fresh signed URL from /api/holding-doc; no re-upload here — that happens in
+// the Edit modal.
+
+function HoldingDocCell({ holdingId, fileName }: { holdingId: string; fileName: string | null }) {
+  if (!fileName) return <span style={{ fontSize: 13, color: '#9B9088' }}>—</span>
+
+  async function handleDownload() {
+    try {
+      const res = await fetch(`/api/holding-doc?holdingId=${holdingId}`)
+      const data = await res.json()
+      if (!data.downloadUrl) return
+      const fileRes = await fetch(data.downloadUrl)
+      const blob = await fileRes.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = data.fileName || fileName || 'document'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      console.error('[holding-doc] download failed')
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDownload}
+      style={{
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0,
+        fontFamily: 'DM Sans, sans-serif',
+      }}
+    >
+      <Download size={12} color="#BA7517" />
+      <span style={{
+        fontSize: 13, color: '#BA7517',
+        maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {fileName}
+      </span>
+    </button>
+  )
 }
 
 // ── HoldingRow ─────────────────────────────────────────────────────────────
@@ -262,6 +313,10 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
                 <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Last NAV date</span>
                 <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.last_nav_date)}</span>
               </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Document</span>
+                <HoldingDocCell holdingId={holding.id} fileName={holding.document_name} />
+              </div>
             </div>
             {holding.notes && (
               <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
@@ -303,6 +358,9 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(DEFAULT_FORM)
   const [formError, setFormError] = useState('')
+  // Document upload queue for the Add/Edit modal. Single-mode = 0 or 1 file.
+  // Uploaded after the holding row is saved (we need the ID).
+  const [holdingFiles, setHoldingFiles] = useState<File[]>([])
 
   // Harbour review script
   const [harbourScript, setHarbourScript] = useState<string | null>(null)
@@ -335,6 +393,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     setForm(DEFAULT_FORM)
     setEditingHoldingId(null)
     setFormError('')
+    setHoldingFiles([])
     setShowForm(true)
   }
 
@@ -354,6 +413,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     })
     setEditingHoldingId(h.id)
     setFormError('')
+    setHoldingFiles([])
     setShowForm(true)
   }
 
@@ -362,6 +422,38 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     setEditingHoldingId(null)
     setForm(DEFAULT_FORM)
     setFormError('')
+    setHoldingFiles([])
+  }
+
+  // ── Bidirectional calculation — units × NAV = value, pick any two ──────
+  // Units are the fixed anchor (from statement), so when value changes we
+  // back-calc NAV (not units). When units or NAV changes we recompute value.
+  function setUnits(v: string) {
+    setForm(p => {
+      const next = { ...p, units_held: v }
+      if (v && p.last_nav) {
+        next.current_value = (Number(v) * Number(p.last_nav)).toFixed(2)
+      }
+      return next
+    })
+  }
+  function setNav(v: string) {
+    setForm(p => {
+      const next = { ...p, last_nav: v }
+      if (p.units_held && v) {
+        next.current_value = (Number(p.units_held) * Number(v)).toFixed(2)
+      }
+      return next
+    })
+  }
+  function setValue(v: string) {
+    setForm(p => {
+      const next = { ...p, current_value: v }
+      if (v && p.units_held && Number(p.units_held) > 0) {
+        next.last_nav = (Number(v) / Number(p.units_held)).toFixed(4)
+      }
+      return next
+    })
   }
 
   async function saveHolding() {
@@ -388,11 +480,34 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       notes: form.notes || null,
     }
     try {
+      let holdingId: string | null = editingHoldingId
       if (editingHoldingId) {
-        await supabase.from('holdings').update(payload).eq('id', editingHoldingId)
+        const { error } = await supabase.from('holdings').update(payload).eq('id', editingHoldingId)
+        if (error) throw error
       } else {
-        await supabase.from('holdings').insert(payload)
+        // Insert and grab the new ID so we can attach the document
+        const { data, error } = await supabase.from('holdings').insert(payload).select('id').single()
+        if (error) throw error
+        holdingId = data?.id ?? null
       }
+
+      // Upload queued document (single-mode, so at most one file)
+      if (holdingFiles[0] && holdingId) {
+        const fd = new FormData()
+        fd.append('file', holdingFiles[0])
+        fd.append('holdingId', holdingId)
+        const res = await fetch('/api/holding-doc', { method: 'POST', body: fd })
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}))
+          console.warn('[holdings] doc upload failed:', d.error)
+          // The holding itself was saved, so we continue — surfacing a soft error.
+          setFormError(`Holding saved, but document upload failed: ${d.error ?? 'unknown'}`)
+          setSaving(false)
+          loadHoldings()
+          return
+        }
+      }
+
       closeForm()
       loadHoldings()
     } catch {
@@ -660,7 +775,7 @@ Keep it under 150 words. Tone: professional but personal.`,
                   type="number"
                   placeholder="e.g. 1234.56"
                   value={form.units_held}
-                  onChange={e => setForm(p => ({ ...p, units_held: e.target.value }))}
+                  onChange={e => setUnits(e.target.value)}
                   style={inputStyle}
                 />
               </div>
@@ -670,7 +785,7 @@ Keep it under 150 words. Tone: professional but personal.`,
                   type="number"
                   placeholder="e.g. 1.2340"
                   value={form.last_nav}
-                  onChange={e => setForm(p => ({ ...p, last_nav: e.target.value }))}
+                  onChange={e => setNav(e.target.value)}
                   style={inputStyle}
                 />
               </div>
@@ -683,7 +798,7 @@ Keep it under 150 words. Tone: professional but personal.`,
                   type="number"
                   placeholder="Auto-calculated or manual"
                   value={form.current_value}
-                  onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))}
+                  onChange={e => setValue(e.target.value)}
                   style={inputStyle}
                 />
               </div>
@@ -712,6 +827,13 @@ Keep it under 150 words. Tone: professional but personal.`,
                 style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
               />
             </div>
+
+            <DocUploadField
+              label="Document"
+              files={holdingFiles}
+              onFilesChange={setHoldingFiles}
+              onError={msg => setFormError(msg)}
+            />
 
             {formError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{formError}</p>}
 
