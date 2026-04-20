@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -13,18 +14,28 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(request: NextRequest) {
   try {
-    const { ifaId, reportType, query, forceRefresh } = await request.json()
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+    const userId = auth.userId
 
-    if (!ifaId) return NextResponse.json({ error: 'Missing ifaId' }, { status: 400 })
+    // ── Parse body ────────────────────────────────────────────────────────
+    const { ifaId: _unused, reportType, query, forceRefresh } = await request.json()
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[lens] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+    }
 
     const CACHE_TTL_HOURS = 6
 
-    // ── Check cache first (skip if forceRefresh or custom query) ──────────
+    // ── Check cache first (scoped to userId) ──────────────────────────────
     if (!forceRefresh && !query) {
       const { data: cached } = await supabase
         .from('lens_cache')
         .select('narrative, metrics, generated_at')
-        .eq('ifa_id', ifaId)
+        .eq('ifa_id', userId)
         .single()
 
       if (cached) {
@@ -44,17 +55,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Fetch all FA data in parallel ──────────────────────────────────────
+    // ── Fetch all FA data in parallel (scoped to userId) ──────────────────
     const [
       { data: clients },
       { data: policies },
       { data: alerts },
       { data: ifa },
     ] = await Promise.all([
-      supabase.from('clients').select('*').eq('ifa_id', ifaId),
-      supabase.from('policies').select('*').eq('ifa_id', ifaId),
-      supabase.from('alerts').select('*').eq('ifa_id', ifaId),
-      supabase.from('profiles').select('*').eq('id', ifaId).single(),
+      supabase.from('clients').select('*').eq('ifa_id', userId),
+      supabase.from('policies').select('*').eq('ifa_id', userId),
+      supabase.from('alerts').select('*').eq('ifa_id', userId),
+      supabase.from('profiles').select('*').eq('id', userId).single(),
     ])
 
     const now = new Date()
@@ -178,12 +189,12 @@ ${JSON.stringify(metrics, null, 2)}`,
       narrative = narrativeRes.content.find(b => b.type === 'text')?.text
     }
 
-    // ── Save to cache ──────────────────────────────────────────────────────
+    // ── Save to cache (scoped to userId — closes cache-poisoning hole) ────
     if (!query) {
       await supabase
         .from('lens_cache')
         .upsert({
-          ifa_id: ifaId,
+          ifa_id: userId,
           narrative,
           metrics,
           generated_at: now.toISOString(),

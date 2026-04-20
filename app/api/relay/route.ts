@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { verifySession } from '@/lib/auth-middleware'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +25,7 @@ type Intent =
 
 interface RelayRequest {
   message: string          // Natural language request
-  ifaId: string
+  ifaId?: string           // Accepted for backward-compat but ignored (use session)
   clientId?: string        // Optional context
   context?: Record<string, unknown>  // Any additional context
 }
@@ -81,22 +82,33 @@ Respond in JSON only:
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, ifaId, clientId, context } = await request.json() as RelayRequest
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!message || !ifaId) {
-      return NextResponse.json({ error: 'Missing message or ifaId' }, { status: 400 })
+    // ── Parse body ────────────────────────────────────────────────────────
+    const { message, ifaId: _unused, clientId } = await request.json() as RelayRequest
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[relay] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+    }
+
+    if (!message) {
+      return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
 
     // ── Classify intent ────────────────────────────────────────────────────
     const { intent, params } = await classifyIntent(message, !!clientId)
 
-    // ── Load client context if available ───────────────────────────────────
+    // ── Load client context if available (scoped to verified userId) ───────
     let client = null
     let policies = null
     if (clientId) {
       const [{ data: c }, { data: p }] = await Promise.all([
-        supabase.from('clients').select('*').eq('id', clientId).single(),
-        supabase.from('policies').select('*').eq('client_id', clientId),
+        supabase.from('clients').select('*').eq('id', clientId).eq('ifa_id', userId).single(),
+        supabase.from('policies').select('*').eq('client_id', clientId).eq('ifa_id', userId),
       ])
       client = c
       policies = p
@@ -113,7 +125,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/scout`,
           agentPayload: {
-            ifaId,
             query: message,
             insurer: params.insurer,
             productType: params.product_type,
@@ -127,7 +138,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/sage`,
           agentPayload: {
-            ifaId,
             clientId,
             client,
             query: message,
@@ -143,7 +153,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/compass`,
           agentPayload: {
-            ifaId,
             clientId,
             client,
             policies,
@@ -163,7 +172,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/atlas`,
           agentPayload: {
-            ifaId,
             clientId,
             query: message,
             insurer: params.insurer,
@@ -179,7 +187,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/lens`,
           agentPayload: {
-            ifaId,
             reportType: intent === 'renewal_pipeline' ? 'renewals' : 'portfolio',
             query: message,
           },
@@ -194,7 +201,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/scout`,
           agentPayload: {
-            ifaId,
             query: message,
             productType: params.product_type,
             insurer: params.insurer,
@@ -208,7 +214,6 @@ export async function POST(request: NextRequest) {
           intent,
           agentUrl: `${baseUrl}/api/harbour`,
           agentPayload: {
-            ifaId,
             clientId,
             mode: clientId ? 'client_review' : 'review_report',
           },
@@ -223,12 +228,21 @@ export async function POST(request: NextRequest) {
         })
     }
 
-    // ── Call the target agent ──────────────────────────────────────────────
+    // ── Call the target agent (internal auth via dedicated relay key) ─────
+    // We pass the verified userId via header so agents can scope DB queries
+    // without trusting any body field. The relay key is a dedicated secret
+    // (not the Supabase service-role key).
+    if (!process.env.RELAY_INTERNAL_KEY) {
+      console.error('[relay] RELAY_INTERNAL_KEY not set — cannot invoke agents securely')
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+    }
+
     const agentRes = await fetch(route.agentUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-relay-key': process.env.SUPABASE_SECRET_KEY!, // Internal auth
+        'x-relay-key': process.env.RELAY_INTERNAL_KEY,
+        'x-relay-user-id': userId,
       },
       body: JSON.stringify(route.agentPayload),
     })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -15,14 +16,25 @@ const SIX_MONTHS_AGO = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOStr
 
 export async function POST(request: NextRequest) {
   try {
-    const { ifaId, mode = 'review_report', clientId } = await request.json()
-    if (!ifaId) return NextResponse.json({ error: 'Missing ifaId' }, { status: 400 })
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+    const userId = auth.userId
 
-    // ── Fetch all holdings for this FA ─────────────────────────────────────
+    // ── Parse body ────────────────────────────────────────────────────────
+    const { ifaId: _unused, mode = 'review_report', clientId } = await request.json()
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[harbour] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+    }
+
+    // ── Fetch all holdings for this FA (scoped to verified userId) ────────
     const { data: holdings } = await supabase
       .from('holdings')
       .select('*, clients(id, name, company)')
-      .eq('ifa_id', ifaId)
+      .eq('ifa_id', userId)
 
     const allHoldings = holdings || []
 
@@ -49,8 +61,19 @@ export async function POST(request: NextRequest) {
 
     // ── Single client mode — detailed holdings + Maya script ───────────────
     if (mode === 'client_review' && clientId) {
+      // Ownership check: ensure client belongs to verified userId
+      const { data: client } = await supabase
+        .from('clients')
+        .select('name, birthday')
+        .eq('id', clientId)
+        .eq('ifa_id', userId)
+        .single()
+
+      if (!client) {
+        return NextResponse.json({ error: 'Client not found or unauthorized' }, { status: 404 })
+      }
+
       const clientHoldingsList = allHoldings.filter(h => h.client_id === clientId)
-      const { data: client } = await supabase.from('clients').select('name, birthday').eq('id', clientId).single()
 
       const reviewRes = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,7 +33,7 @@ function buildKnownFields(client: any, policy: any, ifa: any) {
     'employer': client.company,
 
     // Policy
-    'policy_number': policy?.id, // we don't store actual policy number yet — flag as missing
+    'policy_number': policy?.id,
     'policy_no': policy?.id,
     'insurer': policy?.insurer,
     'insurance_company': policy?.insurer,
@@ -44,7 +45,7 @@ function buildKnownFields(client: any, policy: any, ifa: any) {
     'agent_name': ifa?.name,
     'financial_advisor': ifa?.name,
     'advisor_name': ifa?.name,
-    'agent_code': null, // not stored
+    'agent_code': null,
     'agency': ifa?.company,
   }
 }
@@ -100,45 +101,68 @@ const CLAIM_SPECIFIC_FIELDS = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { formId, clientId, ifaId, collectedFields } = await request.json()
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+    const userId = auth.userId
 
-    if (!formId || !clientId || !ifaId) {
-      return NextResponse.json({ error: 'Missing formId, clientId, or ifaId' }, { status: 400 })
+    // ── Parse body ────────────────────────────────────────────────────────
+    const { formId, clientId, ifaId: _unused, collectedFields } = await request.json()
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[atlas] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
     }
 
-    // ── Fetch all data in parallel ─────────────────────────────────────────
+    if (!formId || !clientId) {
+      return NextResponse.json({ error: 'Missing formId or clientId' }, { status: 400 })
+    }
+
+    // ── Ownership check: verify client belongs to verified userId ─────────
+    // Done separately before the parallel fetch so we can fail fast.
+    const { data: client } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', clientId)
+      .eq('ifa_id', userId)
+      .single()
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found or unauthorized' }, { status: 404 })
+    }
+
+    // ── Fetch remaining data in parallel ──────────────────────────────────
     const [
-      { data: client },
       { data: ifa },
       { data: form },
     ] = await Promise.all([
-      supabase.from('clients').select('*').eq('id', clientId).single(),
-      supabase.from('profiles').select('*').eq('id', ifaId).single(),
+      supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('claim_forms').select('*').eq('id', formId).single(),
     ])
 
-    if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     if (!form) return NextResponse.json({ error: 'Claim form not found' }, { status: 404 })
 
-    // Find the most relevant active policy for this claim type
+    // Find the most relevant active policy for this claim type (scoped to verified userId)
     const { data: policies } = await supabase
       .from('policies')
       .select('*')
       .eq('client_id', clientId)
-      .eq('ifa_id', ifaId)
+      .eq('ifa_id', userId)
 
     const relevantPolicy = policies?.find(p =>
       p.insurer?.toLowerCase().includes(form.insurer.toLowerCase()) ||
       p.type?.toLowerCase().includes(form.form_type.toLowerCase().split('/')[0].toLowerCase())
     ) || policies?.[0]
 
-    // ── Fetch claim attachments if claim exists ──────────────────────────────
+    // ── Fetch claim attachments if claim exists (scoped to verified userId via client check) ──
     let claimAttachments: { file_name: string; file_type: string; storage_path: string; description: string | null }[] = []
     if (clientId) {
       const { data: openClaim } = await supabase
         .from('alerts')
         .select('id')
         .eq('client_id', clientId)
+        .eq('ifa_id', userId)
         .eq('resolved', false)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -243,7 +267,7 @@ Keep it under 60 words. Friendly and direct. Mention they can find it on the ${f
         ),
       } : null,
       mayaCollectionScript: formAvailable ? mayaScript : null,
-      faFormRequestScript,  // Maya sends this to the FA if form not in library
+      faFormRequestScript,
       claimAttachments: claimAttachments.map(a => ({ name: a.file_name, type: a.file_type, description: a.description })),
       attachmentCount: claimAttachments.length,
       readyToGenerate: formAvailable && requiredMissing.length === 0,

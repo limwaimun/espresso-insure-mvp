@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -10,15 +11,30 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    // Prevents unauthenticated LLM-cost abuse (esp. PDF extraction is pricey).
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const contentType = request.headers.get('content-type') ?? ''
 
     // ── Mode 1: Process a product PDF ─────────────────────────────────────
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData()
       const file = formData.get('file') as File
-      const ifaId = formData.get('ifaId') as string
 
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+
+      // Size guard: bail before we pay Anthropic for a massive PDF
+      if (file.size > 20 * 1024 * 1024) {
+        return NextResponse.json({ error: 'File too large — max 20MB' }, { status: 400 })
+      }
+
+      if (file.type !== 'application/pdf') {
+        return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 })
+      }
 
       const bytes = await file.arrayBuffer()
       const base64 = Buffer.from(bytes).toString('base64')

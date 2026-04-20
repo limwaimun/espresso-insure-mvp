@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -44,38 +45,65 @@ const SG_INSURERS = [
 
 export async function POST(request: NextRequest) {
   try {
-    // Accept calls from Relay (internal) or dashboard directly
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+    const userId = auth.userId
+
+    // ── Parse body ────────────────────────────────────────────────────────
     const body = await request.json()
-    const { ifaId, clientId, client, policies, query, mode, coverageType, insurer } = body
+    const { ifaId: _unused, clientId, query, mode, coverageType, insurer } = body
 
-    if (!ifaId) return NextResponse.json({ error: 'Missing ifaId' }, { status: 400 })
-
-    // ── Load data if not passed by Relay ───────────────────────────────────
-    let clientData = client
-    let policyData = policies
-    let ifaProfile = null
-
-    if (!clientData && clientId) {
-      const { data } = await supabase.from('clients').select('*').eq('id', clientId).single()
-      clientData = data
+    if (_unused && _unused !== userId) {
+      console.warn(`[compass] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
     }
-    if (!policyData && clientId) {
-      const { data } = await supabase.from('policies').select('*').eq('client_id', clientId)
-      policyData = data
+
+    // ── Load data, scoped to verified userId ──────────────────────────────
+    // SECURITY NOTE: We ignore any `client`/`policies` pre-loaded by Relay
+    // and re-query with ownership check. Slightly more DB load, but prevents
+    // Relay bugs from translating into cross-tenant reads here.
+    let clientData = null
+    let policyData: any[] = []
+
+    if (clientId) {
+      const { data: c } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .eq('ifa_id', userId)
+        .single()
+
+      if (!c) {
+        return NextResponse.json({ error: 'Client not found or unauthorized' }, { status: 404 })
+      }
+      clientData = c
+
+      const { data: p } = await supabase
+        .from('policies')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('ifa_id', userId)
+      policyData = p || []
     }
-    const { data: ifa } = await supabase.from('profiles').select('*').eq('id', ifaId).single()
-    ifaProfile = ifa
+
+    const { data: ifaProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
 
     const preferredInsurers: string[] = ifaProfile?.preferred_insurers || []
 
     // ── Build context ──────────────────────────────────────────────────────
-    const currentCoverage = (policyData || []).map((p: any) => p.type)
+    const currentCoverage = policyData.map((p: any) => p.type)
     const missingCoverage = COVERAGE_CATEGORIES.filter(c =>
       !currentCoverage.some((cc: string) => cc?.toLowerCase().includes(c.toLowerCase()))
     )
 
-    const policyLines = (policyData || []).length > 0
-      ? (policyData || []).map((p: any) =>
+    const policyLines = policyData.length > 0
+      ? policyData.map((p: any) =>
           `${p.type} — ${p.insurer} — $${Number(p.premium).toLocaleString()}/yr — renews ${p.renewal_date || 'unknown'}`
         ).join('\n')
       : 'No active policies on record'

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -9,6 +10,13 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Auth (accept session OR relay-internal) ───────────────────────────
+    // No DB access, but we still gate to prevent unauthenticated LLM-cost abuse.
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const {
       coverageType,
       clientAge,
@@ -36,7 +44,6 @@ export async function POST(request: NextRequest) {
       : ''
 
     const prompt = `You are Sage, an internal actuary agent for Espresso, an insurance back-office platform in Singapore.
-
 Your job is to give Maya (the client-facing AI) a quick premium estimate for a client enquiry. You are NOT speaking to the client directly — your output will be passed to Maya who will then add a disclaimer.
 
 COVERAGE REQUESTED: ${coverageType}
