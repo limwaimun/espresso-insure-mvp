@@ -6,6 +6,7 @@ import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
 import CountryCodeSelect from '@/components/CountryCodeSelect'
 import PortalMenu from '@/components/PortalMenu'
+import Modal from '@/components/Modal'
 import {
   X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -260,21 +261,7 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
   )
 }
 
-// ── Modal ──────────────────────────────────────────────────────────────────
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 14, padding: '28px', width: 500, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 20, color: '#1A1410' }}>{title}</span>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}><X size={18} color="#6B6460" /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
+// ── Modal is now imported from @/components/Modal (shared with HoldingsSection)
 
 // ── PortalMenu is now imported from @/components/PortalMenu (shared with HoldingsSection)
 

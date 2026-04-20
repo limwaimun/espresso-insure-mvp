@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PortalMenu from '@/components/PortalMenu'
+import Modal from '@/components/Modal'
 import {
-  Plus, X, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
+  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
   ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 
@@ -54,7 +55,7 @@ const RISK_LABELS: Record<string, string> = {
   very_high: 'Very high risk',
 }
 
-// Grid template — shared between header row and data rows so columns align.
+// Shared grid template for column alignment between header and data rows.
 // chevron · product · type+risk · value (right) · units@NAV (right) · review pill · menu
 const GRID_COLS = '14px minmax(0,2.4fr) 1.1fr 0.9fr 1.1fr 0.9fr 28px'
 
@@ -91,11 +92,7 @@ function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDele
   const typeLabel = TYPE_LABELS[holding.product_type] || 'Other'
   const pill = reviewPill(holding.last_reviewed_at)
 
-  // Last row gets no bottom border when collapsed, but gets one when expanded
-  // (separating main row from detail strip). The detail strip itself carries
-  // the "real" last-row border when present.
-  const mainBorder = (!isLast || expanded) ? '0.5px solid #F1EFE8' : 'none'
-  const detailBorder = !isLast ? '0.5px solid #F1EFE8' : 'none'
+  const bottomBorder = !isLast ? '0.5px solid #F1EFE8' : 'none'
 
   return (
     <div>
@@ -108,7 +105,7 @@ function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDele
           gap: 10,
           alignItems: 'center',
           padding: '14px 16px',
-          borderBottom: expanded ? '0.5px solid #F1EFE8' : mainBorder,
+          borderBottom: expanded ? '0.5px solid #F1EFE8' : bottomBorder,
           cursor: 'pointer',
         }}
       >
@@ -197,16 +194,18 @@ function HoldingRow({ holding, isLast, onEdit, onAskMaya, onMarkReviewed, onDele
         </div>
       </div>
 
-      {/* Expanded detail */}
+      {/* Expanded detail — fields spread evenly across the row via auto-fit grid */}
       {expanded && (
         <div style={{
           background: '#FBFAF7',
-          padding: '16px 20px 18px 40px',
-          borderBottom: detailBorder,
+          padding: '18px 20px 20px 40px',
+          borderBottom: bottomBorder,
         }}>
           <div style={{
-            display: 'flex', flexWrap: 'wrap', gap: '14px 36px',
-            marginBottom: holding.notes ? 14 : 0,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '14px 20px',
+            marginBottom: holding.notes ? 16 : 0,
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Inception</span>
@@ -262,21 +261,22 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Form state — handles both add and edit
+  // Form modal state — handles both add and edit
   const [showForm, setShowForm] = useState(false)
   const [editingHoldingId, setEditingHoldingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(DEFAULT_FORM)
+  const [formError, setFormError] = useState('')
 
   // Harbour review script
   const [harbourScript, setHarbourScript] = useState<string | null>(null)
   const [loadingHarbour, setLoadingHarbour] = useState(false)
   const [copiedHarbour, setCopiedHarbour] = useState(false)
 
-  // Maya action stub — fires when user clicks any Maya menu item
+  // Maya action stub — preview of the prompt that will be sent
   const [mayaStub, setMayaStub] = useState<{ title: string; prompt: string } | null>(null)
 
-  // Delete confirmation modal
+  // Delete confirmation
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -298,6 +298,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
   function openAdd() {
     setForm(DEFAULT_FORM)
     setEditingHoldingId(null)
+    setFormError('')
     setShowForm(true)
   }
 
@@ -316,6 +317,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       notes: h.notes ?? '',
     })
     setEditingHoldingId(h.id)
+    setFormError('')
     setShowForm(true)
   }
 
@@ -323,11 +325,14 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     setShowForm(false)
     setEditingHoldingId(null)
     setForm(DEFAULT_FORM)
+    setFormError('')
   }
 
   async function saveHolding() {
-    if (!form.product_name || !form.provider) return
+    if (!form.product_name.trim()) { setFormError('Product name is required'); return }
+    if (!form.provider.trim())     { setFormError('Provider is required'); return }
     setSaving(true)
+    setFormError('')
     const autoValue = form.units_held && form.last_nav
       ? Number(form.units_held) * Number(form.last_nav)
       : null
@@ -346,14 +351,19 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       inception_date: form.inception_date || null,
       notes: form.notes || null,
     }
-    if (editingHoldingId) {
-      await supabase.from('holdings').update(payload).eq('id', editingHoldingId)
-    } else {
-      await supabase.from('holdings').insert(payload)
+    try {
+      if (editingHoldingId) {
+        await supabase.from('holdings').update(payload).eq('id', editingHoldingId)
+      } else {
+        await supabase.from('holdings').insert(payload)
+      }
+      closeForm()
+      loadHoldings()
+    } catch {
+      setFormError('Something went wrong — please try again')
+    } finally {
+      setSaving(false)
     }
-    closeForm()
-    setSaving(false)
-    loadHoldings()
   }
 
   async function markReviewed(holdingId: string) {
@@ -370,9 +380,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     loadHoldings()
   }
 
-  // Maya stubs — same pattern as Policy/Claim Maya actions in ClientDetailPage.
-  // These show a preview modal of the prompt that will be sent once the agent
-  // integration is wired up (Batch 3).
+  // Maya stubs — preview of the prompt that will be sent once agent wiring is done (Batch 3)
   function askMayaStub(h: Holding, action: 'review' | 'client_update') {
     if (action === 'review') {
       setMayaStub({
@@ -435,13 +443,15 @@ Keep it under 150 words. Tone: professional but personal.`,
 
   // ── Styles ───────────────────────────────────────────────────────────────
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', border: '0.5px solid #E8E2DA',
-    borderRadius: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+    width: '100%', padding: '9px 12px', border: '0.5px solid #E8E2DA',
+    borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13,
     background: '#FFFFFF', color: '#1A1410', outline: 'none',
+    boxSizing: 'border-box',
   }
   const labelStyle: React.CSSProperties = {
     fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460',
-    marginBottom: 4, display: 'block',
+    marginBottom: 5, display: 'block',
+    textTransform: 'uppercase', letterSpacing: '0.07em',
   }
   const btnOutlineAmber: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
@@ -452,13 +462,13 @@ Keep it under 150 words. Tone: professional but personal.`,
   }
   const btnPrimary: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
-    padding: '8px 16px', fontSize: 13, color: '#FFFFFF',
+    padding: '9px 18px', fontSize: 13, color: '#FFFFFF',
     background: '#BA7517', border: 'none', borderRadius: 8,
     cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
   }
   const btnOutline: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
-    padding: '8px 16px', fontSize: 13, color: '#6B6460',
+    padding: '9px 18px', fontSize: 13, color: '#6B6460',
     background: 'transparent', border: '0.5px solid #E8E2DA',
     borderRadius: 8, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
   }
@@ -466,7 +476,6 @@ Keep it under 150 words. Tone: professional but personal.`,
   if (loading) return null
 
   const hasRows = holdings.length > 0
-  const showListArea = hasRows || showForm || harbourScript
 
   return (
     <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, marginBottom: 20 }}>
@@ -475,7 +484,7 @@ Keep it under 150 words. Tone: professional but personal.`,
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '16px 20px',
-        borderBottom: showListArea ? '0.5px solid #E8E2DA' : 'none',
+        borderBottom: (hasRows || harbourScript) ? '0.5px solid #E8E2DA' : 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410' }}>
@@ -498,9 +507,9 @@ Keep it under 150 words. Tone: professional but personal.`,
               {loadingHarbour ? 'Loading…' : 'Review script'}
             </button>
           )}
-          <button onClick={showForm ? closeForm : openAdd} style={btnOutlineAmber}>
-            {showForm ? <X size={12} /> : <Plus size={12} />}
-            {showForm ? 'Cancel' : 'Add holding'}
+          <button onClick={openAdd} style={btnOutlineAmber}>
+            <Plus size={12} />
+            Add holding
           </button>
         </div>
       </div>
@@ -540,112 +549,15 @@ Keep it under 150 words. Tone: professional but personal.`,
         </div>
       )}
 
-      {/* Add/Edit form */}
-      {showForm && (
-        <div style={{
-          padding: 20,
-          borderBottom: hasRows ? '0.5px solid #E8E2DA' : 'none',
-          background: '#FBFAF7',
-        }}>
-          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: '#1A1410', marginBottom: 14 }}>
-            {editingHoldingId ? 'Edit holding' : 'Add holding'}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={labelStyle}>Type</label>
-              <select value={form.product_type} onChange={e => setForm(p => ({ ...p, product_type: e.target.value }))} style={inputStyle}>
-                <option value="unit_trust">Unit Trust</option>
-                <option value="etf">ETF</option>
-                <option value="ilp">ILP</option>
-                <option value="annuity">Annuity</option>
-                <option value="structured_product">Structured Product</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Risk rating</label>
-              <select value={form.risk_rating} onChange={e => setForm(p => ({ ...p, risk_rating: e.target.value }))} style={inputStyle}>
-                <option value="low">Low</option>
-                <option value="medium">Moderate</option>
-                <option value="high">High</option>
-                <option value="very_high">Very High</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Product name *</label>
-              <input placeholder="e.g. Infinity US 500 Stock Index Fund" value={form.product_name} onChange={e => setForm(p => ({ ...p, product_name: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Provider / Fund house *</label>
-              <input placeholder="e.g. Lion Global, BlackRock" value={form.provider} onChange={e => setForm(p => ({ ...p, provider: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Platform</label>
-              <input placeholder="e.g. FSMOne, Endowus, Phillip" value={form.platform} onChange={e => setForm(p => ({ ...p, platform: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Inception date</label>
-              <input type="date" value={form.inception_date} onChange={e => setForm(p => ({ ...p, inception_date: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Units held</label>
-              <input type="number" placeholder="e.g. 1234.56" value={form.units_held} onChange={e => setForm(p => ({ ...p, units_held: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Last NAV</label>
-              <input type="number" placeholder="e.g. 1.2340" value={form.last_nav} onChange={e => setForm(p => ({ ...p, last_nav: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Current value</label>
-              <input type="number" placeholder="Auto-calculated or manual" value={form.current_value} onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Currency</label>
-              <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))} style={inputStyle}>
-                <option value="SGD">SGD</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
-                <option value="AUD">AUD</option>
-                <option value="HKD">HKD</option>
-                <option value="CNY">CNY</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Notes</label>
-            <textarea
-              placeholder="Any suitability notes or context"
-              rows={2}
-              value={form.notes}
-              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={saveHolding}
-              disabled={saving || !form.product_name || !form.provider}
-              style={{ ...btnPrimary, opacity: (saving || !form.product_name || !form.provider) ? 0.6 : 1 }}
-            >
-              <Save size={13} />
-              {saving ? 'Saving…' : (editingHoldingId ? 'Save changes' : 'Save holding')}
-            </button>
-            <button onClick={closeForm} style={btnOutline}>Cancel</button>
-          </div>
-        </div>
-      )}
-
       {/* Holdings list */}
-      {!hasRows && !showForm ? (
+      {!hasRows ? (
         <div style={{
           padding: '28px 20px', textAlign: 'center',
           fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#B4B2A9',
         }}>
           No investment holdings recorded yet
         </div>
-      ) : hasRows ? (
+      ) : (
         <div>
           {/* Column headers */}
           <div style={{
@@ -676,90 +588,197 @@ Keep it under 150 words. Tone: professional but personal.`,
             />
           ))}
         </div>
-      ) : null}
-
-      {/* Maya stub modal */}
-      {mayaStub && (
-        <div
-          onClick={() => setMayaStub(null)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(26,20,16,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: 20,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#FFFFFF', borderRadius: 12, padding: '24px 26px',
-              maxWidth: 560, width: '100%', maxHeight: '80vh', overflow: 'auto',
-              fontFamily: 'DM Sans, sans-serif',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Bot size={16} color="#BA7517" />
-                <span style={{ fontSize: 15, fontWeight: 500, color: '#1A1410' }}>{mayaStub.title}</span>
-              </div>
-              <button
-                onClick={() => setMayaStub(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9B9088', padding: 0 }}
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div style={{ background: '#FAEEDA', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, color: '#854F0B', fontWeight: 500 }}>
-                Coming soon — Maya agent integration in progress. Preview of the prompt that will be sent:
-              </span>
-            </div>
-            <pre style={{
-              background: '#FBFAF7', border: '0.5px solid #F1EFE8', borderRadius: 8,
-              padding: '12px 14px', fontSize: 12, color: '#1A1410', lineHeight: 1.6,
-              whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0,
-              fontFamily: 'DM Sans, sans-serif',
-            }}>
-              {mayaStub.prompt}
-            </pre>
-          </div>
-        </div>
       )}
 
-      {/* Delete confirm modal */}
-      {confirmDeleteId && (
-        <div
-          onClick={() => !deleting && setConfirmDeleteId(null)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(26,20,16,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: 20,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#FFFFFF', borderRadius: 12, padding: '22px 24px',
-              maxWidth: 420, width: '100%', fontFamily: 'DM Sans, sans-serif',
-            }}
-          >
-            <div style={{ fontSize: 15, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Delete this holding?</div>
-            <div style={{ fontSize: 13, color: '#6B6460', marginBottom: 16, lineHeight: 1.5 }}>
-              This will permanently remove it from the client record. You can&apos;t undo this.
+      {/* == ADD / EDIT HOLDING MODAL == */}
+      {showForm && (
+        <Modal title={editingHoldingId ? 'Edit holding' : 'Add holding'} onClose={closeForm}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Type</label>
+                <select value={form.product_type} onChange={e => setForm(p => ({ ...p, product_type: e.target.value }))} style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}>
+                  <option value="unit_trust">Unit Trust</option>
+                  <option value="etf">ETF</option>
+                  <option value="ilp">ILP</option>
+                  <option value="annuity">Annuity</option>
+                  <option value="structured_product">Structured Product</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Risk rating</label>
+                <select value={form.risk_rating} onChange={e => setForm(p => ({ ...p, risk_rating: e.target.value }))} style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}>
+                  <option value="low">Low</option>
+                  <option value="medium">Moderate</option>
+                  <option value="high">High</option>
+                  <option value="very_high">Very High</option>
+                </select>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button onClick={() => setConfirmDeleteId(null)} disabled={deleting} style={{ ...btnOutline, opacity: deleting ? 0.6 : 1 }}>Cancel</button>
+
+            <div>
+              <label style={labelStyle}>Product name *</label>
+              <input
+                placeholder="e.g. Infinity US 500 Stock Index Fund"
+                value={form.product_name}
+                onChange={e => setForm(p => ({ ...p, product_name: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Provider / Fund house *</label>
+              <input
+                placeholder="e.g. Lion Global, BlackRock, Schroders"
+                value={form.provider}
+                onChange={e => setForm(p => ({ ...p, provider: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Platform</label>
+                <input
+                  placeholder="e.g. FSMOne, Endowus, Phillip"
+                  value={form.platform}
+                  onChange={e => setForm(p => ({ ...p, platform: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Inception date</label>
+                <input
+                  type="date"
+                  value={form.inception_date}
+                  onChange={e => setForm(p => ({ ...p, inception_date: e.target.value }))}
+                  style={{ ...inputStyle, colorScheme: 'dark' } as React.CSSProperties}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Units held</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1234.56"
+                  value={form.units_held}
+                  onChange={e => setForm(p => ({ ...p, units_held: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Last NAV</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1.2340"
+                  value={form.last_nav}
+                  onChange={e => setForm(p => ({ ...p, last_nav: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Current value</label>
+                <input
+                  type="number"
+                  placeholder="Auto-calculated or manual"
+                  value={form.current_value}
+                  onChange={e => setForm(p => ({ ...p, current_value: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Currency</label>
+                <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))} style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}>
+                  <option value="SGD">SGD</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="JPY">JPY</option>
+                  <option value="AUD">AUD</option>
+                  <option value="HKD">HKD</option>
+                  <option value="CNY">CNY</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Notes</label>
+              <textarea
+                placeholder="Any suitability notes or context"
+                rows={2}
+                value={form.notes}
+                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
+              />
+            </div>
+
+            {formError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{formError}</p>}
+
+            <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                style={{ ...btnPrimary, background: '#A32D2D', opacity: deleting ? 0.6 : 1 }}
+                onClick={saveHolding}
+                disabled={saving}
+                style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: saving ? 0.6 : 1 }}
               >
-                <Trash2 size={13} />
-                {deleting ? 'Deleting…' : 'Delete'}
+                <Save size={14} />
+                {saving ? 'Saving…' : (editingHoldingId ? 'Save changes' : 'Save holding')}
               </button>
+              <button onClick={closeForm} style={btnOutline}>Cancel</button>
             </div>
           </div>
-        </div>
+        </Modal>
+      )}
+
+      {/* == MAYA STUB MODAL == */}
+      {mayaStub && (
+        <Modal title={mayaStub.title} onClose={() => setMayaStub(null)}>
+          <div style={{ background: '#FAEEDA', borderRadius: 8, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <Bot size={14} color="#BA7517" style={{ flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 12, color: '#854F0B', lineHeight: 1.5 }}>
+              Coming soon — Maya agent integration in progress. Preview of the prompt that will be sent:
+            </span>
+          </div>
+          <pre style={{
+            background: '#FBFAF7', border: '0.5px solid #F1EFE8', borderRadius: 8,
+            padding: '12px 14px', fontSize: 12, color: '#1A1410', lineHeight: 1.6,
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0,
+            fontFamily: 'DM Sans, sans-serif',
+          }}>
+            {mayaStub.prompt}
+          </pre>
+        </Modal>
+      )}
+
+      {/* == DELETE CONFIRM MODAL == */}
+      {confirmDeleteId && (
+        <Modal title="Delete this holding?" onClose={() => { if (!deleting) setConfirmDeleteId(null) }}>
+          <div style={{ fontSize: 13, color: '#6B6460', marginBottom: 20, lineHeight: 1.6 }}>
+            This will permanently remove the holding from the client record. You can&apos;t undo this.
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setConfirmDeleteId(null)}
+              disabled={deleting}
+              style={{ ...btnOutline, opacity: deleting ? 0.6 : 1 }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={deleting}
+              style={{ ...btnPrimary, background: '#A32D2D', opacity: deleting ? 0.6 : 1 }}
+            >
+              <Trash2 size={13} />
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )
