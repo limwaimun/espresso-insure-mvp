@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 // SEA country codes — Singapore first as default
 const COUNTRY_CODES = [
@@ -17,67 +19,117 @@ const COUNTRY_CODES = [
   { code: '+95',  label: 'MM +95',  name: 'Myanmar' },
 ] as const
 
+// Password rules (kept in sync with server-side)
+const PW_MIN_LEN = 8
+const pwChecks = (pw: string) => ({
+  length: pw.length >= PW_MIN_LEN,
+  number: /\d/.test(pw),
+  upper: /[A-Z]/.test(pw),
+})
+const pwValid = (pw: string) => {
+  const c = pwChecks(pw)
+  return c.length && c.number && c.upper
+}
+
 export default function TrialPage() {
+  const router = useRouter()
+  const supabase = createClient()
+
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', company: '', countryCode: '+65', phoneLocal: '' })
+  const [form, setForm] = useState({
+    name: '', email: '', company: '',
+    countryCode: '+65', phoneLocal: '',
+    password: '', confirm: '',
+  })
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name || !form.email) { setError('Name and email are required'); return }
+    setError('')
+
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('Name and email are required')
+      return
+    }
+
     const phoneDigits = form.phoneLocal.replace(/\D/g, '')
-    if (!phoneDigits) { setError('Mobile number is required — Maya needs it to reach your clients on WhatsApp'); return }
-    if (phoneDigits.length < 7) { setError('Mobile number looks too short. Please check and try again.'); return }
+    if (!phoneDigits) {
+      setError('Mobile number is required — Maya needs it to reach your clients on WhatsApp')
+      return
+    }
+    if (phoneDigits.length < 7) {
+      setError('Mobile number looks too short. Please check and try again.')
+      return
+    }
+
+    if (!pwValid(form.password)) {
+      setError('Password must be at least 8 characters, with a number and an uppercase letter')
+      return
+    }
+    if (form.password !== form.confirm) {
+      setError('Passwords don\'t match')
+      return
+    }
 
     const phone = `${form.countryCode}${phoneDigits}`
 
     setLoading(true)
-    setError('')
     try {
+      // 1. Create the account server-side
       const res = await fetch('/api/trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          company: form.company,
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
+          company: form.company.trim(),
           phone,
+          password: form.password,
         }),
       })
-      if (res.ok) {
-        setSubmitted(true)
-      } else {
-        const data = await res.json()
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
         if (res.status === 409) {
           setError('An account with this email already exists. Please sign in instead.')
         } else {
           setError(data.error || 'Something went wrong. Please email hello@espresso.insure')
         }
+        setLoading(false)
+        return
       }
+
+      // 2. Sign them in from the client so the session cookie is set in this browser
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      })
+
+      if (signInError) {
+        // Account was created but auto-signin failed — fall back to the login page
+        router.push('/login')
+        return
+      }
+
+      // 3. Straight into the product
+      router.push('/dashboard')
+      router.refresh()
     } catch {
       setError('Something went wrong. Please email hello@espresso.insure and we\'ll get you set up.')
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const input: React.CSSProperties = { width: '100%', height: 46, padding: '0 14px', border: '0.5px solid #E8E2DA', borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', background: '#FFFFFF', outline: 'none', transition: 'border-color 0.15s' }
   const label: React.CSSProperties = { fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500, color: '#3D3532', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 7 }
 
-  if (submitted) return (
-    <>
-      <style>{`html,body,#__next{background:#F7F4F0!important;margin:0;padding:0;}`}</style>
-      <div style={{ minHeight: '100vh', background: '#F7F4F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <a href="/" className="trial-logo" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', textDecoration: 'none', marginBottom: 48, display: 'block', textAlign: 'center' }}>espresso<span style={{ color: '#BA7517' }}>.</span></a>
-        <div style={{ width: '100%', maxWidth: 420, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px', textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, background: '#FEF3E2', border: '0.5px solid #FAC775', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 22 }}>☕</div>
-          <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: '0 0 10px' }}>Welcome to espresso</h2>
-          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', margin: '0 0 10px', lineHeight: 1.7 }}>Your 14-day free trial is live. Check your email for a link to set your password.</p>
-          <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9B9088', margin: '0 0 28px', lineHeight: 1.7 }}>Once you're signed in, you can import your book and Maya will get to work.</p>
-          <Link href="/login" style={{ display: 'inline-block', background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, padding: '11px 28px', borderRadius: 8, textDecoration: 'none' }}>Go to sign in →</Link>
-        </div>
-      </div>
-    </>
+  const checks = pwChecks(form.password)
+
+  const checklistItem = (ok: boolean, text: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: ok ? '#0F6E56' : '#9B9088' }}>
+      <span style={{ width: 12, height: 12, borderRadius: '50%', background: ok ? '#0F6E56' : 'transparent', border: ok ? 'none' : '1px solid #C9C3BA', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#FFF', flexShrink: 0 }}>{ok ? '✓' : ''}</span>
+      {text}
+    </div>
   )
 
   return (
@@ -86,11 +138,9 @@ export default function TrialPage() {
         html, body, #__next { background: #F7F4F0 !important; margin: 0; padding: 0; min-height: 100%; }
         * { box-sizing: border-box; }
         input:focus, select:focus { outline: none; border-color: #BA7517 !important; }
-        .trial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 480px) {
           .trial-card { padding: 28px 22px !important; border-radius: 12px !important; }
           .trial-logo { font-size: 26px !important; margin-bottom: 32px !important; }
-          .trial-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -102,7 +152,7 @@ export default function TrialPage() {
         </a>
 
         {/* Form card */}
-        <div className="trial-card" style={{ width: '100%', maxWidth: 420, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
+        <div className="trial-card" style={{ width: '100%', maxWidth: 440, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 16, padding: '40px 36px' }}>
           <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: '0 0 4px' }}>Start your free trial</h1>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#9B9088', margin: '0 0 32px' }}>14 days free · No credit card · Full access</p>
 
@@ -111,14 +161,17 @@ export default function TrialPage() {
               <label style={label}>Full name *</label>
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Sarah Tan" required style={input} />
             </div>
+
             <div>
               <label style={label}>Email *</label>
               <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com" required style={input} />
             </div>
+
             <div>
               <label style={label}>Company / Agency</label>
               <input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Wayne & Co" style={input} />
             </div>
+
             <div>
               <label style={label}>Mobile (WhatsApp) *</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -143,6 +196,45 @@ export default function TrialPage() {
                 />
               </div>
               <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', margin: '6px 0 0' }}>Maya needs this to reach your clients on WhatsApp.</p>
+            </div>
+
+            <div>
+              <label style={label}>Password *</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                placeholder="••••••••"
+                required
+                autoComplete="new-password"
+                style={input}
+              />
+              {form.password.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8 }}>
+                  {checklistItem(checks.length, 'At least 8 characters')}
+                  {checklistItem(checks.number, 'Contains a number')}
+                  {checklistItem(checks.upper, 'Contains an uppercase letter')}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={label}>Confirm password *</label>
+              <input
+                type="password"
+                value={form.confirm}
+                onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))}
+                placeholder="••••••••"
+                required
+                autoComplete="new-password"
+                style={{
+                  ...input,
+                  borderColor: form.confirm.length > 0 && form.confirm !== form.password ? '#F7C1C1' : '#E8E2DA',
+                }}
+              />
+              {form.confirm.length > 0 && form.confirm !== form.password && (
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#A32D2D', margin: '6px 0 0' }}>Passwords don't match</p>
+              )}
             </div>
 
             {error && (
