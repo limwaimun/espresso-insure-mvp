@@ -4,7 +4,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
-import { X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2 } from 'lucide-react'
+import {
+  X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2,
+  Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
+} from 'lucide-react'
 import { createClient } from '../../../../lib/supabase/client'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -126,6 +129,7 @@ interface Props {
 
 const INSURERS = ['AIA', 'Great Eastern', 'Prudential', 'NTUC Income', 'Manulife', 'AXA', 'Aviva', 'Tokio Marine', 'Singlife', 'FWD', 'Etiqa', 'Other']
 const POLICY_TYPES = ['Life', 'Health', 'Critical Illness', 'Disability', 'Motor', 'Travel', 'Property', 'Professional Indemnity', 'Group Health', 'Group Life', 'Fire', 'Business Interruption', 'Keyman', 'D&O', 'Cyber', 'Workers Compensation', 'Public Liability', 'Marine']
+const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Motor', 'Travel', 'Property', 'Other']
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -175,6 +179,14 @@ const btnOutline: React.CSSProperties = {
   cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
 }
 
+// Outlined amber "+ Add X" button — used consistently across Policies, Holdings, Claims
+const btnAddSection: React.CSSProperties = {
+  fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517',
+  background: 'transparent', border: '1px solid #BA7517', borderRadius: 6,
+  padding: '6px 12px', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', gap: 4,
+}
+
 // ── PolicyDocCell ──────────────────────────────────────────────────────────
 
 function PolicyDocCell({ policyId, ifaId, existingFileName }: {
@@ -201,16 +213,11 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
 
   async function handleDownload() {
     try {
-      // Get the signed URL from our API
       const res = await fetch(`/api/policy-doc?policyId=${policyId}`)
       const data = await res.json()
       if (!data.downloadUrl) return
-
-      // Fetch the actual file as a blob (bypasses cross-origin download restrictions)
       const fileRes = await fetch(data.downloadUrl)
       const blob = await fileRes.blob()
-
-      // Create a local blob URL and trigger download
       const blobUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = blobUrl
@@ -235,7 +242,7 @@ function PolicyDocCell({ policyId, ifaId, existingFileName }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <button onClick={handleDownload} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
             <Download size={12} color="#BA7517" />
-            <span style={{ fontSize: 11, color: '#BA7517', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</span>
+            <span style={{ fontSize: 11, color: '#BA7517', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</span>
           </button>
           <button onClick={() => fileRef.current?.click()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.45 }}>
             <Upload size={11} color="#6B6460" />
@@ -267,6 +274,140 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
+// ── PolicyRow — expandable row for policies table ─────────────────────────
+
+function PolicyRow({ policy, ifaId, onDelete, deleting, confirmingDelete, setConfirming }: {
+  policy: Policy
+  ifaId: string
+  onDelete: (id: string) => void
+  deleting: boolean
+  confirmingDelete: boolean
+  setConfirming: (id: string | null) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [menuOpen])
+
+  function renderStatus() {
+    if (policy.status === 'lapsed') return { cls: 'pill-red', text: 'Lapsed' }
+    if (policy.status === 'cancelled') return { cls: 'pill-neutral', text: 'Cancelled' }
+    if (policy.status === 'pending') return { cls: 'pill-amber', text: 'Pending' }
+    if (!policy.renewal_date) return { cls: 'pill-green', text: 'Active' }
+    const days = Math.ceil((new Date(policy.renewal_date).getTime() - Date.now()) / 86400000)
+    if (days < 0) return { cls: 'pill-amber', text: 'Overdue renewal' }
+    if (days <= 30) return { cls: 'pill-red', text: `Due in ${days}d` }
+    if (days <= 90) return { cls: 'pill-amber', text: `${days}d to renewal` }
+    return { cls: 'pill-green', text: `Renews in ${days}d` }
+  }
+  const { cls, text } = renderStatus()
+
+  return (
+    <>
+      {/* Main row — 6 columns: Product (+ policy#), Insurer (+ type), Premium (+ SA), Renewal, Status, ⋮ */}
+      <tr onClick={() => setExpanded(e => !e)} style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '0.5px solid #F1EFE8' }}>
+        <td style={{ padding: '12px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {expanded ? <ChevronDown size={12} color="#9B9088" /> : <ChevronRight size={12} color="#9B9088" />}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{policy.product_name || policy.type || '—'}</div>
+              {policy.policy_number && (
+                <div style={{ fontSize: 10, color: '#9B9088', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>{policy.policy_number}</div>
+              )}
+            </div>
+          </div>
+        </td>
+        <td style={{ padding: '12px 10px' }}>
+          <div style={{ fontSize: 13, color: '#1A1410' }}>{policy.insurer || '—'}</div>
+          <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>{policy.type || '—'}</div>
+        </td>
+        <td style={{ padding: '12px 10px' }}>
+          <div style={{ fontSize: 13, color: '#1A1410' }}>
+            ${(Number(policy.premium) || 0).toLocaleString()}
+            {policy.premium_frequency && policy.premium_frequency !== 'annual' && (
+              <span style={{ fontSize: 10, color: '#9B9088' }}> /{policy.premium_frequency.slice(0, 1)}</span>
+            )}
+          </div>
+          {policy.sum_assured ? (
+            <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>${(Number(policy.sum_assured) / 1000).toFixed(0)}k SA</div>
+          ) : null}
+        </td>
+        <td style={{ padding: '12px 10px', fontSize: 13, color: '#1A1410' }}>{formatDate(policy.renewal_date)}</td>
+        <td style={{ padding: '12px 10px' }}><span className={`pill ${cls}`}>{text}</span></td>
+        <td style={{ padding: '12px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
+          <div ref={menuRef} style={{ display: 'inline-block', position: 'relative' }}>
+            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
+              <MoreVertical size={14} color="#6B6460" />
+            </button>
+            {menuOpen && (
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 180, zIndex: 20, overflow: 'hidden' }}>
+                <a href={`/dashboard/maya-playground?clientId=${policy.id}&context=policy`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Ask Maya about this
+                </a>
+                {confirmingDelete ? (
+                  <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F1EFE8', display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <button onClick={() => onDelete(policy.id)} disabled={deleting} style={{ fontSize: 11, color: '#A32D2D', background: 'rgba(208,96,96,0.08)', border: '1px solid #A32D2D', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>
+                      {deleting ? 'Deleting…' : 'Confirm'}
+                    </button>
+                    <button onClick={() => setConfirming(null)} style={{ fontSize: 11, color: '#6B6460', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => { setConfirming(policy.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                    <Trash2 size={12} /> Delete policy
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </td>
+      </tr>
+
+      {/* Expanded detail row */}
+      {expanded && (
+        <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
+          <td colSpan={6} style={{ padding: '14px 20px 18px 34px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: policy.notes ? 14 : 0 }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Start date</div>
+                <div style={{ fontSize: 12, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Premium frequency</div>
+                <div style={{ fontSize: 12, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Sum assured</div>
+                <div style={{ fontSize: 12, color: '#1A1410' }}>{policy.sum_assured ? `$${Number(policy.sum_assured).toLocaleString()}` : '—'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Document</div>
+                <PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} />
+              </div>
+            </div>
+            {policy.notes && (
+              <div>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Notes</div>
+                <div style={{ fontSize: 12, color: '#6B6460', lineHeight: 1.5 }}>{policy.notes}</div>
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
 function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; onUpdated: () => void }) {
@@ -276,7 +417,6 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   const [editBody, setEditBody] = useState(claim.body || '')
   const [saving, setSaving] = useState(false)
 
-  // Optimistic local state — updates instantly, syncs to server in background
   const [localStatus, setLocalStatus] = useState(
     claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
   )
@@ -291,7 +431,6 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   const isTruncated = bodyText.length > TRUNCATE
 
   async function saveToServer(patch: Record<string, unknown>) {
-    // Fire and forget — don't await, don't block UI
     fetch('/api/claim-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -300,12 +439,12 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
   }
 
   function handleStatusChange(status: string) {
-    setLocalStatus(status) // instant UI update
+    setLocalStatus(status)
     saveToServer({ status, resolved: status === 'resolved' })
   }
 
   function handlePriorityChange(priority: string) {
-    setLocalPriority(priority) // instant UI update
+    setLocalPriority(priority)
     saveToServer({ priority })
   }
 
@@ -318,24 +457,22 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
     })
     setEditing(false)
     setSaving(false)
-    onUpdated() // refresh only after text edit save
+    onUpdated()
   }
 
   return (
     <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '14px 16px' }}>
 
-      {/* Top row: date + edit button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>{claimDate}</span>
         {!editing && (
           <button onClick={() => setEditing(true)}
             style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: '#6B6460', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 4 }}>
-            ✏️ Edit
+            <Pencil size={11} /> Edit
           </button>
         )}
       </div>
 
-      {/* Content */}
       {editing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
           <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
@@ -370,9 +507,7 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
         </div>
       )}
 
-      {/* Bottom row: status dropdown + priority dropdown */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>Status:</span>
           <select
@@ -406,7 +541,6 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
             <option value="high">High</option>
           </select>
         </div>
-
       </div>
     </div>
   )
@@ -421,7 +555,6 @@ export default function ClientDetailPage({
   const router = useRouter()
   const supabase = createClient()
 
-  // Fetch ifaId client-side — more reliable than server prop in this architecture
   const [resolvedIfaId, setResolvedIfaId] = useState(ifaId)
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -431,6 +564,7 @@ export default function ClientDetailPage({
 
   const [showEdit, setShowEdit] = useState(false)
   const [showAddPolicy, setShowAddPolicy] = useState(false)
+  const [showAddClaim, setShowAddClaim] = useState(false)
   const [showWAInstructions, setShowWAInstructions] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -442,13 +576,23 @@ export default function ClientDetailPage({
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
-  const [policyForm, setPolicyForm] = useState({ policy_number: '', insurer: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' })
+  const [policyForm, setPolicyForm] = useState({
+    insurer: '', product_name: '', policy_number: '', type: '',
+    premium: '', premium_frequency: 'annual', sum_assured: '',
+    start_date: '', renewal_date: '', status: 'active',
+  })
   const [policySaving, setPolicySaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [policyFile, setPolicyFile] = useState<File | null>(null)
   const policyFileRef = useRef<HTMLInputElement>(null)
+
+  // Claim modal state
+  const [claimForm, setClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
+  const [claimSaving, setClaimSaving] = useState(false)
+  const [claimError, setClaimError] = useState('')
+
   const [localActivity, setLocalActivity] = useState<{ date: string; text: string; type: string }[]>([])
 
   // Compass state
@@ -501,7 +645,6 @@ export default function ClientDetailPage({
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
       const newPolicy = await res.json()
 
-      // If a PDF was selected, upload it now
       if (policyFile && newPolicy.policy?.id) {
         const fd = new FormData()
         fd.append('file', policyFile)
@@ -514,7 +657,6 @@ export default function ClientDetailPage({
       setPolicyFile(null)
       setPolicySaving(false)
 
-      // Optimistically add to activity immediately
       setLocalActivity(prev => [{
         date: new Date().toISOString(),
         text: `${policyForm.insurer} ${policyForm.type} added ($${parseFloat(policyForm.premium).toLocaleString()}/yr)`,
@@ -523,6 +665,45 @@ export default function ClientDetailPage({
 
       router.refresh()
     } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
+  }
+
+  async function saveClaim() {
+    if (!claimForm.title.trim()) { setClaimError('Title is required'); return }
+    if (!resolvedIfaId) { setClaimError('Session error — please refresh'); return }
+    setClaimSaving(true)
+    try {
+      const res = await fetch('/api/claim-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: client.id,
+          ifaId: resolvedIfaId,
+          title: claimForm.title,
+          type: 'claim',
+          priority: claimForm.priority,
+          body: claimForm.body,
+          claim_type: claimForm.type,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        setClaimError(d.error ?? 'Failed to create claim')
+        setClaimSaving(false)
+        return
+      }
+      setShowAddClaim(false)
+      setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
+      setClaimSaving(false)
+      setLocalActivity(prev => [{
+        date: new Date().toISOString(),
+        text: `Claim opened: ${claimForm.title}`,
+        type: 'claim',
+      }, ...prev])
+      router.refresh()
+    } catch {
+      setClaimError('Something went wrong — please try again')
+      setClaimSaving(false)
+    }
   }
 
   async function deletePolicy(policyId: string) {
@@ -556,32 +737,31 @@ export default function ClientDetailPage({
             </div>
             {client.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', marginBottom: 6 }}>{client.company}</div>}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', alignItems: 'center' }}>
-              {client.whatsapp && <span>📱 {client.whatsapp}</span>}
-              {client.email && <span>✉️ {client.email}</span>}
-              {client.type === 'individual' && client.birthday && <span>🎂 {birthdayDisplay}</span>}
-              {client.address && <span>📍 {client.address}</span>}
+              {client.whatsapp && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={12} />{client.whatsapp}</span>}
+              {client.email && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Mail size={12} />{client.email}</span>}
+              {client.type === 'individual' && client.birthday && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Cake size={12} />{birthdayDisplay}</span>}
+              {client.address && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} />{client.address}</span>}
             </div>
           </div>
         </div>
 
-        {/* Right: action buttons */}
+        {/* Right: action buttons — all Lucide icons, consistent height */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <button onClick={() => setShowEdit(true)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#BA7517', padding: '8px 16px', border: '1px solid #BA7517', borderRadius: 4, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            ✏️ Edit
+          <button onClick={() => setShowEdit(true)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#BA7517', padding: '8px 16px', border: '1px solid #BA7517', borderRadius: 6, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Pencil size={13} /> Edit
           </button>
           <a href={`/dashboard/maya-playground?clientId=${client.id}`}
-            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', padding: '8px 16px', border: '0.5px solid #E8E2DA', borderRadius: 4, background: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-            🤖 Test with Maya
+            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', padding: '8px 16px', border: '0.5px solid #E8E2DA', borderRadius: 6, background: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+            <Bot size={13} /> Test with Maya
           </a>
           {connectionStatus !== 'connected' && (
-            <button onClick={() => setShowWAInstructions(v => !v)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 4, background: '#25D366', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+            <button onClick={() => setShowWAInstructions(v => !v)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#fff', padding: '8px 16px', border: 'none', borderRadius: 6, background: '#25D366', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
               <MessageCircle size={14} /> Set up WhatsApp group
             </button>
           )}
         </div>
       </div>
 
-      {/* == SECTION 2: METRIC CARDS == */}
       {/* Next of kin + DOB row */}
       {(client.nok_name || client.dob || client.notes) && (
         <div style={{ display: 'flex', gap: 24, marginBottom: 20, padding: '12px 16px', background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, flexWrap: 'wrap' }}>
@@ -609,6 +789,7 @@ export default function ClientDetailPage({
         </div>
       )}
 
+      {/* == SECTION 2: KPI CARDS == */}
       {(() => {
         const totalPremium = policies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
         const totalSA = policies.reduce((s, p) => s + (Number(p.sum_assured) || 0), 0)
@@ -678,11 +859,6 @@ export default function ClientDetailPage({
               ) : (
                 <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>No messages yet.</div>
               )}
-              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                <Link href={`/dashboard/conversations/${conversations.id}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#BA7517', textDecoration: 'none', padding: '8px 16px', border: '1px solid #BA7517', borderRadius: 4, display: 'inline-block' }}>
-                  View full conversation →
-                </Link>
-              </div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: 24, fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460' }}>
@@ -696,81 +872,39 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button onClick={() => { setPolicyForm({ policy_number: '', insurer: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' }); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true) }} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-            + Add policy
+          <button onClick={() => {
+            setPolicyForm({ insurer: '', product_name: '', policy_number: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' })
+            setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
+          }} style={btnAddSection}>
+            <Plus size={12} /> Add policy
           </button>
         </div>
         <div className="panel-body">
           {policies.length > 0 ? (
             <div className="table">
-              <table style={{ width: '100%', tableLayout: 'fixed' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '10%' }}>Policy No.</th>
-                    <th style={{ width: '15%' }}>Product</th>
-                    <th style={{ width: '10%' }}>Insurer</th>
-                    <th style={{ width: '10%' }}>Type</th>
-                    <th style={{ width: '8%' }}>Premium</th>
-                    <th style={{ width: '9%' }}>Sum Assured</th>
-                    <th style={{ width: '8%' }}>Start</th>
-                    <th style={{ width: '8%' }}>Renewal</th>
-                    <th style={{ width: '10%' }}>Doc</th>
-                    <th style={{ width: '8%' }}>Status</th>
-                    <th style={{ width: '4%' }}></th>
+                    <th style={{ width: '28%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, borderBottom: '0.5px solid #E8E2DA' }}>Product</th>
+                    <th style={{ width: '18%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, borderBottom: '0.5px solid #E8E2DA' }}>Insurer · Type</th>
+                    <th style={{ width: '16%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, borderBottom: '0.5px solid #E8E2DA' }}>Premium</th>
+                    <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, borderBottom: '0.5px solid #E8E2DA' }}>Renewal</th>
+                    <th style={{ width: '18%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, borderBottom: '0.5px solid #E8E2DA' }}>Status</th>
+                    <th style={{ width: '6%', borderBottom: '0.5px solid #E8E2DA' }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {policies.map(policy => {
-                    // Render policy status badge with correct logic
-                    function renderPolicyStatus(p: Policy) {
-                      if (p.status === 'lapsed') return { pillClass: 'pill-red', statusText: 'Lapsed' }
-                      if (p.status === 'cancelled') return { pillClass: 'pill-neutral', statusText: 'Cancelled' }
-                      if (p.status === 'pending') return { pillClass: 'pill-amber', statusText: 'Pending' }
-                      // active — compute from renewal_date
-                      if (!p.renewal_date) return { pillClass: 'pill-green', statusText: 'Active' }
-                      const days = Math.ceil((new Date(p.renewal_date).getTime() - Date.now()) / 86400000)
-                      if (days < 0) return { pillClass: 'pill-amber', statusText: 'Overdue renewal' }
-                      if (days <= 30) return { pillClass: 'pill-red', statusText: `Due in ${days} days` }
-                      if (days <= 90) return { pillClass: 'pill-amber', statusText: `Renews in ${days} days` }
-                      return { pillClass: 'pill-green', statusText: `Renews in ${days} days` }
-                    }
-                    const { pillClass, statusText } = renderPolicyStatus(policy)
-                    const isConfirming = confirmDeleteId === policy.id
-                    return (
-                      <tr key={policy.id}>
-                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#9B9088' }}>{policy.policy_number || '—'}</td>
-                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }} title={policy.product_name || ''}>{policy.product_name || policy.type || '—'}</td>
-                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.insurer || '—'}</td>
-                        <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#5F5A57' }}>{policy.type || '—'}</td>
-                        <td>${(Number(policy.premium) || 0).toLocaleString()}{policy.premium_frequency && policy.premium_frequency !== 'annual' ? <span style={{ fontSize: 10, color: '#9B9088' }}> /{policy.premium_frequency.slice(0,1)}</span> : ''}</td>
-                        <td>{policy.sum_assured ? `$${(Number(policy.sum_assured) / 1000).toFixed(0)}k` : '—'}</td>
-                        <td style={{ fontSize: 12, color: '#5F5A57' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</td>
-                        <td>{formatDate(policy.renewal_date)}</td>
-                        <td><PolicyDocCell policyId={policy.id} ifaId={resolvedIfaId} existingFileName={policy.document_name} /></td>
-                        <td><span className={`pill ${pillClass}`}>{statusText}</span></td>
-                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          {isConfirming ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                              <button onClick={() => deletePolicy(policy.id)} disabled={deleting}
-                                style={{ fontSize: 10, color: '#A32D2D', background: 'rgba(208,96,96,0.1)', border: '1px solid #A32D2D', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-                                {deleting ? '…' : 'Delete'}
-                              </button>
-                              <button onClick={() => setConfirmDeleteId(null)}
-                                style={{ fontSize: 10, color: '#6B6460', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>
-                                ✕
-                              </button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setConfirmDeleteId(policy.id)}
-                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.35, display: 'flex', alignItems: 'center', marginLeft: 'auto' }}
-                              title="Delete policy">
-                              <Trash2 size={13} color="#A32D2D" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {policies.map(policy => (
+                    <PolicyRow
+                      key={policy.id}
+                      policy={policy}
+                      ifaId={resolvedIfaId}
+                      onDelete={deletePolicy}
+                      deleting={deleting}
+                      confirmingDelete={confirmDeleteId === policy.id}
+                      setConfirming={setConfirmDeleteId}
+                    />
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -782,44 +916,50 @@ export default function ClientDetailPage({
 
       {/* == SECTION 5: COVERAGE ANALYSIS == */}
       <div className="panel" style={{ marginBottom: 24 }}>
-        <div className="panel-header">
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Coverage analysis</span>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>Click a gap for Maya recommendations</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Bot size={11} color="#BA7517" /> Click a gap for Maya recommendations
+          </span>
         </div>
         <div className="panel-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             {coverageAnalysis.map(coverage => (
               <div
                 key={coverage.key}
                 onClick={() => !coverage.hasCoverage && setCompassGap(coverage)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: 8, borderRadius: 4,
-                  background: coverage.hasCoverage ? 'rgba(90,184,122,0.1)' : 'rgba(200,129,58,0.1)',
+                  display: 'flex', alignItems: 'center', gap: 8, padding: 10, borderRadius: 6,
+                  background: coverage.hasCoverage ? 'rgba(15,110,86,0.08)' : 'rgba(186,117,23,0.08)',
                   cursor: coverage.hasCoverage ? 'default' : 'pointer',
                   border: compassGap?.key === coverage.key ? '1px solid #BA7517' : '1px solid transparent',
                   transition: 'border 0.15s',
                 }}
               >
-                <div style={{ fontSize: 16, color: coverage.hasCoverage ? '#0F6E56' : '#6B6460' }}>{coverage.hasCoverage ? '✓' : '—'}</div>
+                <div style={{ fontSize: 14, color: coverage.hasCoverage ? '#0F6E56' : '#9B9088', lineHeight: 1 }}>
+                  {coverage.hasCoverage ? '✓' : '—'}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{coverage.label}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: coverage.hasCoverage ? '#0F6E56' : '#BA7517' }}>
-                    {coverage.hasCoverage ? (coverage.insurer || 'Covered') : 'Tap for recommendations'}
+                    {coverage.hasCoverage ? (coverage.insurer || 'Covered') : 'Tap for Maya'}
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Compass panel - shows inline below the grid */}
+          {/* Compass panel */}
           {compassGap && (
             <div style={{ marginTop: 20, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>
-                  ✨ Maya — {compassGap.label} recommendations
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Bot size={14} color="#BA7517" /> Maya — {compassGap.label} recommendations
                 </div>
                 <button onClick={() => { setCompassGap(null); setCompassResult(null) }}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B6460', fontSize: 16 }}>✕</button>
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B6460', padding: 4, display: 'flex', alignItems: 'center' }}>
+                  <X size={14} />
+                </button>
               </div>
               {compassLoading ? (
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', padding: '12px 0' }}>
@@ -827,13 +967,11 @@ export default function ClientDetailPage({
                 </div>
               ) : compassResult ? (
                 <div>
-                  {/* Maya summary */}
                   {compassResult.mayaSummary && (
                     <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', lineHeight: 1.6, margin: '0 0 16px' }}>
                       {compassResult.mayaSummary}
                     </p>
                   )}
-                  {/* Comparison cards */}
                   {compassResult.analysis?.comparison && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {compassResult.analysis.comparison.map((item: any, i: number) => (
@@ -868,7 +1006,6 @@ export default function ClientDetailPage({
                       ))}
                     </div>
                   )}
-                  {/* Gap analysis */}
                   {compassResult.analysis?.gaps && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {compassResult.analysis.gaps.map((gap: any, i: number) => (
@@ -894,12 +1031,20 @@ export default function ClientDetailPage({
         </div>
       </div>
 
-      {/* == SECTION 5.5: HOLDINGS == */}
+      {/* == SECTION 5.5: HOLDINGS (untouched — separate component) == */}
       <HoldingsSection clientId={client.id} ifaId={resolvedIfaId} />
 
       {/* == SECTION 6: CLAIMS == */}
       <div className="panel" style={{ marginBottom: 24 }}>
-        <div className="panel-header"><span className="panel-title">Claims</span></div>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="panel-title">Claims</span>
+          <button onClick={() => {
+            setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
+            setClaimError(''); setShowAddClaim(true)
+          }} style={btnAddSection}>
+            <Plus size={12} /> New claim
+          </button>
+        </div>
         <div className="panel-body">
           {claims.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -918,7 +1063,6 @@ export default function ClientDetailPage({
         <div className="panel-header"><span className="panel-title">Activity</span></div>
         <div className="panel-body">
           {(() => {
-            // Merge local optimistic entries with server timeline, deduplicate by text
             const merged = [...localActivity, ...timeline]
               .filter((item, idx, arr) =>
                 idx === arr.findIndex(t => t.text === item.text && t.type === item.type)
@@ -927,7 +1071,7 @@ export default function ClientDetailPage({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {merged.map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: item.type === 'message' ? '#BA7517' : item.type === 'alert' ? '#A32D2D' : '#0F6E56' }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: item.type === 'message' ? '#BA7517' : item.type === 'alert' || item.type === 'claim' ? '#A32D2D' : '#0F6E56' }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{item.text}</div>
                       <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 2 }}>{formatRelativeTime(item.date)}</div>
@@ -944,7 +1088,7 @@ export default function ClientDetailPage({
 
       {/* == WHATSAPP SETUP PANEL == */}
       {showWAInstructions && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: 20, width: 340, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, padding: 20, width: 340, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <span style={{ fontSize: 12, color: '#BA7517', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>2 quick steps</span>
             <button onClick={() => setShowWAInstructions(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}><X size={14} color="#6B6460" /></button>
@@ -1007,31 +1151,42 @@ export default function ClientDetailPage({
         </Modal>
       )}
 
-      {/* == ADD POLICY MODAL == */}
+      {/* == ADD POLICY MODAL — fixed structure, reordered fields == */}
       {showAddPolicy && (
-        <Modal title="Add Policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
+        <Modal title="Add policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div><label style={labelStyle}>Insurer *</label>
-              <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Product Name</label>
-                <input style={inputStyle} placeholder="e.g. AIA Life Treasure II" value={(policyForm as any).product_name || ''} onChange={e => setPolicyForm(p => ({ ...p, product_name: e.target.value } as any))} />
-              </div>
-              <div style={{ gridColumn: '1/-1' }}>
-                <label style={labelStyle}>Policy Number</label>
-                <input style={inputStyle} placeholder="e.g. AIA-2024-12345" value={policyForm.policy_number} onChange={e => setPolicyForm(p => ({ ...p, policy_number: e.target.value }))} />
-              </div>
+
+            {/* Group 1: Identifiers */}
+            <div>
+              <label style={labelStyle}>Insurer *</label>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.insurer} onChange={e => setPolicyForm(p => ({ ...p, insurer: e.target.value }))}>
-                <option value="">Select insurer…</option>{INSURERS.map(i => <option key={i} value={i}>{i}</option>)}
+                <option value="">Select insurer…</option>
+                {INSURERS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
-            <div><label style={labelStyle}>Policy Type *</label>
+
+            <div>
+              <label style={labelStyle}>Product name</label>
+              <input style={inputStyle} placeholder="e.g. AIA Life Treasure II" value={policyForm.product_name} onChange={e => setPolicyForm(p => ({ ...p, product_name: e.target.value }))} />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Policy number</label>
+              <input style={inputStyle} placeholder="e.g. AIA-2024-12345" value={policyForm.policy_number} onChange={e => setPolicyForm(p => ({ ...p, policy_number: e.target.value }))} />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Policy type *</label>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.type} onChange={e => setPolicyForm(p => ({ ...p, type: e.target.value }))}>
-                <option value="">Select type…</option>{POLICY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                <option value="">Select type…</option>
+                {POLICY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+            {/* Group 2: Money — visual separator */}
+            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={labelStyle}>Annual Premium (SGD) *</label>
+                <label style={labelStyle}>Annual premium (SGD) *</label>
                 <input style={inputStyle} type="number" placeholder="e.g. 3600" value={policyForm.premium} onChange={e => setPolicyForm(p => ({ ...p, premium: e.target.value }))} />
               </div>
               <div>
@@ -1043,27 +1198,36 @@ export default function ClientDetailPage({
                   <option value="half-yearly">Half-yearly</option>
                 </select>
               </div>
-              <div>
-                <label style={labelStyle}>Sum Assured (SGD)</label>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle}>Sum assured (SGD)</label>
                 <input style={inputStyle} type="number" placeholder="e.g. 500000" value={policyForm.sum_assured} onChange={e => setPolicyForm(p => ({ ...p, sum_assured: e.target.value }))} />
               </div>
+            </div>
+
+            {/* Group 3: Dates */}
+            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={labelStyle}>Start Date</label>
+                <label style={labelStyle}>Start date</label>
                 <input style={inputStyle} type="date" value={policyForm.start_date} onChange={e => setPolicyForm(p => ({ ...p, start_date: e.target.value }))} />
               </div>
               <div>
-                <label style={labelStyle}>Renewal Date</label>
+                <label style={labelStyle}>Renewal date</label>
                 <input style={inputStyle} type="date" value={policyForm.renewal_date} onChange={e => setPolicyForm(p => ({ ...p, renewal_date: e.target.value }))} />
               </div>
             </div>
-            <div><label style={labelStyle}>Status</label>
+
+            {/* Group 4: Metadata */}
+            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14 }}>
+              <label style={labelStyle}>Status</label>
               <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.status} onChange={e => setPolicyForm(p => ({ ...p, status: e.target.value }))}>
-                <option value="active">Active</option><option value="lapsed">Lapsed</option><option value="cancelled">Cancelled</option>
+                <option value="active">Active</option>
+                <option value="lapsed">Lapsed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            {/* Optional PDF upload */}
+
             <div>
-              <label style={labelStyle}>Policy Document (optional)</label>
+              <label style={labelStyle}>Policy document (optional)</label>
               <input ref={policyFileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
                 onChange={e => setPolicyFile(e.target.files?.[0] ?? null)} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1079,12 +1243,56 @@ export default function ClientDetailPage({
                 )}
               </div>
             </div>
+
             {policyError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{policyError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={savePolicy} disabled={policySaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: policySaving ? 0.7 : 1 }}>
-                <Plus size={14} />{policySaving ? 'Saving…' : 'Add Policy'}
+                <Plus size={14} />{policySaving ? 'Saving…' : 'Add policy'}
               </button>
               <button onClick={() => { setShowAddPolicy(false); setPolicyFile(null) }} style={btnOutline}>Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* == ADD CLAIM MODAL (new) == */}
+      {showAddClaim && (
+        <Modal title="New claim" onClose={() => { setShowAddClaim(false); setClaimError('') }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Claim title *</label>
+              <input style={inputStyle} value={claimForm.title} onChange={e => setClaimForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Health claim — clinic visit" />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Claim type</label>
+                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={claimForm.type} onChange={e => setClaimForm(p => ({ ...p, type: e.target.value }))}>
+                  {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Priority</label>
+                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={claimForm.priority} onChange={e => setClaimForm(p => ({ ...p, priority: e.target.value }))}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Description</label>
+              <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={4} value={claimForm.body} onChange={e => setClaimForm(p => ({ ...p, body: e.target.value }))} placeholder="What happened? Any context that will help track this claim." />
+            </div>
+
+            {claimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{claimError}</p>}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={saveClaim} disabled={claimSaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: claimSaving ? 0.7 : 1 }}>
+                <Plus size={14} />{claimSaving ? 'Creating…' : 'Create claim'}
+              </button>
+              <button onClick={() => setShowAddClaim(false)} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>
