@@ -276,12 +276,11 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ── PolicyRow — expandable row for policies table ─────────────────────────
 
-function PolicyRow({ policy, ifaId, onEdit, onDelete, deleting, confirmingDelete, setConfirming }: {
+function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming }: {
   policy: Policy
   ifaId: string
   onEdit: (p: Policy) => void
-  onDelete: (id: string) => void
-  deleting: boolean
+  onAskMaya: (p: Policy, action: 'summarize' | 'renewal_reminder') => void
   confirmingDelete: boolean
   setConfirming: (id: string | null) => void
 }) {
@@ -350,52 +349,47 @@ function PolicyRow({ policy, ifaId, onEdit, onDelete, deleting, confirmingDelete
               <MoreVertical size={14} color="#6B6460" />
             </button>
             {menuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 180, zIndex: 20, overflow: 'hidden' }}>
-                <button onClick={() => { onEdit(policy); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 210, zIndex: 20, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+                <button onClick={() => { onAskMaya(policy, 'summarize'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Summarize with Maya
+                </button>
+                <button onClick={() => { onAskMaya(policy, 'renewal_reminder'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Draft renewal reminder
+                </button>
+                <button onClick={() => { onEdit(policy); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
                   <Pencil size={12} color="#6B6460" /> Edit policy
                 </button>
-                {confirmingDelete ? (
-                  <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F1EFE8', display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <button onClick={() => onDelete(policy.id)} disabled={deleting} style={{ fontSize: 11, color: '#A32D2D', background: 'rgba(208,96,96,0.08)', border: '1px solid #A32D2D', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>
-                      {deleting ? 'Deleting…' : 'Confirm'}
-                    </button>
-                    <button onClick={() => setConfirming(null)} style={{ fontSize: 11, color: '#6B6460', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => { setConfirming(policy.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                    <Trash2 size={12} /> Delete policy
-                  </button>
-                )}
+                <button onClick={() => { setConfirming(policy.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Trash2 size={12} /> Delete policy
+                </button>
               </div>
             )}
           </div>
         </td>
       </tr>
 
-      {/* Expanded detail row — simplified horizontal strip */}
+      {/* Expanded detail row — stacked metadata with generous breathing room */}
       {expanded && (
         <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
-          <td colSpan={6} style={{ padding: '14px 20px 18px 34px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 32px', alignItems: 'flex-start', marginBottom: policy.notes ? 14 : 0 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Start</span>
-                <span style={{ fontSize: 12, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</span>
+          <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 48px', alignItems: 'flex-start', marginBottom: policy.notes ? 20 : 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Start date</span>
+                <span style={{ fontSize: 13, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</span>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Frequency</span>
-                <span style={{ fontSize: 12, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Frequency</span>
+                <span style={{ fontSize: 13, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Document</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Document</span>
                 <PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} />
               </div>
             </div>
             {policy.notes && (
-              <div style={{ paddingTop: 10, borderTop: '0.5px solid #F1EFE8' }}>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Notes</div>
-                <div style={{ fontSize: 12, color: '#6B6460', lineHeight: 1.5 }}>{policy.notes}</div>
+              <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
+                <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{policy.notes}</div>
               </div>
             )}
           </td>
@@ -407,12 +401,30 @@ function PolicyRow({ policy, ifaId, onEdit, onDelete, deleting, confirmingDelete
 
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
-function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; onUpdated: () => void }) {
+function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
+  claim: Alert
+  ifaId: string
+  onUpdated: () => void
+  onAskMaya: (c: Alert, action: 'status_update' | 'message_insurer' | 'message_client') => void
+  onDelete: (id: string) => void
+}) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(claim.title || '')
   const [editBody, setEditBody] = useState(claim.body || '')
   const [saving, setSaving] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [menuOpen])
 
   const [localStatus, setLocalStatus] = useState(
     claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
@@ -463,10 +475,30 @@ function ClaimCard({ claim, ifaId, onUpdated }: { claim: Alert; ifaId: string; o
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>{claimDate}</span>
         {!editing && (
-          <button onClick={() => setEditing(true)}
-            style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: '#6B6460', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Pencil size={11} /> Edit
-          </button>
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
+              <MoreVertical size={14} color="#6B6460" />
+            </button>
+            {menuOpen && (
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 220, zIndex: 20, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+                <button onClick={() => { onAskMaya(claim, 'status_update'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Draft status update
+                </button>
+                <button onClick={() => { onAskMaya(claim, 'message_insurer'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Draft message to insurer
+                </button>
+                <button onClick={() => { onAskMaya(claim, 'message_client'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Bot size={12} color="#BA7517" /> Draft message to client
+                </button>
+                <button onClick={() => { setEditing(true); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Pencil size={12} color="#6B6460" /> Edit claim
+                </button>
+                <button onClick={() => { onDelete(claim.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Trash2 size={12} /> Delete claim
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -590,6 +622,11 @@ export default function ClientDetailPage({
   const [claimForm, setClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
   const [claimSaving, setClaimSaving] = useState(false)
   const [claimError, setClaimError] = useState('')
+  const [confirmDeleteClaimId, setConfirmDeleteClaimId] = useState<string | null>(null)
+  const [claimDeleting, setClaimDeleting] = useState(false)
+
+  // Maya action stub modal — fires when user clicks any "Draft X with Maya" menu item
+  const [mayaStub, setMayaStub] = useState<{ title: string; context: string } | null>(null)
 
   const [localActivity, setLocalActivity] = useState<{ date: string; text: string; type: string }[]>([])
 
@@ -760,6 +797,46 @@ export default function ClientDetailPage({
       setConfirmDeleteId(null); router.refresh()
     } catch { console.error('Delete failed') }
     setDeleting(false)
+  }
+
+  async function deleteClaim(claimId: string) {
+    setClaimDeleting(true)
+    try {
+      await fetch('/api/claim-delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimId, ifaId: resolvedIfaId }),
+      })
+      setConfirmDeleteClaimId(null); router.refresh()
+    } catch { console.error('Delete claim failed') }
+    setClaimDeleting(false)
+  }
+
+  // Maya stubs — for now these just show a "Coming soon" preview modal.
+  // Next batch will wire these to the Compass/Maya agents with proper prompts.
+  function handlePolicyAskMaya(policy: Policy, action: 'summarize' | 'renewal_reminder') {
+    const titles: Record<string, string> = {
+      summarize: 'Summarize policy with Maya',
+      renewal_reminder: 'Draft renewal reminder',
+    }
+    const contexts: Record<string, string> = {
+      summarize: `Summarize the ${policy.insurer} ${policy.type} policy (${policy.product_name || policy.policy_number || 'unnamed'}) for ${client.name} in plain English — key benefits, exclusions, and anything the client should know at renewal.`,
+      renewal_reminder: `Draft a warm WhatsApp renewal reminder for ${client.name} about their ${policy.insurer} ${policy.type} policy renewing on ${policy.renewal_date ? formatDate(policy.renewal_date) : 'an upcoming date'}. Premium is $${Number(policy.premium).toLocaleString()}/yr.`,
+    }
+    setMayaStub({ title: titles[action], context: contexts[action] })
+  }
+
+  function handleClaimAskMaya(claim: Alert, action: 'status_update' | 'message_insurer' | 'message_client') {
+    const titles: Record<string, string> = {
+      status_update: 'Draft status update for FA notes',
+      message_insurer: 'Draft message to insurer',
+      message_client: 'Draft message to client',
+    }
+    const contexts: Record<string, string> = {
+      status_update: `Summarize the current status of the "${claim.title}" claim for ${client.name} as a short internal note. Current status: ${claim.status || 'open'}, priority: ${claim.priority || 'medium'}.`,
+      message_insurer: `Draft a professional email to the insurer chasing an update on ${client.name}'s claim: "${claim.title}".`,
+      message_client: `Draft a warm WhatsApp message to ${client.name} updating them on their claim: "${claim.title}". Current status: ${claim.status || 'open'}.`,
+    }
+    setMayaStub({ title: titles[action], context: contexts[action] })
   }
 
   return (
@@ -944,8 +1021,7 @@ export default function ClientDetailPage({
                       policy={policy}
                       ifaId={resolvedIfaId}
                       onEdit={openEditPolicy}
-                      onDelete={deletePolicy}
-                      deleting={deleting}
+                      onAskMaya={handlePolicyAskMaya}
                       confirmingDelete={confirmDeleteId === policy.id}
                       setConfirming={setConfirmDeleteId}
                     />
@@ -1094,7 +1170,14 @@ export default function ClientDetailPage({
           {claims.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {claims.map(claim => (
-                <ClaimCard key={claim.id} claim={claim} ifaId={resolvedIfaId} onUpdated={() => router.refresh()} />
+                <ClaimCard
+                  key={claim.id}
+                  claim={claim}
+                  ifaId={resolvedIfaId}
+                  onUpdated={() => router.refresh()}
+                  onAskMaya={handleClaimAskMaya}
+                  onDelete={(id) => setConfirmDeleteClaimId(id)}
+                />
               ))}
             </div>
           ) : (
@@ -1347,6 +1430,66 @@ export default function ClientDetailPage({
                 <Plus size={14} />{claimSaving ? 'Creating…' : 'Create claim'}
               </button>
               <button onClick={() => setShowAddClaim(false)} style={btnOutline}>Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* == POLICY DELETE CONFIRM MODAL == */}
+      {confirmDeleteId && (
+        <Modal title="Delete policy?" onClose={() => setConfirmDeleteId(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', margin: 0, lineHeight: 1.5 }}>
+              This will permanently remove this policy and its uploaded document. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => deletePolicy(confirmDeleteId)} disabled={deleting}
+                style={{ flex: 1, background: '#A32D2D', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', opacity: deleting ? 0.7 : 1 }}>
+                <Trash2 size={14} /> {deleting ? 'Deleting…' : 'Delete policy'}
+              </button>
+              <button onClick={() => setConfirmDeleteId(null)} style={btnOutline}>Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* == CLAIM DELETE CONFIRM MODAL == */}
+      {confirmDeleteClaimId && (
+        <Modal title="Delete claim?" onClose={() => setConfirmDeleteClaimId(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', margin: 0, lineHeight: 1.5 }}>
+              This will permanently remove this claim from the client's record. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => deleteClaim(confirmDeleteClaimId)} disabled={claimDeleting}
+                style={{ flex: 1, background: '#A32D2D', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', opacity: claimDeleting ? 0.7 : 1 }}>
+                <Trash2 size={14} /> {claimDeleting ? 'Deleting…' : 'Delete claim'}
+              </button>
+              <button onClick={() => setConfirmDeleteClaimId(null)} style={btnOutline}>Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* == MAYA STUB PREVIEW MODAL == */}
+      {mayaStub && (
+        <Modal title={mayaStub.title} onClose={() => setMayaStub(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '12px 14px' }}>
+              <Bot size={18} color="#BA7517" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#854F0B', marginBottom: 4 }}>Coming soon</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', lineHeight: 1.5 }}>
+                  Maya will draft this for you in the next update. Here's the prompt we're preparing to send:
+                </div>
+              </div>
+            </div>
+            <div style={{ background: '#FBFAF7', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Prompt preview</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', lineHeight: 1.6, fontStyle: 'italic' }}>"{mayaStub.context}"</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setMayaStub(null)} style={btnOutline}>Close</button>
             </div>
           </div>
         </Modal>
