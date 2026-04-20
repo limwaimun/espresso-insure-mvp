@@ -13,17 +13,18 @@ export async function POST(request: NextRequest) {
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
     }
+    if (!phone || !phone.trim()) {
+      return NextResponse.json({ error: 'Mobile number is required — Maya needs it to reach your clients on WhatsApp' }, { status: 400 })
+    }
 
     // 1. Create Supabase auth user with a temporary password
     const tempPassword = `Trial${Math.random().toString(36).slice(2, 10)}!`
-
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: email.trim().toLowerCase(),
       password: tempPassword,
       email_confirm: true, // skip email confirmation for trials
       user_metadata: { name, company, phone },
     })
-
     if (authError) {
       // User already exists
       if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
@@ -31,7 +32,6 @@ export async function POST(request: NextRequest) {
       }
       throw authError
     }
-
     const userId = authData.user.id
 
     // 2. Create profile record
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       company: company?.trim() || null,
-      phone: phone?.trim() || null,
+      phone: phone.trim(),
       plan: 'trial',
       trial_started_at: new Date().toISOString(),
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
