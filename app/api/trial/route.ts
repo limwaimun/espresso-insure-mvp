@@ -22,6 +22,24 @@ function normalizePhone(raw: string): string {
   return raw.replace(/\D/g, '')
 }
 
+// Build the list of phone-format variants to check against the DB.
+// Handles 3 storage formats we've seen in the wild:
+//   1. "+6581267212" (current format — with + and country code)
+//   2. "6581267212"  (normalized — no +, with country code)
+//   3. "81267212"    (legacy format — local digits only, pre-country-code-dropdown)
+//
+// The third form assumes Singapore (+65). If the normalized phone starts with
+// "65" and is longer than 8 digits, we also check the stripped local form.
+function phoneVariantsForCheck(normalized: string): string[] {
+  const variants = new Set<string>()
+  variants.add(`+${normalized}`)
+  variants.add(normalized)
+  if (normalized.startsWith('65') && normalized.length > 8) {
+    variants.add(normalized.slice(2)) // strip SG country code
+  }
+  return Array.from(variants)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { name, email, company, phone, password } = await request.json()
@@ -41,13 +59,31 @@ export async function POST(request: NextRequest) {
     const cleanPhone = phone.trim() // original format (e.g. +65...) for display
     const normalizedPhone = normalizePhone(cleanPhone)
 
-    // ── Uniqueness check: mobile number ───────────────────────────────────
-    // Profiles may store the phone with or without the + — match both.
+    // ── Uniqueness check 1: email ──────────────────────────────────────────
+    // Explicit pre-check so we can return a clear error rather than rely on
+    // createUser's generic "already registered" response.
+    const { data: existingEmailProfiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', cleanEmail)
+      .limit(1)
+
+    if (existingEmailProfiles && existingEmailProfiles.length > 0) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists. Please sign in instead.', code: 'email_in_use' },
+        { status: 409 }
+      )
+    }
+
+    // ── Uniqueness check 2: mobile number ─────────────────────────────────
+    // Matches all known phone storage formats (see phoneVariantsForCheck).
     if (normalizedPhone) {
+      const variants = phoneVariantsForCheck(normalizedPhone)
       const { data: existingPhoneProfiles } = await supabase
         .from('profiles')
-        .select('id, email')
-        .or(`phone.eq.+${normalizedPhone},phone.eq.${normalizedPhone}`)
+        .select('id')
+        .in('phone', variants)
+        .limit(1)
 
       if (existingPhoneProfiles && existingPhoneProfiles.length > 0) {
         return NextResponse.json(
@@ -61,8 +97,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Create the auth user ──────────────────────────────────────────────
-    // email_confirm: true skips the "confirm your email" flow — they can sign
-    // in immediately with the password they just chose.
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: cleanEmail,
       password,
@@ -73,8 +107,11 @@ export async function POST(request: NextRequest) {
     if (authError) {
       const msg = authError.message.toLowerCase()
       if (msg.includes('already') || msg.includes('registered')) {
+        // Our pre-checks above should have caught this. If we hit it anyway,
+        // something's in auth.users that isn't in profiles — likely a leftover
+        // from a failed previous signup. Return honest message.
         return NextResponse.json(
-          { error: 'An account with this email already exists. Please sign in.', code: 'email_in_use' },
+          { error: 'An account with these details already exists. Please sign in, or email hello@espresso.insure for help.', code: 'account_exists' },
           { status: 409 }
         )
       }
@@ -83,8 +120,10 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id
 
-    // ── Create profile record ─────────────────────────────────────────────
-    await supabase.from('profiles').upsert({
+    // ── Create profile record (with error handling + orphan cleanup) ──────
+    // If this fails, we delete the auth user we just created so the account
+    // isn't left in a broken half-state (auth exists, profile doesn't).
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: userId,
       name: name.trim(),
       email: cleanEmail,
@@ -94,6 +133,18 @@ export async function POST(request: NextRequest) {
       trial_started_at: new Date().toISOString(),
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     }, { onConflict: 'id' })
+
+    if (profileError) {
+      console.error('[trial] Profile upsert failed:', profileError)
+      // Roll back the auth user so retry works cleanly
+      await supabase.auth.admin.deleteUser(userId).catch(cleanupErr =>
+        console.error('[trial] Orphan auth user cleanup failed:', cleanupErr)
+      )
+      return NextResponse.json(
+        { error: 'We couldn\'t complete your signup. Please try again, or email hello@espresso.insure for help.', code: 'profile_create_failed' },
+        { status: 500 }
+      )
+    }
 
     console.log(`[trial] New signup: ${name} <${cleanEmail}> ${company || ''} ${cleanPhone}`)
 
