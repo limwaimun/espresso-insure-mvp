@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifySession } from '@/lib/auth-middleware'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,10 +15,23 @@ const STATUS_MAP: Record<string, { resolved: boolean }> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { claimId, ifaId, status, priority, title, body, resolved } = await request.json()
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!claimId || !ifaId) {
-      return NextResponse.json({ error: 'Missing claimId or ifaId' }, { status: 400 })
+    // ── Parse body ────────────────────────────────────────────────────────
+    // We still destructure ifaId for backward compat logging, but NEVER use
+    // the client-supplied value — everything is scoped to userId from session.
+    const { claimId, ifaId: _unused, status, priority, title, body, resolved } = await request.json()
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[claim-update] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+    }
+
+    if (!claimId) {
+      return NextResponse.json({ error: 'Missing claimId' }, { status: 400 })
     }
 
     const patch: Record<string, unknown> = {}
@@ -31,11 +45,12 @@ export async function POST(request: NextRequest) {
       patch.resolved = resolved
     }
 
+    // ── Update, scoped to verified userId ─────────────────────────────────
     const { error } = await supabase
       .from('alerts')
       .update(patch)
       .eq('id', claimId)
-      .eq('ifa_id', ifaId)
+      .eq('ifa_id', userId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifySession } from '@/lib/auth-middleware'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,8 +9,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
+
+    // ── Parse body ────────────────────────────────────────────────────────
     const {
-      clientId, ifaId,
+      clientId, ifaId: _unused,
       policy_number,
       insurer, type,
       premium, premium_frequency,
@@ -18,15 +26,33 @@ export async function POST(request: NextRequest) {
       status,
     } = await request.json()
 
-    if (!clientId || !ifaId || !insurer || !type || !premium) {
+    if (_unused && _unused !== userId) {
+      console.warn(`[policy-add] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+    }
+
+    if (!clientId || !insurer || !type || !premium) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // ── Ownership check: verify the client belongs to the caller ──────────
+    // Without this, an attacker could add policies to someone else's client.
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .eq('ifa_id', userId)
+      .single()
+
+    if (clientError || !client) {
+      return NextResponse.json({ error: 'Client not found or unauthorized' }, { status: 404 })
+    }
+
+    // ── Insert, scoped to verified userId ─────────────────────────────────
     const { data: policy, error } = await supabase
       .from('policies')
       .insert({
         client_id: clientId,
-        ifa_id: ifaId,
+        ifa_id: userId,
         policy_number: policy_number || null,
         insurer,
         type,

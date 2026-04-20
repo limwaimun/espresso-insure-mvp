@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifySession } from '@/lib/auth-middleware'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,13 +12,23 @@ const BUCKET = 'policy-documents'
 // POST — upload a policy document PDF
 export async function POST(request: NextRequest) {
   try {
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const policyId = formData.get('policyId') as string
-    const ifaId = formData.get('ifaId') as string
+    const bodyIfaId = formData.get('ifaId') as string | null
 
-    if (!file || !policyId || !ifaId) {
-      return NextResponse.json({ error: 'Missing file, policyId or ifaId' }, { status: 400 })
+    if (bodyIfaId && bodyIfaId !== userId) {
+      console.warn(`[policy-doc POST] ignored mismatched ifaId from form: body=${bodyIfaId} session=${userId}`)
+    }
+
+    if (!file || !policyId) {
+      return NextResponse.json({ error: 'Missing file or policyId' }, { status: 400 })
     }
 
     if (file.type !== 'application/pdf') {
@@ -28,17 +39,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large — max 20MB' }, { status: 400 })
     }
 
+    // ── Ownership check: verify the policy belongs to the caller ──────────
+    const { data: policy, error: policyError } = await supabase
+      .from('policies')
+      .select('id')
+      .eq('id', policyId)
+      .eq('ifa_id', userId)
+      .single()
+
+    if (policyError || !policy) {
+      return NextResponse.json({ error: 'Policy not found or unauthorized' }, { status: 404 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Store at: policy-documents/{ifaId}/{policyId}/{filename}
-    const filePath = `${ifaId}/${policyId}/${file.name}`
+    // Store at: policy-documents/{userId}/{policyId}/{filename}
+    const filePath = `${userId}/${policyId}/${file.name}`
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(filePath, buffer, {
         contentType: 'application/pdf',
-        upsert: true, // overwrite if re-uploading
+        upsert: true,
       })
 
     if (uploadError) {
@@ -55,11 +78,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File uploaded but could not generate download link' }, { status: 500 })
     }
 
-    // Save file path to policies table
+    // Save file path to policies table — scoped to verified userId
     const { error: dbError } = await supabase
       .from('policies')
       .update({ document_url: filePath, document_name: file.name })
       .eq('id', policyId)
+      .eq('ifa_id', userId)
 
     if (dbError) {
       console.error('[policy-doc] db error:', dbError)
@@ -82,6 +106,12 @@ export async function POST(request: NextRequest) {
 // GET — get a fresh signed download URL for a policy document
 export async function GET(request: NextRequest) {
   try {
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const policyId = searchParams.get('policyId')
 
@@ -89,10 +119,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing policyId' }, { status: 400 })
     }
 
+    // ── Ownership check: only return a download URL for the caller's own policy ──
     const { data: policy, error } = await supabase
       .from('policies')
       .select('document_url, document_name')
       .eq('id', policyId)
+      .eq('ifa_id', userId)
       .single()
 
     if (error || !policy?.document_url) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifySession } from '@/lib/auth-middleware'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,12 +9,24 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { clientId, ifaId, name, company, whatsapp, email, birthday, address } = await request.json()
+    // ── Auth ──────────────────────────────────────────────────────────────
+    const { userId, error: authError } = await verifySession(request)
+    if (authError || !userId) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!clientId || !ifaId || !name?.trim()) {
+    // ── Parse body ────────────────────────────────────────────────────────
+    const { clientId, ifaId: _unused, name, company, whatsapp, email, birthday, address } = await request.json()
+
+    if (_unused && _unused !== userId) {
+      console.warn(`[client-update] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+    }
+
+    if (!clientId || !name?.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // ── Update, scoped to verified userId ─────────────────────────────────
     const { error } = await supabase
       .from('clients')
       .update({
@@ -25,7 +38,7 @@ export async function POST(request: NextRequest) {
         address: address?.trim() || null,
       })
       .eq('id', clientId)
-      .eq('ifa_id', ifaId)
+      .eq('ifa_id', userId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
