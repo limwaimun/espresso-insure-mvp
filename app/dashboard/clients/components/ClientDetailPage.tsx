@@ -276,9 +276,10 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 // ── PolicyRow — expandable row for policies table ─────────────────────────
 
-function PolicyRow({ policy, ifaId, onDelete, deleting, confirmingDelete, setConfirming }: {
+function PolicyRow({ policy, ifaId, onEdit, onDelete, deleting, confirmingDelete, setConfirming }: {
   policy: Policy
   ifaId: string
+  onEdit: (p: Policy) => void
   onDelete: (id: string) => void
   deleting: boolean
   confirmingDelete: boolean
@@ -350,9 +351,9 @@ function PolicyRow({ policy, ifaId, onDelete, deleting, confirmingDelete, setCon
             </button>
             {menuOpen && (
               <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 180, zIndex: 20, overflow: 'hidden' }}>
-                <a href={`/dashboard/maya-playground?clientId=${policy.id}&context=policy`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Ask Maya about this
-                </a>
+                <button onClick={() => { onEdit(policy); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <Pencil size={12} color="#6B6460" /> Edit policy
+                </button>
                 {confirmingDelete ? (
                   <div style={{ padding: '10px 12px', borderTop: '0.5px solid #F1EFE8', display: 'flex', gap: 6, alignItems: 'center' }}>
                     <button onClick={() => onDelete(policy.id)} disabled={deleting} style={{ fontSize: 11, color: '#A32D2D', background: 'rgba(208,96,96,0.08)', border: '1px solid #A32D2D', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>
@@ -373,30 +374,26 @@ function PolicyRow({ policy, ifaId, onDelete, deleting, confirmingDelete, setCon
         </td>
       </tr>
 
-      {/* Expanded detail row */}
+      {/* Expanded detail row — simplified horizontal strip */}
       {expanded && (
         <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
           <td colSpan={6} style={{ padding: '14px 20px 18px 34px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: policy.notes ? 14 : 0 }}>
-              <div>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Start date</div>
-                <div style={{ fontSize: 12, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 32px', alignItems: 'flex-start', marginBottom: policy.notes ? 14 : 0 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Start</span>
+                <span style={{ fontSize: 12, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</span>
               </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Premium frequency</div>
-                <div style={{ fontSize: 12, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Frequency</span>
+                <span style={{ fontSize: 12, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>
               </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Sum assured</div>
-                <div style={{ fontSize: 12, color: '#1A1410' }}>{policy.sum_assured ? `$${Number(policy.sum_assured).toLocaleString()}` : '—'}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Document</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Document</span>
                 <PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} />
               </div>
             </div>
             {policy.notes && (
-              <div>
+              <div style={{ paddingTop: 10, borderTop: '0.5px solid #F1EFE8' }}>
                 <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Notes</div>
                 <div style={{ fontSize: 12, color: '#6B6460', lineHeight: 1.5 }}>{policy.notes}</div>
               </div>
@@ -579,10 +576,11 @@ export default function ClientDetailPage({
   const [policyForm, setPolicyForm] = useState({
     insurer: '', product_name: '', policy_number: '', type: '',
     premium: '', premium_frequency: 'annual', sum_assured: '',
-    start_date: '', renewal_date: '', status: 'active',
+    start_date: '', renewal_date: '', status: 'active', notes: '',
   })
   const [policySaving, setPolicySaving] = useState(false)
   const [policyError, setPolicyError] = useState('')
+  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [policyFile, setPolicyFile] = useState<File | null>(null)
@@ -641,30 +639,76 @@ export default function ClientDetailPage({
     if (!resolvedIfaId) { setPolicyError('Session error — please refresh the page'); return }
     setPolicySaving(true)
     try {
-      const res = await fetch('/api/policy-add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...policyForm, premium: parseFloat(policyForm.premium), sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null }) })
-      if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
-      const newPolicy = await res.json()
+      const isEdit = !!editingPolicyId
+      const endpoint = isEdit ? '/api/policy-update' : '/api/policy-add'
+      const payload = isEdit
+        ? {
+            policyId: editingPolicyId,
+            ifaId: resolvedIfaId,
+            ...policyForm,
+            premium: parseFloat(policyForm.premium),
+            sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null,
+          }
+        : {
+            clientId: client.id,
+            ifaId: resolvedIfaId,
+            ...policyForm,
+            premium: parseFloat(policyForm.premium),
+            sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null,
+          }
 
-      if (policyFile && newPolicy.policy?.id) {
-        const fd = new FormData()
-        fd.append('file', policyFile)
-        fd.append('policyId', newPolicy.policy.id)
-        fd.append('ifaId', resolvedIfaId)
-        await fetch('/api/policy-doc', { method: 'POST', body: fd })
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
+
+      // For add-mode only: upload policy doc if selected
+      if (!isEdit) {
+        const newPolicy = await res.json()
+        if (policyFile && newPolicy.policy?.id) {
+          const fd = new FormData()
+          fd.append('file', policyFile)
+          fd.append('policyId', newPolicy.policy.id)
+          fd.append('ifaId', resolvedIfaId)
+          await fetch('/api/policy-doc', { method: 'POST', body: fd })
+        }
       }
 
       setShowAddPolicy(false)
+      setEditingPolicyId(null)
       setPolicyFile(null)
       setPolicySaving(false)
 
-      setLocalActivity(prev => [{
-        date: new Date().toISOString(),
-        text: `${policyForm.insurer} ${policyForm.type} added ($${parseFloat(policyForm.premium).toLocaleString()}/yr)`,
-        type: 'policy',
-      }, ...prev])
+      // Optimistic activity entry (for add only — edits don't need a timeline line)
+      if (!isEdit) {
+        setLocalActivity(prev => [{
+          date: new Date().toISOString(),
+          text: `${policyForm.insurer} ${policyForm.type} added ($${parseFloat(policyForm.premium).toLocaleString()}/yr)`,
+          type: 'policy',
+        }, ...prev])
+      }
 
       router.refresh()
     } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
+  }
+
+  function openEditPolicy(policy: Policy) {
+    setPolicyForm({
+      insurer: policy.insurer ?? '',
+      product_name: policy.product_name ?? '',
+      policy_number: policy.policy_number ?? '',
+      type: policy.type ?? '',
+      premium: policy.premium != null ? String(policy.premium) : '',
+      premium_frequency: policy.premium_frequency ?? 'annual',
+      sum_assured: policy.sum_assured != null ? String(policy.sum_assured) : '',
+      start_date: policy.start_date ?? '',
+      renewal_date: policy.renewal_date ?? '',
+      status: policy.status ?? 'active',
+      notes: policy.notes ?? '',
+    })
+    setEditingPolicyId(policy.id)
+    setPolicyError('')
+    setPolicySaving(false)
+    setPolicyFile(null)
+    setShowAddPolicy(true)
   }
 
   async function saveClaim() {
@@ -873,8 +917,8 @@ export default function ClientDetailPage({
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
           <button onClick={() => {
-            setPolicyForm({ insurer: '', product_name: '', policy_number: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active' })
-            setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
+            setPolicyForm({ insurer: '', product_name: '', policy_number: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active', notes: '' })
+            setEditingPolicyId(null); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
           }} style={btnAddSection}>
             <Plus size={12} /> Add policy
           </button>
@@ -899,6 +943,7 @@ export default function ClientDetailPage({
                       key={policy.id}
                       policy={policy}
                       ifaId={resolvedIfaId}
+                      onEdit={openEditPolicy}
                       onDelete={deletePolicy}
                       deleting={deleting}
                       confirmingDelete={confirmDeleteId === policy.id}
@@ -1151,9 +1196,9 @@ export default function ClientDetailPage({
         </Modal>
       )}
 
-      {/* == ADD POLICY MODAL — fixed structure, reordered fields == */}
+      {/* == ADD / EDIT POLICY MODAL == */}
       {showAddPolicy && (
-        <Modal title="Add policy" onClose={() => { setShowAddPolicy(false); setPolicyError(''); setPolicyFile(null) }}>
+        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFile(null) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
             {/* Group 1: Identifiers */}
@@ -1227,29 +1272,38 @@ export default function ClientDetailPage({
             </div>
 
             <div>
-              <label style={labelStyle}>Policy document (optional)</label>
-              <input ref={policyFileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
-                onChange={e => setPolicyFile(e.target.files?.[0] ?? null)} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => policyFileRef.current?.click()}
-                  style={{ background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
-                  <Upload size={12} /> {policyFile ? policyFile.name : 'Upload PDF'}
-                </button>
-                {policyFile && (
-                  <button onClick={() => { setPolicyFile(null); if (policyFileRef.current) policyFileRef.current.value = '' }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: '#6B6460', fontSize: 11, fontFamily: 'DM Sans, sans-serif' }}>
-                    Remove
-                  </button>
-                )}
-              </div>
+              <label style={labelStyle}>Notes</label>
+              <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={2} placeholder="e.g. Single mother, 2 young kids" value={policyForm.notes} onChange={e => setPolicyForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
+
+            {/* Document upload only on add — edit uses the PolicyDocCell in the expanded row */}
+            {!editingPolicyId && (
+              <div>
+                <label style={labelStyle}>Policy document (optional)</label>
+                <input ref={policyFileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
+                  onChange={e => setPolicyFile(e.target.files?.[0] ?? null)} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button onClick={() => policyFileRef.current?.click()}
+                    style={{ background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
+                    <Upload size={12} /> {policyFile ? policyFile.name : 'Upload PDF'}
+                  </button>
+                  {policyFile && (
+                    <button onClick={() => { setPolicyFile(null); if (policyFileRef.current) policyFileRef.current.value = '' }}
+                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: '#6B6460', fontSize: 11, fontFamily: 'DM Sans, sans-serif' }}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {policyError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{policyError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={savePolicy} disabled={policySaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: policySaving ? 0.7 : 1 }}>
-                <Plus size={14} />{policySaving ? 'Saving…' : 'Add policy'}
+                {editingPolicyId ? <Save size={14} /> : <Plus size={14} />}
+                {policySaving ? 'Saving…' : (editingPolicyId ? 'Save changes' : 'Add policy')}
               </button>
-              <button onClick={() => { setShowAddPolicy(false); setPolicyFile(null) }} style={btnOutline}>Cancel</button>
+              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFile(null) }} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>
