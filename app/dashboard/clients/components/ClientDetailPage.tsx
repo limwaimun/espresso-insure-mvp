@@ -377,7 +377,7 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
 // inline uploader for adding more. Self-contained: fetches its own data from
 // /api/claim-doc on mount and refreshes after add/delete.
 
-function ClaimDocList({ claimId }: { claimId: string }) {
+function ClaimDocList({ claimId, editable = false }: { claimId: string; editable?: boolean }) {
   interface Doc {
     id: string
     fileName: string
@@ -467,6 +467,8 @@ function ClaimDocList({ claimId }: { claimId: string }) {
 
   if (loading) return null
   if (docs.length === 0 && !busy) {
+    // Read-only with zero docs: render nothing — keeps ClaimCard clean.
+    if (!editable) return null
     return (
       <div style={{ marginTop: 10, marginBottom: 10 }}>
         <input
@@ -525,18 +527,20 @@ function ClaimDocList({ claimId }: { claimId: string }) {
               </span>
             </button>
             <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
-            <button
-              onClick={() => handleDelete(doc.id)}
-              disabled={busy}
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: 2, opacity: 0.5,
-              }}
-              title="Delete"
-              aria-label="Delete document"
-            >
-              <Trash2 size={12} color="#6B6460" />
-            </button>
+            {editable && (
+              <button
+                onClick={() => handleDelete(doc.id)}
+                disabled={busy}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  padding: 2, opacity: 0.5,
+                }}
+                title="Delete"
+                aria-label="Delete document"
+              >
+                <Trash2 size={12} color="#6B6460" />
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -548,20 +552,22 @@ function ClaimDocList({ claimId }: { claimId: string }) {
         style={{ display: 'none' }}
         onChange={handleAdd}
       />
-      <button
-        onClick={() => inputRef.current?.click()}
-        disabled={busy}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '4px 10px', fontSize: 11, color: '#BA7517',
-          background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
-          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-          opacity: busy ? 0.6 : 1,
-        }}
-      >
-        <Upload size={11} />
-        {busy ? 'Uploading…' : 'Add document'}
-      </button>
+      {editable && (
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '4px 10px', fontSize: 11, color: '#BA7517',
+            background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
+            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          <Upload size={11} />
+          {busy ? 'Uploading…' : 'Add document'}
+        </button>
+      )}
       {err && <span style={{ marginLeft: 10, fontSize: 11, color: '#A32D2D' }}>{err}</span>}
     </div>
   )
@@ -687,7 +693,7 @@ function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
         </div>
       )}
 
-      <ClaimDocList claimId={claim.id} />
+      <ClaimDocList claimId={claim.id} editable={editing} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -768,8 +774,7 @@ export default function ClientDetailPage({
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [policyFile, setPolicyFile] = useState<File | null>(null)
-  const policyFileRef = useRef<HTMLInputElement>(null)
+  const [policyFiles, setPolicyFiles] = useState<File[]>([])
 
   // Claim modal state
   const [claimForm, setClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
@@ -851,21 +856,20 @@ export default function ClientDetailPage({
       const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
 
-      // For add-mode only: upload policy doc if selected
-      if (!isEdit) {
-        const newPolicy = await res.json()
-        if (policyFile && newPolicy.policy?.id) {
-          const fd = new FormData()
-          fd.append('file', policyFile)
-          fd.append('policyId', newPolicy.policy.id)
-          fd.append('ifaId', resolvedIfaId)
-          await fetch('/api/policy-doc', { method: 'POST', body: fd })
-        }
+      // Upload policy doc if selected (works for both add and edit)
+      const newPolicy = isEdit ? null : await res.json()
+      const targetPolicyId = isEdit ? editingPolicyId : newPolicy?.policy?.id
+      if (policyFiles[0] && targetPolicyId) {
+        const fd = new FormData()
+        fd.append('file', policyFiles[0])
+        fd.append('policyId', targetPolicyId)
+        fd.append('ifaId', resolvedIfaId)
+        await fetch('/api/policy-doc', { method: 'POST', body: fd })
       }
 
       setShowAddPolicy(false)
       setEditingPolicyId(null)
-      setPolicyFile(null)
+      setPolicyFiles([])
       setPolicySaving(false)
 
       // Optimistic activity entry (for add only — edits don't need a timeline line)
@@ -898,7 +902,7 @@ export default function ClientDetailPage({
     setEditingPolicyId(policy.id)
     setPolicyError('')
     setPolicySaving(false)
-    setPolicyFile(null)
+    setPolicyFiles([])
     setShowAddPolicy(true)
   }
 
@@ -1177,7 +1181,7 @@ export default function ClientDetailPage({
           <span className="panel-title">Policies</span>
           <button onClick={() => {
             setPolicyForm({ insurer: '', product_name: '', policy_number: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active', notes: '' })
-            setEditingPolicyId(null); setPolicyFile(null); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
+            setEditingPolicyId(null); setPolicyFiles([]); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
           }} style={btnAddSection}>
             <Plus size={12} /> Add policy
           </button>
@@ -1464,7 +1468,7 @@ export default function ClientDetailPage({
 
       {/* == ADD / EDIT POLICY MODAL == */}
       {showAddPolicy && (
-        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFile(null) }}>
+        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFiles([]) }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
             {/* Group 1: Identifiers */}
@@ -1542,26 +1546,14 @@ export default function ClientDetailPage({
               <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={2} placeholder="e.g. Single mother, 2 young kids" value={policyForm.notes} onChange={e => setPolicyForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
 
-            {/* Document upload only on add — edit uses the PolicyDocCell in the expanded row */}
-            {!editingPolicyId && (
-              <div>
-                <label style={labelStyle}>Policy document (optional)</label>
-                <input ref={policyFileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
-                  onChange={e => setPolicyFile(e.target.files?.[0] ?? null)} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button onClick={() => policyFileRef.current?.click()}
-                    style={{ background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
-                    <Upload size={12} /> {policyFile ? policyFile.name : 'Upload PDF'}
-                  </button>
-                  {policyFile && (
-                    <button onClick={() => { setPolicyFile(null); if (policyFileRef.current) policyFileRef.current.value = '' }}
-                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: '#6B6460', fontSize: 11, fontFamily: 'DM Sans, sans-serif' }}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Document upload — works in both add and edit. In edit mode,
+                 a new upload replaces whatever's currently attached. */}
+            <DocUploadField
+              label={editingPolicyId ? 'Replace document (optional)' : 'Document (optional)'}
+              files={policyFiles}
+              onFilesChange={setPolicyFiles}
+              onError={msg => setPolicyError(msg)}
+            />
 
             {policyError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{policyError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
@@ -1569,7 +1561,7 @@ export default function ClientDetailPage({
                 {editingPolicyId ? <Save size={14} /> : <Plus size={14} />}
                 {policySaving ? 'Saving…' : (editingPolicyId ? 'Save changes' : 'Add policy')}
               </button>
-              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFile(null) }} style={btnOutline}>Cancel</button>
+              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFiles([]) }} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>

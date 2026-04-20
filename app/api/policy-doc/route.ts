@@ -8,8 +8,25 @@ const supabase = createClient(
 )
 
 const BUCKET = 'policy-documents'
+const MAX_BYTES = 20 * 1024 * 1024
 
-// POST — upload a policy document PDF
+// Expanded allowlist — matches holding-doc and claim-doc. PDF, images, Office.
+const ALLOWED_MIMES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+])
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'document'
+}
+
+// POST — upload a policy document
 export async function POST(request: NextRequest) {
   try {
     // ── Auth ──────────────────────────────────────────────────────────────
@@ -31,11 +48,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing file or policyId' }, { status: 400 })
     }
 
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 })
+    if (!ALLOWED_MIMES.has(file.type)) {
+      return NextResponse.json({ error: 'Unsupported file type. Accepted: PDF, JPG, PNG, WebP, DOC, DOCX, XLS, XLSX' }, { status: 400 })
     }
 
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > MAX_BYTES) {
       return NextResponse.json({ error: 'File too large — max 20MB' }, { status: 400 })
     }
 
@@ -53,14 +70,13 @@ export async function POST(request: NextRequest) {
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-
-    // Store at: policy-documents/{userId}/{policyId}/{filename}
-    const filePath = `${userId}/${policyId}/${file.name}`
+    const safeName = sanitizeFilename(file.name)
+    const filePath = `${userId}/${policyId}/${safeName}`
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(filePath, buffer, {
-        contentType: 'application/pdf',
+        contentType: file.type,
         upsert: true,
       })
 
