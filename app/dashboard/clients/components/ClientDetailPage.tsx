@@ -8,8 +8,9 @@ import CountryCodeSelect from '@/components/CountryCodeSelect'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
+import DocList from '@/components/DocList'
 import {
-  X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2,
+  X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 import { createClient } from '../../../../lib/supabase/client'
@@ -191,77 +192,6 @@ const btnAddSection: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 4,
 }
 
-// ── PolicyDocCell ──────────────────────────────────────────────────────────
-
-function PolicyDocCell({ policyId, ifaId, existingFileName }: {
-  policyId: string; ifaId: string; existingFileName?: string | null
-}) {
-  const [state, setState] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
-  const [fileName, setFileName] = useState(existingFileName ?? null)
-  const [errMsg, setErrMsg] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  async function handleFile(file: File) {
-    if (file.type !== 'application/pdf') { setState('error'); setErrMsg('PDF only'); setTimeout(() => setState('idle'), 2000); return }
-    setState('uploading')
-    const fd = new FormData()
-    fd.append('file', file); fd.append('policyId', policyId); fd.append('ifaId', ifaId)
-    try {
-      const res = await fetch('/api/policy-doc', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok) { setState('error'); setErrMsg(data.error ?? 'Failed'); setTimeout(() => setState('idle'), 2500); return }
-      setFileName(data.fileName); setState('success'); setTimeout(() => setState('idle'), 1500)
-    } catch { setState('error'); setErrMsg('Failed'); setTimeout(() => setState('idle'), 2500) }
-    if (fileRef.current) fileRef.current.value = ''
-  }
-
-  async function handleDownload() {
-    try {
-      const res = await fetch(`/api/policy-doc?policyId=${policyId}`)
-      const data = await res.json()
-      if (!data.downloadUrl) return
-      const fileRes = await fetch(data.downloadUrl)
-      const blob = await fileRes.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = blobUrl
-      a.download = data.fileName || 'policy.pdf'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(blobUrl)
-    } catch {
-      console.error('Download failed')
-    }
-  }
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <input ref={fileRef} type="file" accept="application/pdf" style={{ display: 'none' }}
-        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
-      {state === 'uploading' && <Loader size={13} color="#BA7517" style={{ animation: 'spin 1s linear infinite' }} />}
-      {state === 'success' && <Check size={13} color="#0F6E56" />}
-      {state === 'error' && <span style={{ fontSize: 11, color: '#A32D2D' }}>{errMsg}</span>}
-      {state === 'idle' && fileName ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <button onClick={handleDownload} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
-            <Download size={12} color="#BA7517" />
-            <span style={{ fontSize: 11, color: '#BA7517', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</span>
-          </button>
-          <button onClick={() => fileRef.current?.click()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, opacity: 0.45 }}>
-            <Upload size={11} color="#6B6460" />
-          </button>
-        </div>
-      ) : state === 'idle' && (
-        <button onClick={() => fileRef.current?.click()} style={{ background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Upload size={11} color="#6B6460" />
-          <span style={{ fontSize: 11, color: '#6B6460' }}>Upload</span>
-        </button>
-      )}
-    </div>
-  )
-}
-
 // ── Modal is now imported from @/components/Modal (shared with HoldingsSection)
 
 // ── PortalMenu is now imported from @/components/PortalMenu (shared with HoldingsSection)
@@ -354,11 +284,13 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
                 <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Frequency</span>
                 <span style={{ fontSize: 13, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Document</span>
-                <PolicyDocCell policyId={policy.id} ifaId={ifaId} existingFileName={policy.document_name} />
-              </div>
             </div>
+            <DocList
+              parentId={policy.id}
+              apiEndpoint="/api/policy-doc"
+              parentParam="policyId"
+              label="Documents"
+            />
             {policy.notes && (
               <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
                 <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
@@ -369,230 +301,6 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
         </tr>
       )}
     </>
-  )
-}
-
-// ── ClaimDocList ───────────────────────────────────────────────────────────
-// Lists attached documents for a claim, with download + delete per doc and an
-// inline uploader for adding more. Self-contained: fetches its own data from
-// /api/claim-doc on mount and refreshes after add/delete.
-
-function ClaimDocList({ claimId, editable = false }: { claimId: string; editable?: boolean }) {
-  interface Doc {
-    id: string
-    fileName: string
-    fileSize: number | null
-    mimeType: string | null
-    downloadUrl: string | null
-  }
-  const [docs, setDocs] = useState<Doc[]>([])
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  async function load() {
-    try {
-      const res = await fetch(`/api/claim-doc?claimId=${claimId}`)
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        console.error('[claim-doc GET] failed:', res.status, d)
-        setErr(`Couldn't load documents — ${d.error ?? `HTTP ${res.status}`}`)
-        setDocs([])
-        setLoading(false)
-        return
-      }
-      const data = await res.json()
-      setDocs(data.docs ?? [])
-      setErr('')
-    } catch (e) {
-      console.error('[claim-doc GET] exception:', e)
-      setErr('Failed to load documents — network error')
-      setDocs([])
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [claimId])
-
-  async function handleDownload(doc: Doc) {
-    if (!doc.downloadUrl) return
-    try {
-      const fileRes = await fetch(doc.downloadUrl)
-      const blob = await fileRes.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = blobUrl
-      a.download = doc.fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(blobUrl)
-    } catch {
-      setErr('Download failed')
-    }
-  }
-
-  async function handleDelete(docId: string) {
-    if (!confirm('Remove this document?')) return
-    setBusy(true); setErr('')
-    const res = await fetch(`/api/claim-doc?docId=${docId}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}))
-      console.error('[claim-doc DELETE] failed:', res.status, d)
-      setErr(`Delete failed — ${d.error ?? `HTTP ${res.status}`}`)
-    }
-    await load()
-    setBusy(false)
-  }
-
-  async function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    if (inputRef.current) inputRef.current.value = ''
-    if (files.length === 0) return
-    setBusy(true); setErr('')
-    const failures: string[] = []
-    for (const file of files) {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('claimId', claimId)
-      const res = await fetch('/api/claim-doc', { method: 'POST', body: fd })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        console.error('[claim-doc POST] failed:', res.status, d)
-        failures.push(`${file.name}: ${d.error ?? `HTTP ${res.status}`}`)
-      }
-    }
-    if (failures.length) {
-      // No timeout — leave the error visible until the user retries or dismisses
-      setErr(`Upload failed — ${failures.join('; ')}`)
-    }
-    await load()
-    setBusy(false)
-  }
-
-  function formatSize(bytes: number | null): string {
-    if (bytes == null) return ''
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-
-  if (loading) return null
-  if (docs.length === 0 && !busy) {
-    // Read-only with zero docs: show error if one, otherwise render nothing.
-    if (!editable) {
-      if (err) return (
-        <div style={{ marginTop: 10, marginBottom: 10, fontSize: 11, color: '#A32D2D', fontFamily: 'DM Sans, sans-serif' }}>
-          {err}
-        </div>
-      )
-      return null
-    }
-    return (
-      <div style={{ marginTop: 10, marginBottom: 10 }}>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          multiple
-          style={{ display: 'none' }}
-          onChange={handleAdd}
-        />
-        <button
-          onClick={() => inputRef.current?.click()}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '4px 10px', fontSize: 11, color: '#BA7517',
-            background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
-            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-          }}
-        >
-          <Upload size={11} />
-          Add document
-        </button>
-        {err && <span style={{ marginLeft: 10, fontSize: 11, color: '#A32D2D' }}>{err}</span>}
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ marginTop: 10, marginBottom: 10 }}>
-      <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-        Documents ({docs.length})
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
-        {docs.map(doc => (
-          <div key={doc.id} style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 10px', background: '#FBFAF7',
-            border: '0.5px solid #E8E2DA', borderRadius: 6,
-            fontFamily: 'DM Sans, sans-serif',
-          }}>
-            <button
-              onClick={() => handleDownload(doc)}
-              style={{
-                flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6, padding: 0, textAlign: 'left',
-                fontFamily: 'DM Sans, sans-serif', minWidth: 0,
-              }}
-              title="Download"
-            >
-              <Download size={12} color="#BA7517" />
-              <span style={{
-                fontSize: 12, color: '#BA7517',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {doc.fileName}
-              </span>
-            </button>
-            <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
-            {editable && (
-              <button
-                onClick={() => handleDelete(doc.id)}
-                disabled={busy}
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: 2, opacity: 0.5,
-                }}
-                title="Delete"
-                aria-label="Delete document"
-              >
-                <Trash2 size={12} color="#6B6460" />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleAdd}
-      />
-      {editable && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '4px 10px', fontSize: 11, color: '#BA7517',
-            background: 'transparent', border: '1px dashed #E8E2DA', borderRadius: 5,
-            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-            opacity: busy ? 0.6 : 1,
-          }}
-        >
-          <Upload size={11} />
-          {busy ? 'Uploading…' : 'Add document'}
-        </button>
-      )}
-      {err && <span style={{ marginLeft: 10, fontSize: 11, color: '#A32D2D' }}>{err}</span>}
-    </div>
   )
 }
 
@@ -680,7 +388,12 @@ function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete }: {
       </div>
 
       {/* Read-only docs on the card. Add/delete lives in the Edit claim modal. */}
-      <ClaimDocList claimId={claim.id} />
+      <DocList
+        parentId={claim.id}
+        apiEndpoint="/api/claim-doc"
+        parentParam="claimId"
+        label="Documents"
+      />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -849,15 +562,29 @@ export default function ClientDetailPage({
       const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
 
-      // Upload policy doc if selected (works for both add and edit)
+      // Upload queued docs. Add mode queues via DocUploadField; Edit mode
+      // manages docs live via <DocList editable /> so queue is always empty.
       const newPolicy = isEdit ? null : await res.json()
       const targetPolicyId = isEdit ? editingPolicyId : newPolicy?.policy?.id
-      if (policyFiles[0] && targetPolicyId) {
-        const fd = new FormData()
-        fd.append('file', policyFiles[0])
-        fd.append('policyId', targetPolicyId)
-        fd.append('ifaId', resolvedIfaId)
-        await fetch('/api/policy-doc', { method: 'POST', body: fd })
+      if (!isEdit && policyFiles.length > 0 && targetPolicyId) {
+        const failures: string[] = []
+        for (const file of policyFiles) {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('policyId', targetPolicyId)
+          fd.append('ifaId', resolvedIfaId)
+          const r = await fetch('/api/policy-doc', { method: 'POST', body: fd })
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({}))
+            console.error('[policy-doc POST] failed:', r.status, d)
+            failures.push(`${file.name}: ${d.error ?? `HTTP ${r.status}`}`)
+          }
+        }
+        if (failures.length) {
+          setPolicyError(`Policy created, but some uploads failed — ${failures.join('; ')}`)
+          setPolicySaving(false)
+          return
+        }
       }
 
       setShowAddPolicy(false)
@@ -1003,7 +730,7 @@ export default function ClientDetailPage({
   }
 
   // ── Edit Claim modal handlers ──────────────────────────────────────────
-  // Docs in the edit modal are managed inline via <ClaimDocList editable />
+  // Docs in the edit modal are managed inline via <DocList editable />
   // — add/delete happen immediately against the server. This Save button
   // only persists text-field changes (title, type, priority, body).
   function openEditClaim(c: Alert) {
@@ -1605,14 +1332,26 @@ export default function ClientDetailPage({
               <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={2} placeholder="e.g. Single mother, 2 young kids" value={policyForm.notes} onChange={e => setPolicyForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
 
-            {/* Document upload — works in both add and edit. In edit mode,
-                 a new upload replaces whatever's currently attached. */}
-            <DocUploadField
-              label={editingPolicyId ? 'Replace document (optional)' : 'Document (optional)'}
-              files={policyFiles}
-              onFilesChange={setPolicyFiles}
-              onError={msg => setPolicyError(msg)}
-            />
+            {/* Document handling: Edit mode uses live DocList (add/delete
+                fire immediately). Add mode queues files, uploaded after the
+                policy row is created. */}
+            {editingPolicyId ? (
+              <DocList
+                parentId={editingPolicyId}
+                apiEndpoint="/api/policy-doc"
+                parentParam="policyId"
+                label="Documents"
+                editable
+              />
+            ) : (
+              <DocUploadField
+                multi
+                label="Documents"
+                files={policyFiles}
+                onFilesChange={setPolicyFiles}
+                onError={msg => setPolicyError(msg)}
+              />
+            )}
 
             {policyError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{policyError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
@@ -1731,7 +1470,13 @@ export default function ClientDetailPage({
                 against the server; there's no "save" gesture for docs. */}
             <div>
               <label style={labelStyle}>Documents</label>
-              <ClaimDocList claimId={editingClaim.id} editable />
+              <DocList
+                parentId={editingClaim.id}
+                apiEndpoint="/api/claim-doc"
+                parentParam="claimId"
+                label="Documents"
+                editable
+              />
             </div>
 
             {editClaimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{editClaimError}</p>}

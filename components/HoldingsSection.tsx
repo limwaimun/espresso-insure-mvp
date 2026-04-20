@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
+import DocList from '@/components/DocList'
 import {
-  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass, Download,
+  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
   ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 
@@ -27,8 +28,10 @@ interface Holding {
   last_reviewed_at: string | null
   inception_date: string | null
   notes: string | null
-  document_name: string | null
-  document_url: string | null
+  // Legacy single-doc columns — kept in DB as safety net after Batch 5
+  // migration moved docs to holding_documents table. No UI reads these.
+  document_name?: string | null
+  document_url?: string | null
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -114,54 +117,6 @@ function reviewPill(last_reviewed_at: string | null): { cls: string; text: strin
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-// ── HoldingDocCell ─────────────────────────────────────────────────────────
-// Shows the attached document (if any) in the expanded row. Download via a
-// fresh signed URL from /api/holding-doc; no re-upload here — that happens in
-// the Edit modal.
-
-function HoldingDocCell({ holdingId, fileName }: { holdingId: string; fileName: string | null }) {
-  if (!fileName) return <span style={{ fontSize: 13, color: '#9B9088' }}>—</span>
-
-  async function handleDownload() {
-    try {
-      const res = await fetch(`/api/holding-doc?holdingId=${holdingId}`)
-      const data = await res.json()
-      if (!data.downloadUrl) return
-      const fileRes = await fetch(data.downloadUrl)
-      const blob = await fileRes.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = blobUrl
-      a.download = data.fileName || fileName || 'document'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(blobUrl)
-    } catch {
-      console.error('[holding-doc] download failed')
-    }
-  }
-
-  return (
-    <button
-      onClick={handleDownload}
-      style={{
-        background: 'transparent', border: 'none', cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0,
-        fontFamily: 'DM Sans, sans-serif',
-      }}
-    >
-      <Download size={12} color="#BA7517" />
-      <span style={{
-        fontSize: 13, color: '#BA7517',
-        maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>
-        {fileName}
-      </span>
-    </button>
-  )
 }
 
 // ── HoldingRow ─────────────────────────────────────────────────────────────
@@ -313,11 +268,13 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
                 <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Last NAV date</span>
                 <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.last_nav_date)}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Document</span>
-                <HoldingDocCell holdingId={holding.id} fileName={holding.document_name} />
-              </div>
             </div>
+            <DocList
+              parentId={holding.id}
+              apiEndpoint="/api/holding-doc"
+              parentParam="holdingId"
+              label="Documents"
+            />
             {holding.notes && (
               <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
                 <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
@@ -491,17 +448,23 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
         holdingId = data?.id ?? null
       }
 
-      // Upload queued document (single-mode, so at most one file)
-      if (holdingFiles[0] && holdingId) {
-        const fd = new FormData()
-        fd.append('file', holdingFiles[0])
-        fd.append('holdingId', holdingId)
-        const res = await fetch('/api/holding-doc', { method: 'POST', body: fd })
-        if (!res.ok) {
-          const d = await res.json().catch(() => ({}))
-          console.warn('[holdings] doc upload failed:', d.error)
-          // The holding itself was saved, so we continue — surfacing a soft error.
-          setFormError(`Holding saved, but document upload failed: ${d.error ?? 'unknown'}`)
+      // Upload queued documents. Only relevant for Add mode — Edit mode
+      // manages docs live via <DocList editable />, so the queue is empty there.
+      if (!editingHoldingId && holdingFiles.length > 0 && holdingId) {
+        const failures: string[] = []
+        for (const file of holdingFiles) {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('holdingId', holdingId)
+          const res = await fetch('/api/holding-doc', { method: 'POST', body: fd })
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}))
+            console.warn('[holdings] doc upload failed:', d)
+            failures.push(`${file.name}: ${d.error ?? `HTTP ${res.status}`}`)
+          }
+        }
+        if (failures.length) {
+          setFormError(`Holding saved, but some uploads failed — ${failures.join('; ')}`)
           setSaving(false)
           loadHoldings()
           return
@@ -828,12 +791,28 @@ Keep it under 150 words. Tone: professional but personal.`,
               />
             </div>
 
-            <DocUploadField
-              label="Document"
-              files={holdingFiles}
-              onFilesChange={setHoldingFiles}
-              onError={msg => setFormError(msg)}
-            />
+            {/* Document handling depends on mode:
+                 • Add: queue files with DocUploadField (multi), uploaded after the
+                   holding row is created (we need an ID first).
+                 • Edit: use live DocList against the existing holding — add and
+                   delete happen immediately. */}
+            {editingHoldingId ? (
+              <DocList
+                parentId={editingHoldingId}
+                apiEndpoint="/api/holding-doc"
+                parentParam="holdingId"
+                label="Documents"
+                editable
+              />
+            ) : (
+              <DocUploadField
+                multi
+                label="Documents"
+                files={holdingFiles}
+                onFilesChange={setHoldingFiles}
+                onError={msg => setFormError(msg)}
+              />
+            )}
 
             {formError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{formError}</p>}
 
