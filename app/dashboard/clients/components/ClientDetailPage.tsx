@@ -394,9 +394,20 @@ function ClaimDocList({ claimId, editable = false }: { claimId: string; editable
   async function load() {
     try {
       const res = await fetch(`/api/claim-doc?claimId=${claimId}`)
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        console.error('[claim-doc GET] failed:', res.status, d)
+        setErr(`Couldn't load documents — ${d.error ?? `HTTP ${res.status}`}`)
+        setDocs([])
+        setLoading(false)
+        return
+      }
       const data = await res.json()
       setDocs(data.docs ?? [])
-    } catch {
+      setErr('')
+    } catch (e) {
+      console.error('[claim-doc GET] exception:', e)
+      setErr('Failed to load documents — network error')
       setDocs([])
     }
     setLoading(false)
@@ -422,14 +433,18 @@ function ClaimDocList({ claimId, editable = false }: { claimId: string; editable
       URL.revokeObjectURL(blobUrl)
     } catch {
       setErr('Download failed')
-      setTimeout(() => setErr(''), 2500)
     }
   }
 
   async function handleDelete(docId: string) {
     if (!confirm('Remove this document?')) return
-    setBusy(true)
-    await fetch(`/api/claim-doc?docId=${docId}`, { method: 'DELETE' })
+    setBusy(true); setErr('')
+    const res = await fetch(`/api/claim-doc?docId=${docId}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      console.error('[claim-doc DELETE] failed:', res.status, d)
+      setErr(`Delete failed — ${d.error ?? `HTTP ${res.status}`}`)
+    }
     await load()
     setBusy(false)
   }
@@ -447,12 +462,13 @@ function ClaimDocList({ claimId, editable = false }: { claimId: string; editable
       const res = await fetch('/api/claim-doc', { method: 'POST', body: fd })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        failures.push(`${file.name}: ${d.error ?? 'failed'}`)
+        console.error('[claim-doc POST] failed:', res.status, d)
+        failures.push(`${file.name}: ${d.error ?? `HTTP ${res.status}`}`)
       }
     }
     if (failures.length) {
-      setErr(failures.join('; '))
-      setTimeout(() => setErr(''), 4000)
+      // No timeout — leave the error visible until the user retries or dismisses
+      setErr(`Upload failed — ${failures.join('; ')}`)
     }
     await load()
     setBusy(false)
@@ -467,8 +483,15 @@ function ClaimDocList({ claimId, editable = false }: { claimId: string; editable
 
   if (loading) return null
   if (docs.length === 0 && !busy) {
-    // Read-only with zero docs: render nothing — keeps ClaimCard clean.
-    if (!editable) return null
+    // Read-only with zero docs: show error if one, otherwise render nothing.
+    if (!editable) {
+      if (err) return (
+        <div style={{ marginTop: 10, marginBottom: 10, fontSize: 11, color: '#A32D2D', fontFamily: 'DM Sans, sans-serif' }}>
+          {err}
+        </div>
+      )
+      return null
+    }
     return (
       <div style={{ marginTop: 10, marginBottom: 10 }}>
         <input
@@ -575,18 +598,14 @@ function ClaimDocList({ claimId, editable = false }: { claimId: string; editable
 
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
-function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
+function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete }: {
   claim: Alert
   ifaId: string
-  onUpdated: () => void
+  onEdit: (claim: Alert) => void
   onAskMaya: (c: Alert, action: 'status_update' | 'message_insurer' | 'message_client') => void
   onDelete: (id: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState(claim.title || '')
-  const [editBody, setEditBody] = useState(claim.body || '')
-  const [saving, setSaving] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
 
@@ -621,79 +640,47 @@ function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
     saveToServer({ priority })
   }
 
-  async function saveEdit() {
-    setSaving(true)
-    await fetch('/api/claim-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId: claim.id, ifaId, title: editTitle, body: editBody }),
-    })
-    setEditing(false)
-    setSaving(false)
-    onUpdated()
-  }
-
   return (
     <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '14px 16px' }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>{claimDate}</span>
-        {!editing && (
-          <>
-            <button ref={menuRef as any} onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
-              <MoreVertical size={14} color="#6B6460" />
-            </button>
-            <PortalMenu
-              anchorRef={menuRef as React.RefObject<HTMLElement>}
-              open={menuOpen}
-              onClose={() => setMenuOpen(false)}
-              items={[
-                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft status update', onClick: () => onAskMaya(claim, 'status_update'), accent: true },
-                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to insurer', onClick: () => onAskMaya(claim, 'message_insurer'), accent: true },
-                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to client', onClick: () => onAskMaya(claim, 'message_client'), accent: true },
-                { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit claim', onClick: () => setEditing(true), dividerBefore: true },
-                { icon: <Trash2 size={12} />, label: 'Delete claim', onClick: () => onDelete(claim.id), danger: true, dividerBefore: true },
-              ]}
-            />
-          </>
+        <button ref={menuRef as any} onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
+          <MoreVertical size={14} color="#6B6460" />
+        </button>
+        <PortalMenu
+          anchorRef={menuRef as React.RefObject<HTMLElement>}
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          items={[
+            { icon: <Bot size={12} color="#BA7517" />, label: 'Draft status update', onClick: () => onAskMaya(claim, 'status_update'), accent: true },
+            { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to insurer', onClick: () => onAskMaya(claim, 'message_insurer'), accent: true },
+            { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to client', onClick: () => onAskMaya(claim, 'message_client'), accent: true },
+            { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit claim', onClick: () => onEdit(claim), dividerBefore: true },
+            { icon: <Trash2 size={12} />, label: 'Delete claim', onClick: () => onDelete(claim.id), danger: true, dividerBefore: true },
+          ]}
+        />
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500, marginBottom: 4 }}>
+          {claim.title || 'Untitled claim'}
+        </div>
+        {bodyText && (
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', lineHeight: 1.6 }}>
+            {expanded || !isTruncated ? bodyText : bodyText.slice(0, TRUNCATE) + '…'}
+            {isTruncated && (
+              <button onClick={() => setExpanded(v => !v)}
+                style={{ background: 'transparent', border: 'none', color: '#BA7517', fontSize: 11, cursor: 'pointer', padding: '0 4px', fontFamily: 'DM Sans, sans-serif' }}>
+                {expanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {editing ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-          <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
-            style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }} placeholder="Claim title" />
-          <textarea value={editBody} onChange={e => setEditBody(e.target.value)}
-            rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontSize: 12 } as React.CSSProperties}
-            placeholder="Description" />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={saveEdit} disabled={saving} style={{ ...btnPrimary, fontSize: 12, padding: '6px 14px', opacity: saving ? 0.7 : 1 }}>
-              <Save size={12} />{saving ? 'Saving…' : 'Save'}
-            </button>
-            <button onClick={() => { setEditing(false); setEditTitle(claim.title || ''); setEditBody(claim.body || '') }}
-              style={{ ...btnOutline, fontSize: 12, padding: '6px 14px' }}>Cancel</button>
-          </div>
-        </div>
-      ) : (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500, marginBottom: 4 }}>
-            {claim.title || 'Untitled claim'}
-          </div>
-          {bodyText && (
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', lineHeight: 1.6 }}>
-              {expanded || !isTruncated ? bodyText : bodyText.slice(0, TRUNCATE) + '…'}
-              {isTruncated && (
-                <button onClick={() => setExpanded(v => !v)}
-                  style={{ background: 'transparent', border: 'none', color: '#BA7517', fontSize: 11, cursor: 'pointer', padding: '0 4px', fontFamily: 'DM Sans, sans-serif' }}>
-                  {expanded ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      <ClaimDocList claimId={claim.id} editable={editing} />
+      {/* Read-only docs on the card. Add/delete lives in the Edit claim modal. */}
+      <ClaimDocList claimId={claim.id} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -781,6 +768,12 @@ export default function ClientDetailPage({
   const [claimFiles, setClaimFiles] = useState<File[]>([])
   const [claimSaving, setClaimSaving] = useState(false)
   const [claimError, setClaimError] = useState('')
+
+  // Edit Claim modal — separate from Add Claim so the two flows don't collide
+  const [editingClaim, setEditingClaim] = useState<Alert | null>(null)
+  const [editClaimForm, setEditClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
+  const [editClaimSaving, setEditClaimSaving] = useState(false)
+  const [editClaimError, setEditClaimError] = useState('')
   const [confirmDeleteClaimId, setConfirmDeleteClaimId] = useState<string | null>(null)
   const [claimDeleting, setClaimDeleting] = useState(false)
 
@@ -933,10 +926,23 @@ export default function ClientDetailPage({
       // Grab the new claim ID for doc upload. Route may return { claim: {...} }
       // or the row directly — handle both shapes.
       const payload = await res.json().catch(() => ({}))
-      const newClaimId: string | undefined = payload?.claim?.id ?? payload?.id ?? payload?.alert?.id
+      // Log so we can diagnose if uploads aren't attaching — the response
+      // shape tells us which key holds the new claim ID.
+      console.log('[claim-create] response payload:', payload)
+      const newClaimId: string | undefined =
+        payload?.claim?.id ?? payload?.id ?? payload?.alert?.id ?? payload?.data?.id
 
-      // Upload queued documents sequentially. A failure on any one doesn't
-      // block the claim itself — we surface a soft error and continue.
+      // If files were queued but we couldn't get the new claim's ID, stop
+      // here and tell the user loudly — silently dropping uploads is the
+      // bug we're fixing.
+      if (claimFiles.length > 0 && !newClaimId) {
+        const keys = Object.keys(payload || {}).join(', ') || 'empty'
+        setClaimError(`Claim created but attachments could not be uploaded — server response shape was unexpected (keys: ${keys}). Please close this dialog and use "Edit claim" on the new claim to add documents.`)
+        setClaimSaving(false)
+        return
+      }
+
+      // Upload queued documents sequentially.
       if (newClaimId && claimFiles.length > 0) {
         const failures: string[] = []
         for (const file of claimFiles) {
@@ -946,13 +952,12 @@ export default function ClientDetailPage({
           const up = await fetch('/api/claim-doc', { method: 'POST', body: fd })
           if (!up.ok) {
             const d = await up.json().catch(() => ({}))
-            failures.push(`${file.name}: ${d.error ?? 'upload failed'}`)
+            failures.push(`${file.name}: ${d.error ?? up.statusText ?? `HTTP ${up.status}`}`)
           }
         }
         if (failures.length) {
           setClaimError(`Claim created, but some uploads failed — ${failures.join('; ')}`)
           setClaimSaving(false)
-          // Leave modal open so Wayne can retry or dismiss
           return
         }
       }
@@ -995,6 +1000,60 @@ export default function ClientDetailPage({
       setConfirmDeleteClaimId(null); router.refresh()
     } catch { console.error('Delete claim failed') }
     setClaimDeleting(false)
+  }
+
+  // ── Edit Claim modal handlers ──────────────────────────────────────────
+  // Docs in the edit modal are managed inline via <ClaimDocList editable />
+  // — add/delete happen immediately against the server. This Save button
+  // only persists text-field changes (title, type, priority, body).
+  function openEditClaim(c: Alert) {
+    setEditClaimForm({
+      title: c.title ?? '',
+      type: (c as any).claim_type ?? 'Health',
+      priority: c.priority ?? 'medium',
+      body: c.body ?? '',
+    })
+    setEditClaimError('')
+    setEditClaimSaving(false)
+    setEditingClaim(c)
+  }
+
+  function closeEditClaim() {
+    setEditingClaim(null)
+    setEditClaimError('')
+    setEditClaimSaving(false)
+  }
+
+  async function saveEditedClaim() {
+    if (!editingClaim) return
+    if (!editClaimForm.title.trim()) { setEditClaimError('Title is required'); return }
+    if (!resolvedIfaId) { setEditClaimError('Session error — please refresh'); return }
+    setEditClaimSaving(true)
+    try {
+      const res = await fetch('/api/claim-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          claimId: editingClaim.id,
+          ifaId: resolvedIfaId,
+          title: editClaimForm.title,
+          body: editClaimForm.body,
+          priority: editClaimForm.priority,
+          claim_type: editClaimForm.type,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setEditClaimError(d.error ?? `Save failed (HTTP ${res.status})`)
+        setEditClaimSaving(false)
+        return
+      }
+      closeEditClaim()
+      router.refresh()
+    } catch {
+      setEditClaimError('Something went wrong — please try again')
+      setEditClaimSaving(false)
+    }
   }
 
   // Maya stubs — for now these just show a "Coming soon" preview modal.
@@ -1361,7 +1420,7 @@ export default function ClientDetailPage({
                   key={claim.id}
                   claim={claim}
                   ifaId={resolvedIfaId}
-                  onUpdated={() => router.refresh()}
+                  onEdit={openEditClaim}
                   onAskMaya={handleClaimAskMaya}
                   onDelete={(id) => setConfirmDeleteClaimId(id)}
                 />
@@ -1613,6 +1672,79 @@ export default function ClientDetailPage({
                 <Plus size={14} />{claimSaving ? 'Creating…' : 'Create claim'}
               </button>
               <button onClick={() => { setShowAddClaim(false); setClaimFiles([]) }} style={btnOutline}>Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* == EDIT CLAIM MODAL == */}
+      {editingClaim && (
+        <Modal title="Edit claim" onClose={closeEditClaim}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Claim title *</label>
+              <input
+                style={inputStyle}
+                value={editClaimForm.title}
+                onChange={e => setEditClaimForm(p => ({ ...p, title: e.target.value }))}
+                placeholder="e.g. Health claim — clinic visit"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Claim type</label>
+                <select
+                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+                  value={editClaimForm.type}
+                  onChange={e => setEditClaimForm(p => ({ ...p, type: e.target.value }))}
+                >
+                  {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Priority</label>
+                <select
+                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+                  value={editClaimForm.priority}
+                  onChange={e => setEditClaimForm(p => ({ ...p, priority: e.target.value }))}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Description</label>
+              <textarea
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
+                rows={4}
+                value={editClaimForm.body}
+                onChange={e => setEditClaimForm(p => ({ ...p, body: e.target.value }))}
+                placeholder="What happened? Any context that will help track this claim."
+              />
+            </div>
+
+            {/* Documents — managed inline. Add/delete fire immediately
+                against the server; there's no "save" gesture for docs. */}
+            <div>
+              <label style={labelStyle}>Documents</label>
+              <ClaimDocList claimId={editingClaim.id} editable />
+            </div>
+
+            {editClaimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{editClaimError}</p>}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={saveEditedClaim}
+                disabled={editClaimSaving}
+                style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: editClaimSaving ? 0.7 : 1 }}
+              >
+                <Save size={14} />{editClaimSaving ? 'Saving…' : 'Save changes'}
+              </button>
+              <button onClick={closeEditClaim} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>
