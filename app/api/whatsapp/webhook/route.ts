@@ -10,6 +10,36 @@ const RATE_LIMIT_PER_DAY_FA = 200     // max Maya messages per FA per day
 const DAILY_SPEND_CAP_MESSAGES = 150  // soft cap before Maya pauses
 const MAX_MESSAGE_LENGTH = 2000       // ignore suspiciously long messages
 
+// ── PII redaction helpers for logs ─────────────────────────────────────────
+// Pattern: keep country code + last 4 digits, e.g. "+6591234567" → "+65****7212"
+// Preserves debuggability while keeping Vercel logs PDPA-safe.
+function redactPhone(input: string | null | undefined): string {
+  if (!input) return '<none>'
+  const s = String(input)
+  const digits = s.replace(/\D/g, '')
+  if (digits.length < 7) return '<redacted>'
+  // Assume first 1-3 digits are country code, last 4 we keep visible
+  // For SG numbers (+65XXXXXXXX, 10 digits total), this gives +65****XXXX
+  const last4 = digits.slice(-4)
+  // Country code: everything except the last 8 digits, capped at 3
+  const cc = digits.length > 8 ? digits.slice(0, digits.length - 8).slice(0, 3) : ''
+  return cc ? `+${cc}****${last4}` : `****${last4}`
+}
+
+// Extract a safe error string — .message only, never full err object
+// (error objects can contain request URLs, headers, or response bodies)
+function safeErrMsg(err: unknown): string {
+  if (!err) return 'unknown error'
+  if (err instanceof Error) return err.message
+  if (typeof err === 'string') return err
+  try {
+    const s = JSON.stringify(err)
+    return s.length > 200 ? s.slice(0, 200) + '…' : s
+  } catch {
+    return String(err).slice(0, 200)
+  }
+}
+
 // ── Signature verification ─────────────────────────────────────────────────
 function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
   if (!signature || !process.env.WHATSAPP_APP_SECRET) return false
@@ -133,8 +163,8 @@ async function verifySender(whatsappNumber: string): Promise<{
     }
   }
 
-  // Log unknown sender attempt
-  console.warn(`[webhook] Unknown sender: ${whatsappNumber}`)
+  // Log unknown sender attempt (phone redacted in log; full number stored in alert DB row)
+  console.warn(`[webhook] Unknown sender: ${redactPhone(whatsappNumber)}`)
   await supabase.from('alerts').insert({
     type: 'security',
     title: 'Unknown WhatsApp sender',
@@ -164,15 +194,15 @@ async function notifyFA(
     body: `Client said: "${messageSummary.slice(0, 200)}"\n\nMaya replied: "${mayaReply.slice(0, 200)}"`,
     priority: 'low',
     resolved: false,
-  }).catch(err => console.error('[notify] alert insert failed:', err))
+  }).catch(err => console.error('[notify] alert insert failed:', safeErrMsg(err)))
 
   // 2. WhatsApp notification to FA (uses the 24h window — the FA has been in
   //    contact with Maya by virtue of having an active account)
   if (ifaWhatsApp) {
     const notifText = `💬 ${clientName} just messaged me. I replied — check your dashboard for the full thread.`
     sendWhatsAppText(ifaWhatsApp, notifText)
-      .then(r => { if (!r.ok && !r.stubbed) console.error('[notify] WhatsApp to FA failed:', r.error) })
-      .catch(err => console.error('[notify] WhatsApp to FA threw:', err))
+      .then(r => { if (!r.ok && !r.stubbed) console.error('[notify] WhatsApp to FA failed:', safeErrMsg(r.error)) })
+      .catch(err => console.error('[notify] WhatsApp to FA threw:', safeErrMsg(err)))
   }
 }
 
@@ -256,7 +286,7 @@ export async function POST(request: NextRequest) {
 
   // ── DEFENCE 3: Message length guard ──────────────────────────────────────
   if (messageText.length > MAX_MESSAGE_LENGTH) {
-    console.warn(`[webhook] Oversized message from ${senderNumber} (${messageText.length} chars)`)
+    console.warn(`[webhook] Oversized message from ${redactPhone(senderNumber)} (${messageText.length} chars)`)
     return NextResponse.json({ status: 'ignored_oversized' })
   }
 
@@ -265,14 +295,14 @@ export async function POST(request: NextRequest) {
 
   // Unknown sender — send polite rejection, do not engage
   if (sender.type === 'unknown') {
-    console.log(`[webhook] Rejected unknown sender ${senderNumber}`)
+    console.log(`[webhook] Rejected unknown sender ${redactPhone(senderNumber)}`)
     return NextResponse.json({ status: 'rejected_unknown_sender' })
   }
 
   // ── DEFENCE 4: Rate limiting ──────────────────────────────────────────────
   const rateCheck = await checkRateLimit(senderNumber, sender.ifaId)
   if (!rateCheck.allowed) {
-    console.warn(`[webhook] Rate limited: ${senderNumber} reason=${rateCheck.reason}`)
+    console.warn(`[webhook] Rate limited: ${redactPhone(senderNumber)} reason=${rateCheck.reason}`)
     if (rateCheck.reason === 'fa_daily_cap') {
       // Log alert for FA — Maya is paused for the day
       await supabase.from('alerts').insert({
@@ -301,7 +331,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => {})
     // Maya will still respond naturally due to identity lock in system prompt
     // but we've logged it for the FA
-    console.warn(`[webhook] Injection attempt detected from ${senderNumber}`)
+    console.warn(`[webhook] Injection attempt detected from ${redactPhone(senderNumber)}`)
   }
 
   // ── STEP 3: Get conversation context ─────────────────────────────────────
@@ -425,11 +455,12 @@ export async function POST(request: NextRequest) {
               resolved: false,
             }).catch(() => {})
 
-            console.log(`[webhook] Media saved: ${storagePath}`)
+            // Storage path contains ifaId/claimId — log without them to reduce log-data exposure
+            console.log(`[webhook] Media saved for client (${mimeType}, ${fileBuffer.byteLength} bytes)`)
           }
         }
       } catch (err) {
-        console.error('[webhook] Media upload error:', err)
+        console.error('[webhook] Media upload error:', safeErrMsg(err))
         // Non-fatal — continue processing
       }
     }
@@ -493,7 +524,7 @@ export async function POST(request: NextRequest) {
     })
     mayaReply = response.content.find(b => b.type === 'text')?.text || ''
   } catch (err) {
-    console.error('[webhook] Claude error:', err)
+    console.error('[webhook] Claude error:', safeErrMsg(err))
     mayaReply = "Sorry, I'm having a brief issue. Please try again in a moment, or reach out to your advisor directly."
   }
 
@@ -521,11 +552,12 @@ export async function POST(request: NextRequest) {
   if (mayaReply) {
     const sendResult = await sendWhatsAppText(senderNumber, mayaReply)
     if (!sendResult.ok && !sendResult.stubbed) {
-      console.error(`[webhook] Failed to send Maya reply to ${senderNumber}:`, sendResult.error)
+      console.error(`[webhook] Failed to send Maya reply to ${redactPhone(senderNumber)}:`, safeErrMsg(sendResult.error))
     } else if (sendResult.stubbed) {
-      console.log(`[webhook] Maya reply STUBBED to ${senderNumber}: ${mayaReply.slice(0, 100)}`)
+      // Don't log Maya's reply body — could contain client PII/financial info
+      console.log(`[webhook] Maya reply STUBBED to ${redactPhone(senderNumber)} (${mayaReply.length} chars)`)
     } else {
-      console.log(`[webhook] Maya reply sent to ${senderNumber}: ${sendResult.messageId}`)
+      console.log(`[webhook] Maya reply sent to ${redactPhone(senderNumber)}: ${sendResult.messageId}`)
     }
   }
 
