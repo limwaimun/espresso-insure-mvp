@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
+import CountryCodeSelect from '@/components/CountryCodeSelect'
 import {
   X, Plus, Save, Upload, Download, Check, Loader, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -274,7 +276,119 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
-// ── PolicyRow — expandable row for policies table ─────────────────────────
+// ── PortalMenu — renders dropdown menus at document.body to avoid parent clipping
+
+interface MenuItem {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+  danger?: boolean
+  accent?: boolean       // highlight (e.g. amber for Maya actions)
+  dividerBefore?: boolean
+}
+
+function PortalMenu({ anchorRef, open, onClose, items }: {
+  anchorRef: React.RefObject<HTMLElement>
+  open: boolean
+  onClose: () => void
+  items: MenuItem[]
+}) {
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // SSR guard — portals only work client-side
+  useEffect(() => { setMounted(true) }, [])
+
+  // Compute position whenever menu opens, and on scroll/resize
+  useEffect(() => {
+    if (!open) return
+    function updatePosition() {
+      if (!anchorRef.current) return
+      const rect = anchorRef.current.getBoundingClientRect()
+      const menuWidth = 220
+      const menuGap = 4
+      // Right-align to anchor button's right edge. Clamp to viewport.
+      let left = rect.right - menuWidth
+      if (left < 8) left = 8
+      if (left + menuWidth > window.innerWidth - 8) left = window.innerWidth - menuWidth - 8
+      const top = rect.bottom + menuGap
+      setCoords({ top, left })
+    }
+    updatePosition()
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [open, anchorRef])
+
+  // Outside-click dismiss
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target) && !anchorRef.current?.contains(target)) {
+        onClose()
+      }
+    }
+    // mousedown (not click) so it fires before any onClick handler inside the menu
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open, onClose, anchorRef])
+
+  if (!mounted || !open || !coords) return null
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: 'fixed',
+        top: coords.top,
+        left: coords.left,
+        width: 220,
+        background: '#FFFFFF',
+        border: '0.5px solid #E8E2DA',
+        borderRadius: 8,
+        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+        zIndex: 2000,
+        overflow: 'hidden',
+        fontFamily: 'DM Sans, sans-serif',
+      }}
+    >
+      {items.map((item, i) => (
+        <button
+          key={i}
+          onClick={() => { item.onClick(); onClose() }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 12px',
+            fontSize: 12,
+            color: item.danger ? '#A32D2D' : '#1A1410',
+            background: 'transparent',
+            border: 'none',
+            borderTop: item.dividerBefore ? '0.5px solid #F1EFE8' : 'none',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left',
+            fontFamily: 'DM Sans, sans-serif',
+          }}
+          onMouseOver={e => {
+            e.currentTarget.style.background = item.danger ? '#FCEBEB' : item.accent ? '#FAEEDA' : '#F7F4F0'
+          }}
+          onMouseOut={e => { e.currentTarget.style.background = 'transparent' }}
+        >
+          {item.icon}
+          {item.label}
+        </button>
+      ))}
+    </div>,
+    document.body
+  )
+}
 
 function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming }: {
   policy: Policy
@@ -286,17 +400,7 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
 }) {
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
+  const menuRef = useRef<HTMLButtonElement>(null)
 
   function renderStatus() {
     if (policy.status === 'lapsed') return { cls: 'pill-red', text: 'Lapsed' }
@@ -343,28 +447,21 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
         </td>
         <td style={{ padding: '12px 10px', fontSize: 13, color: '#1A1410' }}>{formatDate(policy.renewal_date)}</td>
         <td style={{ padding: '12px 10px' }}><span className={`pill ${cls}`}>{text}</span></td>
-        <td style={{ padding: '12px 10px', textAlign: 'right', position: 'relative' }} onClick={e => e.stopPropagation()}>
-          <div ref={menuRef} style={{ display: 'inline-block', position: 'relative' }}>
-            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
-              <MoreVertical size={14} color="#6B6460" />
-            </button>
-            {menuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 210, zIndex: 20, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
-                <button onClick={() => { onAskMaya(policy, 'summarize'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Summarize with Maya
-                </button>
-                <button onClick={() => { onAskMaya(policy, 'renewal_reminder'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Draft renewal reminder
-                </button>
-                <button onClick={() => { onEdit(policy); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Pencil size={12} color="#6B6460" /> Edit policy
-                </button>
-                <button onClick={() => { setConfirming(policy.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Trash2 size={12} /> Delete policy
-                </button>
-              </div>
-            )}
-          </div>
+        <td style={{ padding: '12px 10px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+          <button ref={menuRef as any} onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center', marginLeft: 'auto' }} title="Actions">
+            <MoreVertical size={14} color="#6B6460" />
+          </button>
+          <PortalMenu
+            anchorRef={menuRef as React.RefObject<HTMLElement>}
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            items={[
+              { icon: <Bot size={12} color="#BA7517" />, label: 'Summarize with Maya', onClick: () => onAskMaya(policy, 'summarize'), accent: true },
+              { icon: <Bot size={12} color="#BA7517" />, label: 'Draft renewal reminder', onClick: () => onAskMaya(policy, 'renewal_reminder'), accent: true },
+              { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit policy', onClick: () => onEdit(policy), dividerBefore: true },
+              { icon: <Trash2 size={12} />, label: 'Delete policy', onClick: () => setConfirming(policy.id), danger: true, dividerBefore: true },
+            ]}
+          />
         </td>
       </tr>
 
@@ -414,17 +511,7 @@ function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
   const [editBody, setEditBody] = useState(claim.body || '')
   const [saving, setSaving] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
+  const menuRef = useRef<HTMLButtonElement>(null)
 
   const [localStatus, setLocalStatus] = useState(
     claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
@@ -475,30 +562,23 @@ function ClaimCard({ claim, ifaId, onUpdated, onAskMaya, onDelete }: {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460' }}>{claimDate}</span>
         {!editing && (
-          <div ref={menuRef} style={{ position: 'relative' }}>
-            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
+          <>
+            <button ref={menuRef as any} onClick={() => setMenuOpen(o => !o)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, display: 'flex', alignItems: 'center' }} title="Actions">
               <MoreVertical size={14} color="#6B6460" />
             </button>
-            {menuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', minWidth: 220, zIndex: 20, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
-                <button onClick={() => { onAskMaya(claim, 'status_update'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Draft status update
-                </button>
-                <button onClick={() => { onAskMaya(claim, 'message_insurer'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Draft message to insurer
-                </button>
-                <button onClick={() => { onAskMaya(claim, 'message_client'); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FAEEDA')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Bot size={12} color="#BA7517" /> Draft message to client
-                </button>
-                <button onClick={() => { setEditing(true); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#1A1410', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#F7F4F0')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Pencil size={12} color="#6B6460" /> Edit claim
-                </button>
-                <button onClick={() => { onDelete(claim.id); setMenuOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', fontSize: 12, color: '#A32D2D', background: 'transparent', border: 'none', borderTop: '0.5px solid #F1EFE8', cursor: 'pointer', width: '100%', textAlign: 'left' }} onMouseOver={e => (e.currentTarget.style.background = '#FCEBEB')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <Trash2 size={12} /> Delete claim
-                </button>
-              </div>
-            )}
-          </div>
+            <PortalMenu
+              anchorRef={menuRef as React.RefObject<HTMLElement>}
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              items={[
+                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft status update', onClick: () => onAskMaya(claim, 'status_update'), accent: true },
+                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to insurer', onClick: () => onAskMaya(claim, 'message_insurer'), accent: true },
+                { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to client', onClick: () => onAskMaya(claim, 'message_client'), accent: true },
+                { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit claim', onClick: () => setEditing(true), dividerBefore: true },
+                { icon: <Trash2 size={12} />, label: 'Delete claim', onClick: () => onDelete(claim.id), danger: true, dividerBefore: true },
+              ]}
+            />
+          </>
         )}
       </div>
 
@@ -1263,7 +1343,7 @@ export default function ClientDetailPage({
               <div><label style={labelStyle}>Company</label><input style={inputStyle} value={editForm.company} onChange={e => setEditForm(p => ({ ...p, company: e.target.value }))} /></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={labelStyle}>WhatsApp</label><input style={inputStyle} value={editForm.whatsapp} onChange={e => setEditForm(p => ({ ...p, whatsapp: e.target.value }))} placeholder="+65 9123 4567" /></div>
+              <div><CountryCodeSelect value={editForm.whatsapp} onChange={v => setEditForm(p => ({ ...p, whatsapp: v }))} label="WhatsApp" /></div>
               <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} /></div>
             </div>
             <div><label style={labelStyle}>Date of Birth</label><input style={{ ...inputStyle, colorScheme: 'dark' } as React.CSSProperties} type="date" value={editForm.birthday} onChange={e => setEditForm(p => ({ ...p, birthday: e.target.value }))} /></div>
