@@ -135,9 +135,9 @@ export async function GET(request: NextRequest) {
     // ── List mode ──────────────────────────────────────────────────────
     if (!policyId) return NextResponse.json({ error: 'Missing policyId or docId' }, { status: 400 })
 
-    const own = await assertPolicyOwnership(policyId, userId)
-    if (!own.ok) return NextResponse.json({ error: own.error }, { status: own.status })
-
+    // Single query that both filters and enforces ownership. No separate
+    // ownership pre-check — `.eq('ifa_id', userId)` + RLS make it impossible
+    // to see rows belonging to another IFA. Saves a round-trip.
     const { data: rows, error } = await supabase
       .from('policy_documents')
       .select('id, file_name, file_size, mime_type, uploaded_at')
