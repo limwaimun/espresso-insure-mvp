@@ -114,7 +114,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET — list all docs for a claim, each with a fresh 1-hour signed URL
+// GET — list metadata for a claim (?claimId=) OR fetch fresh signed URL for
+// one doc (?docId=). Splitting these keeps list loads DB-only (fast); signed
+// URL generation only happens when the user actually clicks a download.
 export async function GET(request: NextRequest) {
   try {
     const { userId, error: authError } = await verifySession(request)
@@ -124,9 +126,32 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const claimId = searchParams.get('claimId')
+    const docId = searchParams.get('docId')
 
+    // ── Single-doc mode: on-demand signed URL for download ──────────────
+    if (docId) {
+      const { data: doc, error } = await supabase
+        .from('claim_documents')
+        .select('file_path, file_name')
+        .eq('id', docId)
+        .eq('ifa_id', userId)
+        .single()
+      if (error || !doc) {
+        return NextResponse.json({ error: 'Document not found or unauthorized' }, { status: 404 })
+      }
+      const { data: signed, error: urlErr } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(doc.file_path, 60 * 60)
+      if (urlErr || !signed) {
+        console.error('[claim-doc GET docId] signed URL failed:', urlErr)
+        return NextResponse.json({ error: 'Could not generate download link' }, { status: 500 })
+      }
+      return NextResponse.json({ downloadUrl: signed.signedUrl, fileName: doc.file_name })
+    }
+
+    // ── List mode ───────────────────────────────────────────────────────
     if (!claimId) {
-      return NextResponse.json({ error: 'Missing claimId' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing claimId or docId' }, { status: 400 })
     }
 
     const own = await assertClaimOwnership(claimId, userId)
@@ -134,7 +159,7 @@ export async function GET(request: NextRequest) {
 
     const { data: rows, error } = await supabase
       .from('claim_documents')
-      .select('id, file_name, file_path, file_size, mime_type, uploaded_at')
+      .select('id, file_name, file_size, mime_type, uploaded_at')
       .eq('claim_id', claimId)
       .eq('ifa_id', userId)
       .order('uploaded_at', { ascending: true })
@@ -144,21 +169,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to list documents' }, { status: 500 })
     }
 
-    const docs = await Promise.all(
-      (rows || []).map(async r => {
-        const { data: signed } = await supabase.storage
-          .from(BUCKET)
-          .createSignedUrl(r.file_path, 60 * 60)
-        return {
-          id: r.id,
-          fileName: r.file_name,
-          fileSize: r.file_size,
-          mimeType: r.mime_type,
-          uploadedAt: r.uploaded_at,
-          downloadUrl: signed?.signedUrl ?? null,
-        }
-      })
-    )
+    // Return metadata only — no signed URLs. DocList fetches URLs on-demand.
+    const docs = (rows || []).map(r => ({
+      id: r.id,
+      fileName: r.file_name,
+      fileSize: r.file_size,
+      mimeType: r.mime_type,
+      uploadedAt: r.uploaded_at,
+    }))
 
     return NextResponse.json({ docs })
   } catch (err) {

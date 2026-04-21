@@ -38,7 +38,6 @@ interface Doc {
   fileName: string
   fileSize: number | null
   mimeType: string | null
-  downloadUrl: string | null
 }
 
 function formatSize(bytes: number | null): string {
@@ -87,9 +86,20 @@ export default function DocList({ parentId, apiEndpoint, parentParam, editable =
   }, [parentId, apiEndpoint])
 
   async function handleDownload(doc: Doc) {
-    if (!doc.downloadUrl) return
     try {
-      const fileRes = await fetch(doc.downloadUrl)
+      // Fetch a fresh signed URL just-in-time. The list endpoint no longer
+      // generates URLs eagerly — saves an HTTP round trip per doc on list.
+      const urlRes = await fetch(`${apiEndpoint}?docId=${doc.id}`)
+      if (!urlRes.ok) {
+        const d = await urlRes.json().catch(() => ({}))
+        console.error(`[DocList download URL] failed:`, urlRes.status, d)
+        setErr(`Couldn't get download link — ${d.error ?? `HTTP ${urlRes.status}`}`)
+        return
+      }
+      const { downloadUrl } = await urlRes.json()
+      if (!downloadUrl) { setErr('Download link missing'); return }
+
+      const fileRes = await fetch(downloadUrl)
       const blob = await fileRes.blob()
       const blobUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -99,7 +109,8 @@ export default function DocList({ parentId, apiEndpoint, parentParam, editable =
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(blobUrl)
-    } catch {
+    } catch (e) {
+      console.error('[DocList download] exception:', e)
       setErr('Download failed')
     }
   }
@@ -161,101 +172,86 @@ export default function DocList({ parentId, apiEndpoint, parentParam, editable =
     fontFamily: 'DM Sans, sans-serif',
   }
 
-  if (loading) return null
+  // Read-only + no docs + no error + done loading → render nothing (clean card).
+  // Everything else renders the container so the Add button shows up immediately.
+  if (!editable && !loading && docs.length === 0 && !err) return null
 
-  // No docs + not editable → render error only if any, otherwise nothing.
-  if (docs.length === 0 && !busy) {
-    if (!editable) {
-      if (err) return (
-        <div style={{ marginTop: 10, marginBottom: 10, fontSize: 11, color: '#A32D2D', fontFamily: 'DM Sans, sans-serif' }}>
-          {err}
-        </div>
-      )
-      return null
-    }
-    return (
-      <div style={{ marginTop: 10, marginBottom: 10 }}>
-        {label && <span style={labelStyle}>{label}</span>}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ACCEPT_MIMES}
-          multiple
-          style={{ display: 'none' }}
-          onChange={handleAdd}
-        />
-        <button onClick={() => inputRef.current?.click()} style={addBtnStyle}>
-          <Upload size={11} />
-          Add document
-        </button>
-        {err && <span style={errStyle}>{err}</span>}
-      </div>
-    )
-  }
-
-  // Main render: list of docs + optional add button
   return (
     <div style={{ marginTop: 10, marginBottom: 10 }}>
       {(label || docs.length > 0) && (
-        <div style={labelStyle}>{label ?? 'Documents'} ({docs.length})</div>
+        <div style={labelStyle}>
+          {label ?? 'Documents'}{docs.length > 0 ? ` (${docs.length})` : ''}
+        </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
-        {docs.map(doc => (
-          <div key={doc.id} style={rowStyle}>
-            <button
-              onClick={() => handleDownload(doc)}
-              style={{
-                flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6, padding: 0, textAlign: 'left',
-                fontFamily: 'DM Sans, sans-serif', minWidth: 0,
-              }}
-              title="Download"
-            >
-              {isImageMime(doc.mimeType)
-                ? <ImageIcon size={12} color="#BA7517" />
-                : <FileText size={12} color="#BA7517" />}
-              <span style={{
-                fontSize: 12, color: '#BA7517',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {doc.fileName}
-              </span>
-            </button>
-            <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
-            {editable && (
+
+      {docs.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
+          {docs.map(doc => (
+            <div key={doc.id} style={rowStyle}>
               <button
-                onClick={() => handleDelete(doc.id)}
-                disabled={busy}
+                onClick={() => handleDownload(doc)}
                 style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: 2, opacity: 0.5,
+                  flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6, padding: 0, textAlign: 'left',
+                  fontFamily: 'DM Sans, sans-serif', minWidth: 0,
                 }}
-                title="Delete"
-                aria-label="Delete document"
+                title="Download"
               >
-                <Trash2 size={12} color="#6B6460" />
+                {isImageMime(doc.mimeType)
+                  ? <ImageIcon size={12} color="#BA7517" />
+                  : <FileText size={12} color="#BA7517" />}
+                <span style={{
+                  fontSize: 12, color: '#BA7517',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {doc.fileName}
+                </span>
               </button>
-            )}
-          </div>
-        ))}
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT_MIMES}
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleAdd}
-      />
+              <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
+              {editable && (
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  disabled={busy}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: 2, opacity: 0.5,
+                  }}
+                  title="Delete"
+                  aria-label="Delete document"
+                >
+                  <Trash2 size={12} color="#6B6460" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {editable && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          style={{ ...addBtnStyle, opacity: busy ? 0.6 : 1 }}
-        >
-          <Upload size={11} />
-          {busy ? 'Uploading…' : 'Add document'}
-        </button>
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ACCEPT_MIMES}
+            multiple
+            style={{ display: 'none' }}
+            onChange={handleAdd}
+          />
+          <button
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+            style={{ ...addBtnStyle, opacity: busy ? 0.6 : 1 }}
+          >
+            <Upload size={11} />
+            {busy ? 'Uploading…' : 'Add document'}
+          </button>
+        </>
+      )}
+
+      {loading && (
+        <span style={{ marginLeft: editable ? 10 : 0, fontSize: 10, color: '#9B9088', fontStyle: 'italic', fontFamily: 'DM Sans, sans-serif' }}>
+          Loading…
+        </span>
       )}
       {err && <span style={errStyle}>{err}</span>}
     </div>
