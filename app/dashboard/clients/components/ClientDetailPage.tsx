@@ -30,8 +30,6 @@ interface Policy {
   renewal_date: string
   status: string
   notes?: string | null
-  document_name?: string | null
-  document_url?: string | null
 }
 
 interface Message {

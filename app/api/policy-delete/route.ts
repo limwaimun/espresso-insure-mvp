@@ -27,20 +27,17 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Verify the policy belongs to this IFA before deleting ─────────────
+    // Note: document cleanup is handled by the policy_documents cascade
+    // (Batch 5 multi-doc architecture). Legacy document_url column is dropped.
     const { data: policy, error: fetchError } = await supabase
       .from('policies')
-      .select('id, document_url')
+      .select('id')
       .eq('id', policyId)
       .eq('ifa_id', userId)
       .single()
 
     if (fetchError || !policy) {
       return NextResponse.json({ error: 'Policy not found or unauthorized' }, { status: 404 })
-    }
-
-    // ── Delete the document from storage if it exists ─────────────────────
-    if (policy.document_url) {
-      await supabase.storage.from('policy-documents').remove([policy.document_url])
     }
 
     // ── Delete the policy record ──────────────────────────────────────────

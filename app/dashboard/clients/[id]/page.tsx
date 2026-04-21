@@ -174,8 +174,6 @@ export default async function ClientProfilePage({ params }: PageProps) {
         sum_assured: p.sum_assured,
         renewal_date: p.renewal_date,
         status: p.status,
-        document_name: p.document_name ?? null,
-        document_url: p.document_url ?? null,
         policy_number: p.policy_number ?? null,
         product_name: p.product_name ?? null,
         start_date: p.start_date ?? null,
