@@ -64,10 +64,9 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 }
 
 const RISK_LABELS: Record<string, string> = {
-  low: 'Low risk',
-  medium: 'Moderate risk',
-  high: 'High risk',
-  very_high: 'Very high risk',
+  conservative: 'Conservative',
+  moderate: 'Moderate',
+  aggressive: 'Aggressive',
 }
 
 // ── Batch 8: classification dropdowns ──────────────────────────────────────
@@ -503,7 +502,7 @@ const DEFAULT_FORM = {
   last_nav: '',
   current_value: '',
   currency: 'SGD',
-  risk_rating: 'medium',
+  risk_rating: 'moderate',
   inception_date: '',
   notes: '',
   // Batch 8
@@ -577,7 +576,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       last_nav: h.last_nav != null ? String(h.last_nav) : '',
       current_value: h.current_value != null ? String(h.current_value) : '',
       currency: h.currency,
-      risk_rating: h.risk_rating ?? 'medium',
+      risk_rating: h.risk_rating ?? 'moderate',
       inception_date: h.inception_date ?? '',
       notes: h.notes ?? '',
       // Batch 8
@@ -912,10 +911,10 @@ Keep it under 150 words. Tone: professional but personal.`,
               <div>
                 <label style={labelStyle}>Risk rating</label>
                 <select value={form.risk_rating} onChange={e => setForm(p => ({ ...p, risk_rating: e.target.value }))} style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}>
-                  <option value="low">Low</option>
-                  <option value="medium">Moderate</option>
-                  <option value="high">High</option>
-                  <option value="very_high">Very High</option>
+                  <option value="">—</option>
+                  <option value="conservative">Conservative</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="aggressive">Aggressive</option>
                 </select>
               </div>
             </div>

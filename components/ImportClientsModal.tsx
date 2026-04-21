@@ -130,16 +130,17 @@ function coerceEnum(raw: string | null | undefined, enumSet: Set<string>) {
   return { value: 'Other', other: trimmed }
 }
 
-// Claude's risk_rating prompt output is conservative/moderate/aggressive.
-// Our DB schema uses low/medium/high/very_high. Map between them.
+// Claude's risk_rating prompt output is conservative/moderate/aggressive,
+// matching our DB CHECK constraint exactly. This coercer validates the value
+// and maps common alternatives (e.g., "medium" → "moderate") in case Claude
+// drifts from the prompt.
 function coerceRiskRating(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null
   const s = raw.toLowerCase().trim()
   if (!s) return null
-  if (s === 'conservative' || s === 'low') return 'low'
-  if (s === 'moderate' || s === 'medium') return 'medium'
-  if (s === 'aggressive' || s === 'high') return 'high'
-  if (s === 'very high' || s === 'very_high' || s === 'very-high') return 'very_high'
+  if (s === 'conservative' || s === 'low' || s === 'cautious') return 'conservative'
+  if (s === 'moderate' || s === 'medium' || s === 'balanced') return 'moderate'
+  if (s === 'aggressive' || s === 'high' || s === 'growth' || s === 'very high' || s === 'very_high') return 'aggressive'
   return null
 }
 
