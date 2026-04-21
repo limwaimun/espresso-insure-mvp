@@ -28,6 +28,15 @@ interface Holding {
   last_reviewed_at: string | null
   inception_date: string | null
   notes: string | null
+  // Batch 8: classification + cost basis + yield
+  asset_class?: string | null
+  asset_class_other?: string | null
+  geography?: string | null
+  geography_other?: string | null
+  sector?: string | null
+  sector_other?: string | null
+  avg_cost_price?: number | null
+  distribution_yield?: number | null
   // Legacy single-doc columns — kept in DB as safety net after Batch 5
   // migration moved docs to holding_documents table. No UI reads these.
   document_name?: string | null
@@ -59,6 +68,90 @@ const RISK_LABELS: Record<string, string> = {
   medium: 'Moderate risk',
   high: 'High risk',
   very_high: 'Very high risk',
+}
+
+// ── Batch 8: classification dropdowns ──────────────────────────────────────
+
+const ASSET_CLASSES = [
+  'Equity',
+  'Fixed Income',
+  'Multi-Asset',
+  'Cash',
+  'REIT',
+  'Alternatives',
+  'Structured',
+  'Crypto',
+  'Other',
+] as const
+
+const GEOGRAPHIES = [
+  'Global',
+  'Singapore',
+  'Asia ex-Japan',
+  'Emerging Markets',
+  'US',
+  'Europe',
+  'Japan',
+  'Greater China',
+  'ASEAN',
+  'Other',
+] as const
+
+const SECTORS = [
+  'Diversified',
+  'Corp credit',
+  'Technology',
+  'Financials',
+  'Healthcare',
+  'Consumer',
+  'Energy',
+  'Industrials',
+  'Real estate',
+  'Utilities',
+  'Materials',
+  'Communications',
+  'Other',
+] as const
+
+// ── Batch 8: P&L + yield calculation helpers ───────────────────────────────
+
+function calcPnl(h: Holding) {
+  const value = Number(h.current_value) || 0
+  const cost  = Number(h.avg_cost_price) || 0
+  const units = Number(h.units_held) || 0
+  if (!cost || !units || !value) return null
+  const totalCost = cost * units
+  const absolute = value - totalCost
+  const percent = (absolute / totalCost) * 100
+  // Annualize only if we know inception and it's been >= 1 year
+  let annualized: number | null = null
+  if (h.inception_date) {
+    const years = (Date.now() - new Date(h.inception_date).getTime()) / (365.25 * 86400000)
+    if (years >= 1 && totalCost > 0) {
+      annualized = (Math.pow(value / totalCost, 1 / years) - 1) * 100
+    }
+  }
+  return { totalCost, absolute, percent, annualized }
+}
+
+function calcAnnualIncome(h: Holding): number | null {
+  const yield_ = Number(h.distribution_yield) || 0
+  const value  = Number(h.current_value) || 0
+  if (!yield_ || !value) return null
+  return (yield_ / 100) * value
+}
+
+function formatMoney(n: number | null | undefined, currency = 'SGD'): string {
+  if (n == null || isNaN(n)) return '—'
+  const abs = Math.abs(n)
+  const sign = n < 0 ? '−' : (n > 0 ? '+' : '')
+  return `${sign}${currency} ${abs.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+}
+
+function formatPct(n: number | null | undefined, decimals = 1): string {
+  if (n == null || isNaN(n)) return '—'
+  const sign = n > 0 ? '+' : ''
+  return `${sign}${n.toFixed(decimals)}%`
 }
 
 // ── Styles — matched 1:1 to ClientDetailPage so Holdings looks native to the card ──
@@ -132,85 +225,128 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
 
-  const typeColor = TYPE_COLORS[holding.product_type] || TYPE_COLORS.other
-  const typeLabel = TYPE_LABELS[holding.product_type] || 'Other'
-  const pill = reviewPill(holding.last_reviewed_at)
+  const pnl = calcPnl(holding)
+  const income = calcAnnualIncome(holding)
+  const yieldPct = holding.distribution_yield != null ? Number(holding.distribution_yield) : null
+
+  // Classification tags under product subtitle. Resolve "Other" -> custom text.
+  const assetLabel = holding.asset_class === 'Other' ? holding.asset_class_other : holding.asset_class
+  const regionLabel = holding.geography === 'Other' ? holding.geography_other : holding.geography
+  const sectorLabel = holding.sector === 'Other' ? holding.sector_other : holding.sector
+  const tags = [assetLabel, regionLabel, sectorLabel].filter(Boolean) as string[]
+
+  const tagStyle: React.CSSProperties = {
+    fontSize: 10, background: '#F1EFE8', color: '#5F5E5A',
+    padding: '2px 7px', borderRadius: 3, letterSpacing: '0.01em',
+    display: 'inline-block',
+  }
+
+  // Subtitle line: provider · [platform] · [units @ NAV currency]
+  const subParts: string[] = []
+  if (holding.provider) subParts.push(holding.provider)
+  if (holding.platform) subParts.push(holding.platform)
+  if (holding.units_held != null && holding.last_nav != null) {
+    subParts.push(
+      `${Number(holding.units_held).toLocaleString(undefined, { maximumFractionDigits: 3 })} @ ${Number(holding.last_nav).toFixed(4)} ${holding.currency}`
+    )
+  }
+  const subtitle = subParts.join(' · ')
 
   return (
     <>
-      {/* Main row */}
+      {/* Main row — 5 columns: Product, Value, P&L, Yield, ⋮ */}
       <tr
         onClick={() => setExpanded(v => !v)}
         style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '0.5px solid #F1EFE8' }}
       >
-        {/* Product (chevron + name + provider/platform subtitle) */}
-        <td style={{ padding: '12px 10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {expanded
-              ? <ChevronDown size={12} color="#9B9088" />
-              : <ChevronRight size={12} color="#9B9088" />}
-            <div style={{ minWidth: 0 }}>
+        {/* Product (chevron + name + subtitle + classification tags) */}
+        <td style={{ padding: '13px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+            <div style={{ paddingTop: 3 }}>
+              {expanded
+                ? <ChevronDown size={12} color="#9B9088" />
+                : <ChevronRight size={12} color="#9B9088" />}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{
                 fontSize: 13, fontWeight: 500, color: '#1A1410',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                marginBottom: 3,
               }}>
                 {holding.product_name}
               </div>
-              <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>
-                {holding.provider}{holding.platform ? ` · ${holding.platform}` : ''}
-              </div>
+              {subtitle && (
+                <div style={{ fontSize: 11, color: '#6B6460', marginBottom: tags.length ? 6 : 0 }}>
+                  {subtitle}
+                </div>
+              )}
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {tags.map((t, i) => <span key={i} style={tagStyle}>{t}</span>)}
+                </div>
+              )}
             </div>
           </div>
         </td>
 
-        {/* Type · Risk */}
-        <td style={{ padding: '12px 10px' }}>
-          <span style={{
-            background: typeColor.bg, color: typeColor.text,
-            fontSize: 11, fontWeight: 500,
-            padding: '3px 9px', borderRadius: 4, display: 'inline-block',
-          }}>
-            {typeLabel}
-          </span>
-          {holding.risk_rating && (
-            <div style={{ fontSize: 11, color: '#6B6460', marginTop: 4 }}>
-              {RISK_LABELS[holding.risk_rating] || holding.risk_rating}
-            </div>
-          )}
-        </td>
-
         {/* Value */}
-        <td style={{ padding: '12px 10px' }}>
+        <td style={{ padding: '13px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
           <div style={{ fontSize: 13, color: '#1A1410' }}>
             {holding.current_value != null
-              ? `${holding.currency} ${Number(holding.current_value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+              ? Number(holding.current_value).toLocaleString(undefined, { maximumFractionDigits: 0 })
               : '—'}
           </div>
         </td>
 
-        {/* Units @ NAV */}
-        <td style={{ padding: '12px 10px' }}>
-          {holding.units_held != null && holding.last_nav != null ? (
+        {/* P&L */}
+        <td style={{ padding: '13px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          {pnl ? (
             <>
-              <div style={{ fontSize: 13, color: '#1A1410' }}>
-                {Number(holding.units_held).toLocaleString(undefined, { maximumFractionDigits: 3 })}
+              <div style={{
+                fontSize: 13, fontWeight: 500,
+                color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D',
+              }}>
+                {pnl.absolute >= 0 ? '+' : '−'}{Math.abs(Math.round(pnl.absolute)).toLocaleString()}
               </div>
-              <div style={{ fontSize: 11, color: '#6B6460', marginTop: 2 }}>
-                @ {Number(holding.last_nav).toFixed(4)}
+              <div style={{
+                fontSize: 10, marginTop: 2,
+                color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D',
+              }}>
+                {formatPct(pnl.percent)}{pnl.annualized != null ? ` · ${formatPct(pnl.annualized)} p.a.` : ''}
               </div>
             </>
           ) : (
-            <span style={{ fontSize: 13, color: '#9B9088' }}>—</span>
+            <>
+              <div style={{ fontSize: 13, color: '#BFB9B1' }}>—</div>
+              {holding.current_value != null && (
+                <div style={{ fontSize: 10, color: '#BFB9B1', marginTop: 2 }}>
+                  Cost not entered
+                </div>
+              )}
+            </>
           )}
         </td>
 
-        {/* Reviewed pill — uses global pill classes for parity with Policies status pill */}
-        <td style={{ padding: '12px 10px' }}>
-          <span className={`pill ${pill.cls}`}>{pill.text}</span>
+        {/* Yield */}
+        <td style={{ padding: '13px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          {yieldPct != null ? (
+            <>
+              <div style={{ fontSize: 13, color: '#1A1410' }}>
+                {yieldPct.toFixed(1)}%
+              </div>
+              {income != null && (
+                <div style={{ fontSize: 10, color: '#6B6460', marginTop: 2 }}>
+                  {holding.currency} {Math.round(income).toLocaleString()}/yr
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: '#BFB9B1' }}>—</div>
+          )}
         </td>
 
         {/* ⋮ menu */}
-        <td style={{ padding: '12px 10px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+        <td style={{ padding: '13px 10px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
           <button
             ref={menuRef}
             onClick={() => setMenuOpen(o => !o)}
@@ -238,54 +374,122 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
         </td>
       </tr>
 
-      {/* Expanded detail — fields spread evenly via auto-fit grid so 5+ fields balance */}
+      {/* Expanded detail — performance block on top, then the existing KV grid + docs + notes */}
       {expanded && (
         <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
-          <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+          <td colSpan={5} style={{ padding: '18px 24px 22px 34px' }}>
+
+            {/* Performance block (cream) — only show if any perf signal exists */}
+            {(pnl || yieldPct != null) && (
+              <div style={{
+                background: '#FAEEDA', borderRadius: 8,
+                padding: '14px 18px',
+                display: 'flex', gap: 32, flexWrap: 'wrap',
+                marginBottom: 16,
+              }}>
+                {pnl && (
+                  <>
+                    <PerfItem label="Unrealized gain" value={
+                      <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                        {pnl.absolute >= 0 ? '+' : '−'}{holding.currency} {Math.abs(Math.round(pnl.absolute)).toLocaleString()}
+                      </span>
+                    } />
+                    <PerfItem label="Return" value={
+                      <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                        {formatPct(pnl.percent)}
+                      </span>
+                    } />
+                    {pnl.annualized != null && (
+                      <PerfItem label="Annualized" value={
+                        <span style={{ color: pnl.annualized >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                          {formatPct(pnl.annualized)} p.a.
+                        </span>
+                      } />
+                    )}
+                  </>
+                )}
+                {yieldPct != null && (
+                  <PerfItem label="Distribution yield" value={`${yieldPct.toFixed(2)}%`} />
+                )}
+                {income != null && (
+                  <PerfItem label="Annual income" value={`${holding.currency} ${Math.round(income).toLocaleString()}`} />
+                )}
+                {holding.inception_date && (
+                  <PerfItem label="Held" value={heldDuration(holding.inception_date)} />
+                )}
+              </div>
+            )}
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               gap: '16px 24px',
-              marginBottom: holding.notes ? 16 : 0,
+              marginBottom: 16,
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Inception</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.inception_date)}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Currency</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.currency}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Platform</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.platform || '—'}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk rating</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Last NAV date</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{formatDate(holding.last_nav_date)}</span>
-              </div>
+              {holding.avg_cost_price != null && (
+                <>
+                  <KV label="Avg. cost price" value={Number(holding.avg_cost_price).toFixed(4)} />
+                  {holding.units_held != null && (
+                    <KV label="Total invested" value={
+                      `${holding.currency} ${(Number(holding.avg_cost_price) * Number(holding.units_held))
+                        .toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                    } />
+                  )}
+                </>
+              )}
+              <KV label="Inception" value={formatDate(holding.inception_date)} />
+              <KV label="Last NAV date" value={formatDate(holding.last_nav_date)} />
+              <KV label="Currency" value={holding.currency} />
+              <KV label="Platform" value={holding.platform || '—'} />
+              <KV label="Risk rating" value={holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'} />
+              <KV label="Last reviewed" value={formatDate(holding.last_reviewed_at)} />
             </div>
+
             <DocList
               parentId={holding.id}
               apiEndpoint="/api/holding-doc"
               parentParam="holdingId"
               label="Documents"
             />
+
             {holding.notes && (
               <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
                 <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
                 <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{holding.notes}</div>
               </div>
             )}
+
           </td>
         </tr>
       )}
     </>
   )
+}
+
+// Small helpers for the expanded row
+function PerfItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <span style={{ fontSize: 10, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 500, color: '#1A1410', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </div>
+  )
+}
+function KV({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
+      <span style={{ fontSize: 13, color: '#1A1410' }}>{value}</span>
+    </div>
+  )
+}
+function heldDuration(inception: string): string {
+  const months = Math.floor((Date.now() - new Date(inception).getTime()) / (30.44 * 86400000))
+  const y = Math.floor(months / 12)
+  const m = months % 12
+  if (y === 0) return `${m}m`
+  if (m === 0) return `${y}y`
+  return `${y}y ${m}m`
 }
 
 // ── Main section ───────────────────────────────────────────────────────────
@@ -302,6 +506,15 @@ const DEFAULT_FORM = {
   risk_rating: 'medium',
   inception_date: '',
   notes: '',
+  // Batch 8
+  asset_class: '',
+  asset_class_other: '',
+  geography: '',
+  geography_other: '',
+  sector: '',
+  sector_other: '',
+  avg_cost_price: '',
+  distribution_yield: '',
 }
 
 export default function HoldingsSection({ clientId, ifaId }: { clientId: string; ifaId: string }) {
@@ -367,6 +580,15 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       risk_rating: h.risk_rating ?? 'medium',
       inception_date: h.inception_date ?? '',
       notes: h.notes ?? '',
+      // Batch 8
+      asset_class: h.asset_class ?? '',
+      asset_class_other: h.asset_class_other ?? '',
+      geography: h.geography ?? '',
+      geography_other: h.geography_other ?? '',
+      sector: h.sector ?? '',
+      sector_other: h.sector_other ?? '',
+      avg_cost_price: h.avg_cost_price != null ? String(h.avg_cost_price) : '',
+      distribution_yield: h.distribution_yield != null ? String(h.distribution_yield) : '',
     })
     setEditingHoldingId(h.id)
     setFormError('')
@@ -435,6 +657,15 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       risk_rating: form.risk_rating,
       inception_date: form.inception_date || null,
       notes: form.notes || null,
+      // Batch 8 classification + cost basis + yield
+      asset_class:       form.asset_class       || null,
+      asset_class_other: form.asset_class === 'Other' ? (form.asset_class_other || null) : null,
+      geography:         form.geography         || null,
+      geography_other:   form.geography === 'Other' ? (form.geography_other || null) : null,
+      sector:            form.sector            || null,
+      sector_other:      form.sector === 'Other' ? (form.sector_other || null) : null,
+      avg_cost_price:    form.avg_cost_price    ? Number(form.avg_cost_price) : null,
+      distribution_yield: form.distribution_yield ? Number(form.distribution_yield) : null,
     }
     try {
       let holdingId: string | null = editingHoldingId
@@ -631,11 +862,10 @@ Keep it under 150 words. Tone: professional but personal.`,
             <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={thCell(28)}>Product</th>
-                  <th style={thCell(18)}>Type · Risk</th>
-                  <th style={thCell(16)}>Value</th>
-                  <th style={thCell(14)}>Units @ NAV</th>
-                  <th style={thCell(18)}>Reviewed</th>
+                  <th style={thCell(44)}>Product</th>
+                  <th style={thCell(14, true)}>Value</th>
+                  <th style={thCell(18, true)}>P&amp;L</th>
+                  <th style={thCell(18, true)}>Yield</th>
                   <th style={{ ...thBase, width: '6%' }}></th>
                 </tr>
               </thead>
@@ -710,6 +940,64 @@ Keep it under 150 words. Tone: professional but personal.`,
               />
             </div>
 
+            {/* Batch 8: Classification — Asset class / Region / Sector */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Asset class</label>
+                <select
+                  value={form.asset_class}
+                  onChange={e => setForm(p => ({ ...p, asset_class: e.target.value }))}
+                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+                >
+                  <option value="">—</option>
+                  {ASSET_CLASSES.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Region</label>
+                <select
+                  value={form.geography}
+                  onChange={e => setForm(p => ({ ...p, geography: e.target.value }))}
+                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+                >
+                  <option value="">—</option>
+                  {GEOGRAPHIES.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Sector</label>
+                <select
+                  value={form.sector}
+                  onChange={e => setForm(p => ({ ...p, sector: e.target.value }))}
+                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+                >
+                  <option value="">—</option>
+                  {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Conditional "Other" text inputs — only when user selects Other */}
+            {(form.asset_class === 'Other' || form.geography === 'Other' || form.sector === 'Other') && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div>{form.asset_class === 'Other' && (
+                  <input placeholder="Specify asset class" value={form.asset_class_other}
+                    onChange={e => setForm(p => ({ ...p, asset_class_other: e.target.value }))}
+                    style={inputStyle} />
+                )}</div>
+                <div>{form.geography === 'Other' && (
+                  <input placeholder="Specify region" value={form.geography_other}
+                    onChange={e => setForm(p => ({ ...p, geography_other: e.target.value }))}
+                    style={inputStyle} />
+                )}</div>
+                <div>{form.sector === 'Other' && (
+                  <input placeholder="Specify sector" value={form.sector_other}
+                    onChange={e => setForm(p => ({ ...p, sector_other: e.target.value }))}
+                    style={inputStyle} />
+                )}</div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={labelStyle}>Platform</label>
@@ -778,6 +1066,42 @@ Keep it under 150 words. Tone: professional but personal.`,
                   <option value="CNY">CNY</option>
                 </select>
               </div>
+            </div>
+
+            {/* Batch 8: Avg. cost price — with live "Total invested" readout */}
+            <div>
+              <label style={labelStyle}>Avg. cost price (per unit)</label>
+              <input
+                type="number"
+                placeholder="From broker statement. Leave blank if unknown."
+                value={form.avg_cost_price}
+                onChange={e => setForm(p => ({ ...p, avg_cost_price: e.target.value }))}
+                style={inputStyle}
+              />
+              {form.avg_cost_price && form.units_held && (
+                <div style={{ fontSize: 11, color: '#6B6460', marginTop: 6, fontStyle: 'italic' }}>
+                  Total invested: {form.currency} {(Number(form.avg_cost_price) * Number(form.units_held))
+                    .toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
+              )}
+            </div>
+
+            {/* Batch 8: Distribution yield — with live "Est. annual income" readout */}
+            <div>
+              <label style={labelStyle}>Distribution yield (% p.a.)</label>
+              <input
+                type="number"
+                placeholder="e.g. 5.2 — for income-paying funds"
+                value={form.distribution_yield}
+                onChange={e => setForm(p => ({ ...p, distribution_yield: e.target.value }))}
+                style={inputStyle}
+              />
+              {form.distribution_yield && form.current_value && (
+                <div style={{ fontSize: 11, color: '#6B6460', marginTop: 6, fontStyle: 'italic' }}>
+                  Est. annual income: {form.currency} {((Number(form.distribution_yield) / 100) * Number(form.current_value))
+                    .toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
+              )}
             </div>
 
             <div>

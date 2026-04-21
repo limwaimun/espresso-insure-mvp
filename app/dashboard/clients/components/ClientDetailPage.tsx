@@ -102,11 +102,18 @@ interface Holding {
   product_type?: string | null
   units?: number | null
   nav?: number | null
+  units_held?: number | null
+  last_nav?: number | null
   current_value: number | null
   risk_level?: string | null
   last_reviewed?: string | null
   reviewed_at?: string | null
   notes?: string | null
+  // Batch 8
+  avg_cost_price?: number | null
+  distribution_yield?: number | null
+  inception_date?: string | null
+  currency?: string | null
 }
 
 interface Props {
@@ -891,21 +898,56 @@ export default function ClientDetailPage({
         const daysToRenewal = nextRenewal ? Math.ceil((new Date(nextRenewal.renewal_date).getTime() - Date.now()) / 86400000) : null
         const openClaimsCount = claims.filter(c => !c.resolved).length
 
+        // Batch 8: aggregate P&L + income across holdings with the needed fields.
+        // Only count holdings where cost basis is entered — avoids false zeros.
+        let totalInvested = 0
+        let totalCurrent = 0
+        let holdingsWithCost = 0
+        for (const h of holdings) {
+          const units = Number(h.units_held ?? h.units) || 0
+          const cost  = Number(h.avg_cost_price) || 0
+          const value = Number(h.current_value) || 0
+          if (units && cost && value) {
+            totalInvested += cost * units
+            totalCurrent  += value
+            holdingsWithCost++
+          }
+        }
+        const unrealizedGain = totalInvested > 0 ? totalCurrent - totalInvested : 0
+        const unrealizedPct = totalInvested > 0 ? (unrealizedGain / totalInvested) * 100 : 0
+        const totalAnnualIncome = holdings.reduce((s, h) => {
+          const y = Number(h.distribution_yield) || 0
+          const v = Number(h.current_value) || 0
+          return s + (y && v ? (y / 100) * v : 0)
+        }, 0)
+
         const kpis = [
           { label: 'Annual premium', value: totalPremium > 0 ? `$${totalPremium.toLocaleString()}` : '—', sub: `${policies.length} polic${policies.length !== 1 ? 'ies' : 'y'}` },
           { label: 'Sum assured', value: totalSA > 0 ? `$${(totalSA / 1000).toFixed(0)}k` : '—', sub: 'total coverage' },
           { label: 'Holdings AUM', value: holdingsValue > 0 ? `$${holdingsValue.toLocaleString()}` : '—', sub: holdingsValue > 0 ? `${holdings.length} holding${holdings.length !== 1 ? 's' : ''}` : 'no holdings' },
+          { label: 'Unrealized gain',
+            value: holdingsWithCost > 0
+              ? `${unrealizedGain >= 0 ? '+' : '−'}$${Math.abs(Math.round(unrealizedGain)).toLocaleString()}`
+              : '—',
+            sub: holdingsWithCost > 0
+              ? `${unrealizedPct >= 0 ? '+' : ''}${unrealizedPct.toFixed(1)}% · ${holdingsWithCost} of ${holdings.length}`
+              : 'no cost basis entered',
+            positive: holdingsWithCost > 0 && unrealizedGain > 0,
+            danger: holdingsWithCost > 0 && unrealizedGain < 0 },
+          { label: 'Annual income',
+            value: totalAnnualIncome > 0 ? `$${Math.round(totalAnnualIncome).toLocaleString()}` : '—',
+            sub: totalAnnualIncome > 0 ? 'from yielding funds' : 'no yields entered' },
           { label: 'Next renewal', value: nextRenewal ? (daysToRenewal !== null && daysToRenewal <= 30 ? `${daysToRenewal}d` : new Date(nextRenewal.renewal_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })) : '—', sub: nextRenewal ? `${nextRenewal.insurer} · ${nextRenewal.type}` : 'no upcoming renewals', warn: daysToRenewal !== null && daysToRenewal <= 30 },
           { label: 'Open claims', value: openClaimsCount, sub: openClaimsCount > 0 ? `${claims.filter(c => !c.resolved && c.priority === 'high').length} high priority` : 'none open', danger: openClaimsCount > 0 },
           { label: 'Coverage gaps', value: coverageAnalysis?.filter(c => !c.hasCoverage).length ?? 0, sub: 'products not covered', info: true },
         ]
         return (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-            {kpis.map((m, i) => (
+            {kpis.map((m: any, i) => (
               <div key={i} style={{ background: '#FFFFFF', border: `0.5px solid ${m.danger ? '#F7C1C1' : m.warn ? '#FAC775' : '#E8E2DA'}`, borderRadius: 8, padding: '16px 20px' }}>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{m.label}</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: m.danger ? '#A32D2D' : m.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{m.value}</div>
-                {m.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', marginTop: 6 }}>{m.sub}</div>}
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: m.danger ? '#A32D2D' : m.warn ? '#854F0B' : m.positive ? '#0F6E56' : '#1A1410', lineHeight: 1 }}>{m.value}</div>
+                {m.sub && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: m.positive ? '#0F6E56' : '#5F5A57', marginTop: 6 }}>{m.sub}</div>}
               </div>
             ))}
           </div>
@@ -1124,9 +1166,6 @@ export default function ClientDetailPage({
         </div>
       </div>
 
-      {/* == SECTION 5.5: HOLDINGS (untouched — separate component) == */}
-      <HoldingsSection clientId={client.id} ifaId={resolvedIfaId} />
-
       {/* == SECTION 6: CLAIMS == */}
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1159,7 +1198,10 @@ export default function ClientDetailPage({
         </div>
       </div>
 
-      {/* == SECTION 7: ACTIVITY == */}
+      {/* == SECTION 7: HOLDINGS (now below Claims — distinct product line) == */}
+      <HoldingsSection clientId={client.id} ifaId={resolvedIfaId} />
+
+      {/* == SECTION 8: ACTIVITY == */}
       <div className="panel">
         <div className="panel-header"><span className="panel-title">Activity</span></div>
         <div className="panel-body">
