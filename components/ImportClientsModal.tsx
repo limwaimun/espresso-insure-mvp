@@ -23,8 +23,17 @@ interface ParsedHolding {
   platform: string | null
   units_held: number | null
   last_nav: number | null
+  last_nav_date: string | null
   current_value: number | null
+  currency: string | null
+  inception_date: string | null
   risk_rating: string | null
+  // Batch 8: classification + cost basis + yield
+  avg_cost_price: number | null
+  distribution_yield: number | null
+  asset_class: string | null
+  geography: string | null
+  sector: string | null
 }
 
 interface ExistingClient {
@@ -103,6 +112,45 @@ function policyNew(p: ParsedPolicy, existing: ExistingClient['policies']) {
 
 function holdingNew(h: ParsedHolding, existing: ExistingClient['holdings']) {
   return !existing.some(e => norm(e.product_name) === norm(h.product_name))
+}
+
+// ── Batch 9: enum coercers for Claude-parsed holding fields ──────────────────
+
+const ASSET_CLASS_ENUM = new Set(['Equity', 'Fixed Income', 'Multi-Asset', 'Cash', 'REIT', 'Alternatives', 'Structured', 'Crypto', 'Other'])
+const GEOGRAPHY_ENUM   = new Set(['Global', 'Singapore', 'Asia ex-Japan', 'Emerging Markets', 'US', 'Europe', 'Japan', 'Greater China', 'ASEAN', 'Other'])
+const SECTOR_ENUM      = new Set(['Diversified', 'Corp credit', 'Technology', 'Financials', 'Healthcare', 'Consumer', 'Energy', 'Industrials', 'Real estate', 'Utilities', 'Materials', 'Communications', 'Other'])
+
+// Returns { value, other } — if Claude's value is in the enum, pass through;
+// otherwise put the raw string in *_other so FA doesn't lose context.
+function coerceEnum(raw: string | null | undefined, enumSet: Set<string>) {
+  if (!raw || typeof raw !== 'string') return { value: null, other: null }
+  const trimmed = raw.trim()
+  if (!trimmed) return { value: null, other: null }
+  if (enumSet.has(trimmed)) return { value: trimmed, other: null }
+  return { value: 'Other', other: trimmed }
+}
+
+// Claude's risk_rating prompt output is conservative/moderate/aggressive.
+// Our DB schema uses low/medium/high/very_high. Map between them.
+function coerceRiskRating(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== 'string') return null
+  const s = raw.toLowerCase().trim()
+  if (!s) return null
+  if (s === 'conservative' || s === 'low') return 'low'
+  if (s === 'moderate' || s === 'medium') return 'medium'
+  if (s === 'aggressive' || s === 'high') return 'high'
+  if (s === 'very high' || s === 'very_high' || s === 'very-high') return 'very_high'
+  return null
+}
+
+// Heuristic: Claude occasionally emits decimal yield (0.052) instead of percentage (5.2).
+// Any realistic distribution yield is 0.5%–20%, so <0.5 means it's almost certainly a decimal.
+function normalizeYield(raw: number | null | undefined): number | null {
+  if (raw == null || isNaN(Number(raw))) return null
+  const n = Number(raw)
+  if (n <= 0) return null
+  if (n > 0 && n < 0.5) return n * 100
+  return n
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -292,13 +340,31 @@ export default function ImportClientsModal({
       // Add new holdings only
       const holdingsToAdd = isNew ? client.holdings : client._newHoldings
       for (const h of (holdingsToAdd || [])) {
+        // Batch 9: coerce Claude-parsed enums to DB-valid values; raw values
+        // that don't match an enum get preserved in *_other fields.
+        const ac = coerceEnum((h as any).asset_class, ASSET_CLASS_ENUM)
+        const gg = coerceEnum((h as any).geography,   GEOGRAPHY_ENUM)
+        const sc = coerceEnum((h as any).sector,      SECTOR_ENUM)
+
         const { error: hErr } = await supabase.from('holdings').insert({
           ifa_id: ifaId, client_id: clientId,
           product_type: h.product_type || 'other', product_name: h.product_name,
           provider: h.provider, platform: h.platform,
           units_held: h.units_held, last_nav: h.last_nav,
+          last_nav_date: (h as any).last_nav_date || null,
           current_value: h.current_value || (h.units_held && h.last_nav ? h.units_held * h.last_nav : null),
-          risk_rating: h.risk_rating ? h.risk_rating.toLowerCase() : null,
+          currency: (h as any).currency || 'SGD',
+          inception_date: (h as any).inception_date || null,
+          risk_rating: coerceRiskRating(h.risk_rating),
+          // Batch 8 classification + cost basis + yield
+          avg_cost_price: (h as any).avg_cost_price ?? null,
+          distribution_yield: normalizeYield((h as any).distribution_yield),
+          asset_class:        ac.value,
+          asset_class_other:  ac.other,
+          geography:          gg.value,
+          geography_other:    gg.other,
+          sector:             sc.value,
+          sector_other:       sc.other,
         })
         if (hErr) errors.push(`${client.name} holding (${h.product_name}): ${hErr.message}`)
       }

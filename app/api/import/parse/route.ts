@@ -97,8 +97,16 @@ CRITICAL: For status and premium_frequency, your job is to READ the column and C
           "platform": "brokerage or platform name or null",
           "units_held": 1234.567 or null,
           "last_nav": 1.234 or null,
+          "last_nav_date": "YYYY-MM-DD or null — the date the NAV was quoted",
           "current_value": 15000.00 or null,
-          "risk_rating": "conservative" | "moderate" | "aggressive" | null  — ALWAYS one of these exact values, never "medium", "high", "low", or any other variant. Map "medium" → "moderate", "high risk" → "aggressive", "low risk" → "conservative"
+          "currency": "SGD" | "USD" | "EUR" | "GBP" | "JPY" | "AUD" | "HKD" | "CNY" or null — use ISO code,
+          "inception_date": "YYYY-MM-DD or null — when the holding was first purchased",
+          "risk_rating": "conservative" | "moderate" | "aggressive" | null  — ALWAYS one of these exact values, never "medium", "high", "low", or any other variant. Map "medium" → "moderate", "high risk" → "aggressive", "low risk" → "conservative",
+          "avg_cost_price": 1.12 or null — per-unit cost basis from broker statement. Column names to look for: "Avg Cost", "Average Cost", "Cost Price", "Book Cost / Units", "Purchase Price". If statement shows "Book Value" divided by units, compute it. Extract number only — strip currency symbols.,
+          "distribution_yield": 5.2 or null — distribution/dividend yield as PERCENTAGE (e.g. 5.2 for 5.2%, never 0.052). Column names: "Yield", "Distribution Yield", "Indicative Yield", "YTM", "Dividend Yield", "Income Yield". If the statement shows a decimal like 0.052, convert to 5.2.,
+          "asset_class": "Equity" | "Fixed Income" | "Multi-Asset" | "Cash" | "REIT" | "Alternatives" | "Structured" | "Crypto" | "Other" or null — classify the holding. Map common terms: bonds/bond fund → Fixed Income; stock/shares → Equity; balanced/allocation → Multi-Asset; fixed deposit/money market → Cash; property fund → REIT; hedge fund/PE → Alternatives.,
+          "geography": "Global" | "Singapore" | "Asia ex-Japan" | "Emerging Markets" | "US" | "Europe" | "Japan" | "Greater China" | "ASEAN" | "Other" or null — market exposure, NOT fund domicile. "US equities" → US; "Asia Pacific ex Japan" → Asia ex-Japan; "Global Developed" → Global.,
+          "sector": "Diversified" | "Corp credit" | "Technology" | "Financials" | "Healthcare" | "Consumer" | "Energy" | "Industrials" | "Real estate" | "Utilities" | "Materials" | "Communications" | "Other" or null — industry focus. Use "Diversified" for broad-market funds with no sector tilt. Use "Corp credit" for corporate bond funds. For cash/multi-asset, leave null.
         }
       ]
     }
@@ -106,6 +114,22 @@ CRITICAL: For status and premium_frequency, your job is to READ the column and C
   "warnings": ["any data quality issues to flag"],
   "summary": "one sentence describing what you found"
 }
+
+## HOLDINGS-SPECIFIC PARSING GUIDANCE:
+
+When you encounter a broker statement (Endowus, iFAST, FSMOne, Phillip, Tiger, IBKR), extract maximum detail:
+- Endowus CSVs usually have: Fund Name, Fund House, Units, NAV, Market Value, Avg Cost, Asset Class, Currency
+- iFAST statements show: Fund Name, Holdings (units), Current NAV, Current Value (SGD), Book Cost
+- Bank statements for cash/FDs: product is the FD, product_type="other", asset_class="Cash", current_value=balance, no units/NAV. Yield goes in distribution_yield.
+- SSB (Singapore Savings Bonds): asset_class="Fixed Income", geography="Singapore", sector="Diversified"
+- STI ETF / SPDR STI: asset_class="Equity", geography="Singapore"
+- Global tech fund like "Lion-OCBC Global Tech Fund": asset_class="Equity", geography="Global", sector="Technology"
+- If the statement mixes categories in one label like "US equities", split: asset_class="Equity", geography="US"
+
+For risk ratings in broker statements:
+- "PRIIPs 1-3" or "Risk Level 1-3" → conservative
+- "PRIIPs 4" or "Risk Level 4" → moderate  
+- "PRIIPs 5-7" or "Risk Level 5-7" → aggressive
 
 ## RULES:
 - Group multiple rows for the same client into ONE client with multiple policies/holdings
