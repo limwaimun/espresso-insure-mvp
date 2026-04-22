@@ -154,6 +154,78 @@ function normalizeYield(raw: number | null | undefined): number | null {
   return n
 }
 
+// ── Batch 11: surface risk_rating values Claude couldn't map ────────────────
+//
+// Problem: the CSV parser (via coerceRiskRating) silently returns null when
+// it encounters a risk_rating value outside its known synonym list. This
+// means values like "Defensive", "PIRD 4", "Wealth Preservation" get dropped
+// without the FA knowing.
+//
+// Fix: scan parsed holdings BEFORE import, collect unique unrecognized
+// values, and surface one ConversationalReview issue per unique value.
+// When the FA maps "Defensive" → "Moderate", that mapping is applied to
+// ALL holdings carrying that raw value.
+function extractRiskMismatches(clients: ParsedClient[]): ImportIssue[] {
+  // Group affected holdings by normalized raw value.
+  // Key: lowercased+trimmed raw value; value: display string + affected list.
+  const byValue = new Map<string, {
+    rawValue: string
+    affected: Array<{ clientId: string; holdingIndex: number; label: string }>
+  }>()
+
+  for (const client of clients) {
+    if (!client._selected) continue
+    ;(client.holdings as any[]).forEach((h, hi) => {
+      const raw = h.risk_rating
+      if (!raw || typeof raw !== 'string') return
+      const trimmed = raw.trim()
+      if (!trimmed) return
+      // If the coercer already handles this value, no question needed.
+      if (coerceRiskRating(trimmed) !== null) return
+
+      const key = trimmed.toLowerCase()
+      if (!byValue.has(key)) {
+        byValue.set(key, { rawValue: trimmed, affected: [] })
+      }
+      byValue.get(key)!.affected.push({
+        clientId: client._id,
+        holdingIndex: hi,
+        label: `${h.product_name || 'holding'} (${client.name})`,
+      })
+    })
+  }
+
+  // One issue per unique unknown value.
+  const issues: ImportIssue[] = []
+  byValue.forEach(({ rawValue, affected }) => {
+    const n = affected.length
+    const preview = affected.slice(0, 3).map(a => a.label).join(', ') +
+      (n > 3 ? ` +${n - 3} more` : '')
+    issues.push({
+      clientId: '_global',  // placeholder — this issue isn't tied to one client
+      clientName: 'Risk rating mapping',
+      policyIndex: null,
+      field: '_risk_mismatch',
+      label: n === 1 ? `Affects 1 holding: ${preview}` : `Affects ${n} holdings: ${preview}`,
+      question: `Maya found "${rawValue}" in your CSV which isn't one of her standard risk levels (Conservative, Moderate, Aggressive). Should she map it to one of those?`,
+      currentValue: rawValue,
+      inputType: 'select',
+      selectOptions: ['Conservative', 'Moderate', 'Aggressive'],
+      severity: 'info',
+      hideSkip: true,                     // skipping a cross-client field makes no sense
+      confirmLabel: 'Leave blank for now', // clearer than "Import as-is" for this case
+      affectedItems: affected,
+    })
+  })
+
+  return issues
+}
+
+// Combine all issue sources. Used in 3 places in the UI so consolidating here.
+function allIssues(clients: ParsedClient[]): ImportIssue[] {
+  return [...extractIssues(clients), ...extractRiskMismatches(clients)]
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ImportClientsModal({
   ifaId, plan, currentCount, clientLimit,
@@ -548,6 +620,33 @@ export default function ImportClientsModal({
                 const updated = [...parsed]
                 answers.forEach(ans => {
                   const issue = issues[ans.issueIndex]
+
+                  // Batch 11: _risk_mismatch applies to multiple holdings
+                  // across multiple clients — uses issue.affectedItems, not
+                  // issue.clientId. Handle this FIRST so the clientIdx
+                  // lookup below doesn't silently skip these answers.
+                  if (issue.field === '_risk_mismatch') {
+                    if (ans.action === 'fixed' && ans.value && issue.affectedItems) {
+                      // FA picked "Conservative" / "Moderate" / "Aggressive"
+                      // from the dropdown — lowercase to match DB enum.
+                      const mappedValue = ans.value.toLowerCase()
+                      for (const aff of issue.affectedItems) {
+                        const cIdx = updated.findIndex(c => c._id === aff.clientId)
+                        if (cIdx === -1) continue
+                        updated[cIdx] = {
+                          ...updated[cIdx],
+                          holdings: updated[cIdx].holdings.map((h: any, hi: number) =>
+                            hi === aff.holdingIndex ? { ...h, risk_rating: mappedValue } : h
+                          ),
+                        }
+                      }
+                    }
+                    // action === 'confirmed' → FA chose "Leave blank for now".
+                    // No override needed; coerceRiskRating will return null at
+                    // insert time, which the DB accepts (constraint is nullable).
+                    return
+                  }
+
                   const clientIdx = updated.findIndex(c => c._id === issue.clientId)
                   if (clientIdx === -1) return
 
@@ -639,9 +738,9 @@ export default function ImportClientsModal({
             <>
               <button onClick={() => { setStep('upload'); setParsed([]) }} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>← Different file</button>
 
-              {extractIssues(parsed).length > 0 && (
-                <button onClick={() => { setIssues(extractIssues(parsed)); setStep('review') }} style={{ background: 'transparent', border: '0.5px solid #854F0B', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
-                  Review {extractIssues(parsed).length} issue{extractIssues(parsed).length !== 1 ? 's' : ''} first
+              {allIssues(parsed).length > 0 && (
+                <button onClick={() => { setIssues(allIssues(parsed)); setStep('review') }} style={{ background: 'transparent', border: '0.5px solid #854F0B', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B' }}>
+                  Review {allIssues(parsed).length} issue{allIssues(parsed).length !== 1 ? 's' : ''} first
                 </button>
               )}
               {newClients.length > 0 && exactMatches.length === 0 && (

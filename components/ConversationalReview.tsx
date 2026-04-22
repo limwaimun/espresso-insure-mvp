@@ -13,6 +13,16 @@ export interface ImportIssue {
   inputType: 'date' | 'number' | 'text' | 'select' | 'confirm'
   selectOptions?: string[]
   severity: 'warning' | 'info'
+  // Batch 11: optional extensions for cross-client enum mismatches.
+  //   hideSkip      — suppress "Skip this client" (for field-level issues
+  //                   where skipping makes no sense)
+  //   confirmLabel  — override "Import as-is" button text
+  //   affectedItems — list of (clientId, holdingIndex) pairs this single
+  //                   issue applies to. Used by _risk_mismatch issues where
+  //                   one question covers N holdings across M clients.
+  hideSkip?: boolean
+  confirmLabel?: string
+  affectedItems?: Array<{ clientId: string; holdingIndex: number; label: string }>
 }
 
 interface Answer {
@@ -167,11 +177,13 @@ export default function ConversationalReview({
                   Yes — let me enter it
                 </button>
                 <button onClick={confirm} style={{ background: 'transparent', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#5F5A57', textAlign: 'center' }}>
-                  Import as-is
+                  {issue.confirmLabel || 'Import as-is'}
                 </button>
-                <button onClick={skip} style={{ background: 'transparent', border: 'none', borderRadius: 8, padding: '8px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#B4B2A9', textAlign: 'center' }}>
-                  Skip this client
-                </button>
+                {!issue.hideSkip && (
+                  <button onClick={skip} style={{ background: 'transparent', border: 'none', borderRadius: 8, padding: '8px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#B4B2A9', textAlign: 'center' }}>
+                    Skip this client
+                  </button>
+                )}
               </>
             )}
           </div>
