@@ -90,11 +90,7 @@ export default function TrialPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        if (res.status === 409) {
-          setError('An account with this email already exists. Please sign in instead.')
-        } else {
-          setError(data.error || 'Something went wrong. Please email hello@espresso.insure')
-        }
+        setError(data.error || 'Something went wrong. Please email hello@espresso.insure')
         setLoading(false)
         return
       }
