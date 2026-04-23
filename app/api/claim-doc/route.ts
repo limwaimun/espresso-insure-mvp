@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
-const BUCKET = 'claim-documents'
+const BUCKET = 'claim-attachments'
 const MAX_BYTES = 20 * 1024 * 1024
 
 const ALLOWED_MIMES = new Set([
@@ -26,20 +26,22 @@ function sanitizeFilename(name: string): string {
 }
 
 // Verify that `claimId` is an alert of type 'claim' owned by `userId`.
-// Claims live in the alerts table with type='claim', so we check that here.
+// Claims live in the alerts table with type='claim'. We also fetch the
+// client_id here because claim_attachments.client_id is NOT NULL.
 async function assertClaimOwnership(claimId: string, userId: string) {
   const { data, error } = await supabase
     .from('alerts')
-    .select('id, type')
+    .select('id, type, client_id')
     .eq('id', claimId)
     .eq('ifa_id', userId)
     .single()
   if (error || !data) return { ok: false as const, status: 404, error: 'Claim not found or unauthorized' }
   if (data.type !== 'claim') return { ok: false as const, status: 400, error: 'Target is not a claim' }
-  return { ok: true as const }
+  if (!data.client_id) return { ok: false as const, status: 400, error: 'Claim has no associated client' }
+  return { ok: true as const, clientId: data.client_id as string }
 }
 
-// POST — upload one document for a claim (inserts a row in claim_documents)
+// POST — upload one document for a claim (inserts a row in claim_attachments)
 export async function POST(request: NextRequest) {
   try {
     const { userId, error: authError } = await verifySession(request)
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const claimId = formData.get('claimId') as string
     const bodyIfaId = formData.get('ifaId') as string | null
+    const description = (formData.get('description') as string | null) || null
 
     if (bodyIfaId && bodyIfaId !== userId) {
       console.warn(`[claim-doc POST] ignored mismatched ifaId from form: body=${bodyIfaId} session=${userId}`)
@@ -75,27 +78,31 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
     const safeName = sanitizeFilename(file.name)
     // Prepend timestamp for uniqueness — multiple docs per claim must not collide
-    const filePath = `${userId}/${claimId}/${Date.now()}-${safeName}`
+    const storagePath = `${userId}/${claimId}/${Date.now()}-${safeName}`
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(filePath, buffer, { contentType: file.type, upsert: false })
+      .upload(storagePath, buffer, { contentType: file.type, upsert: false })
 
     if (uploadError) {
       console.error('[claim-doc] upload error:', uploadError)
       return NextResponse.json({ error: 'Failed to upload file: ' + uploadError.message }, { status: 500 })
     }
 
-    // Insert row referencing this upload
+    // Insert row in claim_attachments
     const { data: inserted, error: dbError } = await supabase
-      .from('claim_documents')
+      .from('claim_attachments')
       .insert({
         claim_id: claimId,
+        client_id: own.clientId,
         ifa_id: userId,
         file_name: file.name,
-        file_path: filePath,
+        file_type: file.type,
         file_size: file.size,
-        mime_type: file.type,
+        storage_path: storagePath,
+        source: 'fa_upload',
+        description,
+        uploaded_by: 'FA',
       })
       .select()
       .single()
@@ -103,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (dbError || !inserted) {
       console.error('[claim-doc] db error:', dbError)
       // Try to roll back the upload to avoid orphan
-      await supabase.storage.from(BUCKET).remove([filePath])
+      await supabase.storage.from(BUCKET).remove([storagePath])
       return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
     }
 
@@ -131,8 +138,8 @@ export async function GET(request: NextRequest) {
     // ── Single-doc mode: on-demand signed URL for download ──────────────
     if (docId) {
       const { data: doc, error } = await supabase
-        .from('claim_documents')
-        .select('file_path, file_name')
+        .from('claim_attachments')
+        .select('storage_path, file_name')
         .eq('id', docId)
         .eq('ifa_id', userId)
         .single()
@@ -141,7 +148,7 @@ export async function GET(request: NextRequest) {
       }
       const { data: signed, error: urlErr } = await supabase.storage
         .from(BUCKET)
-        .createSignedUrl(doc.file_path, 60 * 60)
+        .createSignedUrl(doc.storage_path, 60 * 60)
       if (urlErr || !signed) {
         console.error('[claim-doc GET docId] signed URL failed:', urlErr)
         return NextResponse.json({ error: 'Could not generate download link' }, { status: 500 })
@@ -158,11 +165,11 @@ export async function GET(request: NextRequest) {
     // ownership pre-check — `.eq('ifa_id', userId)` + RLS make it impossible
     // to see rows belonging to another IFA. Saves a round-trip.
     const { data: rows, error } = await supabase
-      .from('claim_documents')
-      .select('id, file_name, file_size, mime_type, uploaded_at')
+      .from('claim_attachments')
+      .select('id, file_name, file_size, file_type, source, description, uploaded_by, created_at')
       .eq('claim_id', claimId)
       .eq('ifa_id', userId)
-      .order('uploaded_at', { ascending: true })
+      .order('created_at', { ascending: true })
 
     if (error) {
       console.error('[claim-doc GET] query error:', error)
@@ -170,12 +177,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Return metadata only — no signed URLs. DocList fetches URLs on-demand.
+    // Extra fields (source, description, uploadedBy) let DocList optionally
+    // render source badges; components that don't use them just ignore them.
     const docs = (rows || []).map(r => ({
       id: r.id,
       fileName: r.file_name,
       fileSize: r.file_size,
-      mimeType: r.mime_type,
-      uploadedAt: r.uploaded_at,
+      mimeType: r.file_type,
+      uploadedAt: r.created_at,
+      source: r.source,
+      description: r.description,
+      uploadedBy: r.uploaded_by,
     }))
 
     return NextResponse.json({ docs })
@@ -202,8 +214,8 @@ export async function DELETE(request: NextRequest) {
 
     // Fetch the row (scoped to caller) to get the storage path
     const { data: doc, error: fetchErr } = await supabase
-      .from('claim_documents')
-      .select('id, file_path')
+      .from('claim_attachments')
+      .select('id, storage_path')
       .eq('id', docId)
       .eq('ifa_id', userId)
       .single()
@@ -216,13 +228,13 @@ export async function DELETE(request: NextRequest) {
     // below — orphan storage is preferable to a zombie DB row pointing nowhere.
     const { error: storageErr } = await supabase.storage
       .from(BUCKET)
-      .remove([doc.file_path])
+      .remove([doc.storage_path])
     if (storageErr) {
       console.warn('[claim-doc DELETE] storage remove failed (proceeding with DB delete):', storageErr)
     }
 
     const { error: deleteErr } = await supabase
-      .from('claim_documents')
+      .from('claim_attachments')
       .delete()
       .eq('id', docId)
       .eq('ifa_id', userId)

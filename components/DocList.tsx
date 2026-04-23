@@ -38,6 +38,18 @@ interface Doc {
   fileName: string
   fileSize: number | null
   mimeType: string | null
+  /** Optional: where the doc came from. Populated for claim attachments; absent for policy/holding docs. */
+  source?: 'fa_upload' | 'whatsapp' | 'client_upload' | null
+  /** Optional: user-supplied label (e.g., "Medical bill"). Shown inline with filename when present. */
+  description?: string | null
+  /** Optional: identifier of who uploaded. Present for claim attachments. */
+  uploadedBy?: string | null
+}
+
+// Non-default sources get a visible badge. fa_upload is the dashboard default — no badge needed.
+const SOURCE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
+  whatsapp:      { label: 'WA',     color: '#0F6E56', bg: '#E1F5EE' },
+  client_upload: { label: 'Client', color: '#854F0B', bg: '#FAEEDA' },
 }
 
 function formatSize(bytes: number | null): string {
@@ -204,9 +216,18 @@ export default function DocList({ parentId, apiEndpoint, parentParam, editable =
                   fontSize: 12, color: '#BA7517',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
-                  {doc.fileName}
+                  {doc.description ? `${doc.description} — ` : ''}{doc.fileName}
                 </span>
               </button>
+              {doc.source && SOURCE_BADGE[doc.source] && (
+                <span style={{
+                  fontSize: 9, fontWeight: 500, padding: '1px 5px', borderRadius: 100,
+                  color: SOURCE_BADGE[doc.source].color, background: SOURCE_BADGE[doc.source].bg,
+                  fontFamily: 'DM Sans, sans-serif', flexShrink: 0,
+                }}>
+                  {SOURCE_BADGE[doc.source].label}
+                </span>
+              )}
               <span style={{ fontSize: 10, color: '#9B9088' }}>{formatSize(doc.fileSize)}</span>
               {editable && (
                 <button
