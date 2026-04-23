@@ -13,6 +13,7 @@ import {
   ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
+import { formatDate } from '@/lib/dates'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,11 +153,6 @@ function reviewPill(last_reviewed_at: string | null): { cls: string; text: strin
   if (days <= 30)  return { cls: 'pill-green', text: days === 0 ? 'Today' : `Reviewed ${days}d ago` }
   if (days <= 180) return { cls: 'pill-amber', text: `Reviewed ${days}d ago` }
   return                   { cls: 'pill-red',   text: `Reviewed ${days}d ago` }
-}
-
-function formatDate(d: string | null | undefined): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 // ── HoldingRow ─────────────────────────────────────────────────────────────
