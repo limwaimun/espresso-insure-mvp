@@ -1,0 +1,25 @@
+-- Baseline marker — placeholder only.
+--
+-- Schema state before 2026-04-23 (Singapore time) is not captured as
+-- executable SQL here. This file exists only to establish a "before this
+-- point we tracked manually, after this point we track in git" boundary.
+--
+-- Pre-tonight migrations we know happened (for future reference only —
+-- NOT reconstructed as SQL here):
+--   - Initial schema: profiles, clients, policies, holdings, alerts,
+--     claim_attachments, claim_documents, claim_forms, policy_documents,
+--     holding_documents, conversations, messages, lens_cache,
+--     verification_logs, renewals, client_groups
+--   - Batch 12a: ALTER profiles_plan_check to include 'trial'
+--   - Batch 13: DROP misconfigured service_role policy on lens_cache
+--   - Batch 14a: CREATE webhook_processed_messages, webhook_rate_limits,
+--                fa_daily_spend tables with service-role-only RLS
+--   - Batch 14b: DROP renewals, client_groups (dead tables)
+--
+-- Batch 12b (self-promotion RLS hole fix) IS reconstructed in the next
+-- migration file because it's a critical security policy.
+--
+-- See Supabase dashboard -> Database -> Migrations for the dashboard's
+-- own audit log of pre-tonight DDL.
+
+SELECT 'baseline_pre_tonight placeholder' AS note;
