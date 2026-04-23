@@ -114,3 +114,75 @@ export interface Holding {
   created_at: string               // NOT NULL per DB
   updated_at: string               // NOT NULL per DB, triggered by Batch 21
 }
+
+// ── UI types (ClientDetailPage) ─────────────────────────────────────────────
+
+export interface Message {
+  id: string
+  role: string
+  content: string
+  created_at: string
+}
+
+export interface Conversation {
+  id: string
+  status: string
+  messages: Message[]
+}
+
+export interface CoverageItem {
+  key: string
+  label: string
+  hasCoverage: boolean
+  insurer: string | null
+}
+
+export interface TimelineItem {
+  date: string
+  text: string
+  type: string
+}
+
+export interface Metric {
+  label: string
+  value: string
+  subtitle?: string
+}
+
+export interface ClientData {
+  id: string
+  name: string
+  company?: string
+  type: string
+  tier: string
+  whatsapp?: string
+  email?: string
+  birthday?: string
+  address?: string
+  notes?: string | null
+  nok_name?: string | null
+  nok_relationship?: string | null
+  nok_phone?: string | null
+}
+
+export interface Props {
+  client: ClientData
+  policies: Policy[]
+  conversations: Conversation | null
+  claims: Alert[]
+  metrics: Metric[]
+  birthdayDisplay: string
+  coverageAnalysis: CoverageItem[]
+  timeline: TimelineItem[]
+  connectionStatus: 'connected' | 'pending' | 'not_connected'
+  dob?: string | null
+  notes?: string | null
+  nok_name?: string | null
+  nok_relationship?: string | null
+  nok_phone?: string | null
+  calculatedTier: string
+  ifaId: string
+  ifaName: string
+  holdings: Holding[]
+}
+

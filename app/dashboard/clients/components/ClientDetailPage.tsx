@@ -11,86 +11,14 @@ import DocUploadField from '@/components/DocUploadField'
 import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
-import type { Holding } from '@/lib/types'
+import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import {
   X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 import { createClient } from '../../../../lib/supabase/client'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface Message {
-  id: string
-  role: string
-  content: string
-  created_at: string
-}
-
-interface Conversation {
-  id: string
-  status: string
-  messages: Message[]
-}
-
-interface CoverageItem {
-  key: string
-  label: string
-  hasCoverage: boolean
-  insurer: string | null
-}
-
-interface TimelineItem {
-  date: string
-  text: string
-  type: string
-}
-
-interface Metric {
-  label: string
-  value: string
-  subtitle?: string
-}
-
-interface ClientData {
-  id: string
-  name: string
-  company?: string
-  type: string
-  tier: string
-  whatsapp?: string
-  email?: string
-  birthday?: string
-  address?: string
-  dob?: string | null
-  notes?: string | null
-  nok_name?: string | null
-  nok_relationship?: string | null
-  nok_phone?: string | null
-}
-
-// Holding now imported from lib/types (canonical DB row shape)
-
-interface Props {
-  client: ClientData
-  policies: Policy[]
-  conversations: Conversation | null
-  claims: Alert[]
-  metrics: Metric[]
-  birthdayDisplay: string
-  coverageAnalysis: CoverageItem[]
-  timeline: TimelineItem[]
-  connectionStatus: 'connected' | 'pending' | 'not_connected'
-  dob?: string | null
-  notes?: string | null
-  nok_name?: string | null
-  nok_relationship?: string | null
-  nok_phone?: string | null
-  calculatedTier: string
-  ifaId: string
-  ifaName: string
-  holdings: Holding[]
-}
+// Types imported from @/lib/types (see imports above)
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
