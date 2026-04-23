@@ -68,3 +68,49 @@ export interface Alert {
   created_at: string | null
   updated_at: string           // NOT NULL as of Batch 21
 }
+
+
+// ── Holding (maps to public.holdings) ─────────────────────────────────────
+
+export interface Holding {
+  id: string
+  client_id: string
+  ifa_id: string
+
+  // Product identity
+  product_type: string             // NOT NULL per DB
+  product_name: string             // NOT NULL per DB
+  provider: string                 // NOT NULL per DB
+  platform: string | null
+  isin: string | null
+  currency: string                 // NOT NULL per DB, default 'SGD'
+
+  // Position
+  units_held: number | null
+  avg_cost_price: number | null
+  last_nav: number | null
+  last_nav_date: string | null
+  current_value: number | null
+  distribution_yield: number | null
+
+  // Classification (Batch 8)
+  asset_class: string | null
+  asset_class_other: string | null
+  geography: string | null
+  geography_other: string | null
+  sector: string | null
+  sector_other: string | null
+
+  // Lifecycle
+  risk_rating: string | null
+  suitable_for: string | null
+  inception_date: string | null
+  last_reviewed_at: string | null
+
+  // Free-text
+  notes: string | null
+
+  // Timestamps
+  created_at: string               // NOT NULL per DB
+  updated_at: string               // NOT NULL per DB, triggered by Batch 21
+}

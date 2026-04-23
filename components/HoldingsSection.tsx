@@ -1,5 +1,7 @@
 'use client'
 
+import type { Holding } from '@/lib/types'
+
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PortalMenu from '@/components/PortalMenu'
@@ -13,35 +15,7 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface Holding {
-  id: string
-  product_type: string
-  product_name: string
-  provider: string
-  platform: string | null
-  units_held: number | null
-  last_nav: number | null
-  last_nav_date: string | null
-  current_value: number | null
-  currency: string
-  risk_rating: string | null
-  last_reviewed_at: string | null
-  inception_date: string | null
-  notes: string | null
-  // Batch 8: classification + cost basis + yield
-  asset_class?: string | null
-  asset_class_other?: string | null
-  geography?: string | null
-  geography_other?: string | null
-  sector?: string | null
-  sector_other?: string | null
-  avg_cost_price?: number | null
-  distribution_yield?: number | null
-  // Legacy single-doc columns — kept in DB as safety net after Batch 5
-  // migration moved docs to holding_documents table. No UI reads these.
-  document_name?: string | null
-  document_url?: string | null
-}
+// Holding now imported from lib/types (canonical DB row shape)
 
 // ── Constants ──────────────────────────────────────────────────────────────
 

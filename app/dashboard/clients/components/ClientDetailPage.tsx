@@ -11,6 +11,7 @@ import DocUploadField from '@/components/DocUploadField'
 import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
+import type { Holding } from '@/lib/types'
 import {
   X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -68,27 +69,7 @@ interface ClientData {
   nok_phone?: string | null
 }
 
-interface Holding {
-  id: string
-  product_name?: string | null
-  provider?: string | null
-  platform?: string | null
-  product_type?: string | null
-  units?: number | null
-  nav?: number | null
-  units_held?: number | null
-  last_nav?: number | null
-  current_value: number | null
-  risk_level?: string | null
-  last_reviewed?: string | null
-  reviewed_at?: string | null
-  notes?: string | null
-  // Batch 8
-  avg_cost_price?: number | null
-  distribution_yield?: number | null
-  inception_date?: string | null
-  currency?: string | null
-}
+// Holding now imported from lib/types (canonical DB row shape)
 
 interface Props {
   client: ClientData
@@ -645,7 +626,7 @@ export default function ClientDetailPage({
         let totalCurrent = 0
         let holdingsWithCost = 0
         for (const h of holdings) {
-          const units = Number(h.units_held ?? h.units) || 0
+          const units = Number(h.units_held) || 0
           const cost  = Number(h.avg_cost_price) || 0
           const value = Number(h.current_value) || 0
           if (units && cost && value) {
