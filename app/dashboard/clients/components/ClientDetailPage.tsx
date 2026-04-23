@@ -13,6 +13,7 @@ import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
+import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
 import {
   X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -29,39 +30,7 @@ const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Motor'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// ── Styles ─────────────────────────────────────────────────────────────────
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', background: '#FFFFFF', border: '0.5px solid #E8E2DA',
-  borderRadius: 8, padding: '10px 13px', fontSize: 13, color: '#1A1410',
-  outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box',
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 11, color: '#6B6460', textTransform: 'uppercase',
-  letterSpacing: '0.08em', marginBottom: 5, display: 'block',
-}
-
-const btnPrimary: React.CSSProperties = {
-  background: '#BA7517', color: '#F7F4F0', border: 'none',
-  borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500,
-  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-  display: 'flex', alignItems: 'center', gap: 6,
-}
-
-const btnOutline: React.CSSProperties = {
-  background: 'transparent', color: '#6B6460', border: '0.5px solid #E8E2DA',
-  borderRadius: 8, padding: '10px 20px', fontSize: 13,
-  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-}
-
-// Outlined amber "+ Add X" button — used consistently across Policies, Holdings, Claims
-const btnAddSection: React.CSSProperties = {
-  fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517',
-  background: 'transparent', border: '1px solid #BA7517', borderRadius: 6,
-  padding: '6px 12px', cursor: 'pointer',
-  display: 'inline-flex', alignItems: 'center', gap: 4,
-}
+// Styles imported from @/lib/styles (see imports above)
 
 // ── Modal is now imported from @/components/Modal (shared with HoldingsSection)
 

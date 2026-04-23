@@ -12,6 +12,7 @@ import {
   Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
   ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
+import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -140,34 +141,7 @@ const thCell = (widthPct: number, rightAlign = false): React.CSSProperties => ({
 })
 
 // Outlined amber "+ Add X" button — exact match to ClientDetailPage's btnAddSection
-const btnAddSection: React.CSSProperties = {
-  fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517',
-  background: 'transparent', border: '1px solid #BA7517', borderRadius: 6,
-  padding: '6px 12px', cursor: 'pointer',
-  display: 'inline-flex', alignItems: 'center', gap: 4,
-}
-
-// Modal form styles — match ClientDetailPage exactly
-const inputStyle: React.CSSProperties = {
-  width: '100%', background: '#FFFFFF', border: '0.5px solid #E8E2DA',
-  borderRadius: 8, padding: '10px 13px', fontSize: 13, color: '#1A1410',
-  outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box',
-}
-const labelStyle: React.CSSProperties = {
-  fontSize: 11, color: '#6B6460', textTransform: 'uppercase',
-  letterSpacing: '0.08em', marginBottom: 5, display: 'block',
-}
-const btnPrimary: React.CSSProperties = {
-  background: '#BA7517', color: '#F7F4F0', border: 'none',
-  borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500,
-  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-  display: 'flex', alignItems: 'center', gap: 6,
-}
-const btnOutline: React.CSSProperties = {
-  background: 'transparent', color: '#6B6460', border: '0.5px solid #E8E2DA',
-  borderRadius: 8, padding: '10px 20px', fontSize: 13,
-  cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
-}
+// Shared styles imported from @/lib/styles (see imports below)
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
