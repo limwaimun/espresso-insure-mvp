@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       const clientHoldingsList = allHoldings.filter(h => h.client_id === clientId)
 
       const reviewRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: 'You are Harbour, an investment portfolio review agent for Singapore financial advisors. You assess client investment holdings for review needs, concentration risk, and suitability. Write in clean prose, no markdown.',
         messages: [{
@@ -109,7 +109,7 @@ Return JSON: { "mayaScript": "", "reviewNotes": "", "urgency": "high|medium|low"
 
     // ── Portfolio report mode — full FA overview ───────────────────────────
     const narrativeRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 400,
       system: 'You are Harbour, an investment oversight agent for Singapore financial advisors. Write in clean prose, no markdown, no bullet points.',
       messages: [{

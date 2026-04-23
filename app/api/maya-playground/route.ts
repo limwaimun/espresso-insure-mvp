@@ -338,7 +338,7 @@ async function generateAndSaveSummary(
     .join('\n')
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 500,
     messages: [{
       role: 'user',
@@ -593,7 +593,7 @@ export async function POST(request: NextRequest) {
     const claudeMessages = buildClaudeMessages(messages, client, ifaName)
 
     let response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: systemPrompt,
       messages: claudeMessages,
@@ -634,7 +634,7 @@ export async function POST(request: NextRequest) {
 
       // Continue conversation with tool result
       response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         system: systemPrompt,
         messages: [

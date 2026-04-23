@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
     let mayaScript = null
     if (requiredMissing.length > 0) {
       const scriptRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         messages: [{
           role: 'user',
@@ -216,7 +216,7 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
     let faFormRequestScript: string | null = null
     if (!formAvailable) {
       const scriptRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 300,
         messages: [{
           role: 'user',

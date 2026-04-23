@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     let narrative = null
     if (reportType === 'portfolio' || query) {
       const narrativeRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: 'You are Lens, an analytics agent for Singapore financial advisors. Write in clean flowing prose — no markdown, no headers, no bullet points, no bold text. Just clear, direct sentences an FA can read at a glance. Be specific with numbers and names. Highlight the single most urgent action first.',
         messages: [{
