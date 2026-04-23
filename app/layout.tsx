@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, DM_Sans, DM_Mono } from 'next/font/google';
+import VersionBadge from '@/components/VersionBadge';
 import './globals.css';
 
 const cormorant = Cormorant_Garamond({
@@ -43,6 +44,7 @@ export default function RootLayout({
         padding: 0,
       }}>
         <main>{children}</main>
+        <VersionBadge />
       </body>
     </html>
   );
