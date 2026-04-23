@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image, Zap } from 'lucide-react'
+import type { Policy } from '@/lib/types'
 
 interface Client {
   id: string
@@ -14,15 +15,6 @@ interface Client {
   whatsapp?: string
   email?: string
   birthday?: string
-}
-
-interface Policy {
-  id: string
-  insurer: string
-  type: string
-  premium: number
-  renewal_date: string
-  status: string
 }
 
 interface Attachment {

@@ -63,7 +63,10 @@ export default async function ClientProfilePage({ params }: PageProps) {
   let nextRenewalDate = null;
   let daysUntilRenewal = null;
   if (policies && policies.length > 0) {
-    const dates = policies.filter(p => p.renewal_date && p.status === 'active').map(p => new Date(p.renewal_date)).sort((a, b) => a.getTime() - b.getTime());
+    const dates = policies
+      .filter((p): p is typeof p & { renewal_date: string } => !!p.renewal_date && p.status === 'active')
+      .map(p => new Date(p.renewal_date))
+      .sort((a, b) => a.getTime() - b.getTime());
     if (dates.length > 0) {
       nextRenewalDate = dates[0];
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -166,20 +169,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
         birthday: client.birthday,
         address: client.address,
       }}
-      policies={(policies ?? []).map(p => ({
-        id: p.id,
-        insurer: p.insurer,
-        type: p.type,
-        premium: p.premium,
-        sum_assured: p.sum_assured,
-        renewal_date: p.renewal_date,
-        status: p.status,
-        policy_number: p.policy_number ?? null,
-        product_name: p.product_name ?? null,
-        start_date: p.start_date ?? null,
-        premium_frequency: p.premium_frequency ?? null,
-        notes: p.notes ?? null,
-      }))}
+      policies={policies ?? []}
       holdings={holdings ?? []}
       conversations={conversations}
       claims={claims ?? []}

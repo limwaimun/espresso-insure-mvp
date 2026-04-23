@@ -633,7 +633,9 @@ export default function ClientDetailPage({
         const totalPremium = policies.reduce((s, p) => s + (Number(p.premium) || 0), 0)
         const totalSA = policies.reduce((s, p) => s + (Number(p.sum_assured) || 0), 0)
         const holdingsValue = holdings.reduce((s, h) => s + (Number(h.current_value) || 0), 0)
-        const nextRenewal = policies.filter(p => p.renewal_date && new Date(p.renewal_date) >= new Date()).sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())[0]
+        const nextRenewal = policies
+          .filter((p): p is typeof p & { renewal_date: string } => !!p.renewal_date && new Date(p.renewal_date) >= new Date())
+          .sort((a, b) => new Date(a.renewal_date).getTime() - new Date(b.renewal_date).getTime())[0]
         const daysToRenewal = nextRenewal ? Math.ceil((new Date(nextRenewal.renewal_date).getTime() - Date.now()) / 86400000) : null
         const openClaimsCount = claims.filter(c => !c.resolved).length
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
+import type { Policy } from '@/lib/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -27,15 +28,6 @@ interface Client {
   address?: string
 }
 
-interface Policy {
-  id: string
-  insurer: string
-  type: string
-  premium: number
-  renewal_date: string
-  status: string
-}
-
 interface AttachmentPayload {
   type: 'image' | 'pdf'
   mediaType: string
@@ -59,7 +51,8 @@ const COVERAGE_TYPES = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getRenewalStatus(renewalDate: string): string {
+function getRenewalStatus(renewalDate: string | null): string {
+  if (!renewalDate) return 'UNKNOWN (no renewal date on file)'
   const days = Math.ceil((new Date(renewalDate).getTime() - Date.now()) / 86400000)
   if (days < 0) return `LAPSED (${Math.abs(days)} days overdue)`
   if (days <= 30) return `URGENT — renews in ${days} days`
@@ -81,7 +74,7 @@ function getBirthdayNote(client: Client): string {
 
 function detectCoverageGaps(client: Client, policies: Policy[]): string[] {
   const expected = COVERAGE_TYPES[client.type] ?? []
-  const covered = policies.map(p => p.type.toLowerCase())
+  const covered = policies.map(p => (p.type ?? '').toLowerCase())
   return expected.filter(t => !covered.some(c => c.includes(t.toLowerCase())))
 }
 

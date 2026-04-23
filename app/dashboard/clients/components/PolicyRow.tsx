@@ -4,31 +4,14 @@ import { useState, useRef } from 'react'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
+import type { Policy } from '@/lib/types'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-// Duplicated here from ClientDetailPage to keep PolicyRow standalone.
-// TODO: When we extract types to a shared types.ts, remove this duplicate
-// and import from there instead.
-
-export interface Policy {
-  id: string
-  policy_number?: string | null
-  product_name?: string | null
-  insurer: string
-  type: string
-  premium: number
-  premium_frequency?: string | null
-  sum_assured?: number | null
-  start_date?: string | null
-  renewal_date: string
-  status: string
-  notes?: string | null
-}
+export type { Policy }  // re-export: kept so ClientDetailPage's `import { Policy } from './PolicyRow'` keeps working during the unification transition.
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 // Duplicated from ClientDetailPage for the same reason. TODO: consolidate.
 
-const formatDate = (d: string) => {
+const formatDate = (d: string | null | undefined) => {
   if (!d) return '—'
   try { return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }
   catch { return '—' }
