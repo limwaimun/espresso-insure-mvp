@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
@@ -10,12 +11,6 @@ export type { Policy }  // re-export: kept so ClientDetailPage's `import { Polic
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 // Duplicated from ClientDetailPage for the same reason. TODO: consolidate.
-
-const formatDate = (d: string | null | undefined) => {
-  if (!d) return '—'
-  try { return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }
-  catch { return '—' }
-}
 
 // ── Component ──────────────────────────────────────────────────────────────
 

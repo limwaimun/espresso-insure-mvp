@@ -12,6 +12,7 @@ import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
+import { formatDate, formatRelativeTime } from '@/lib/dates'
 import {
   X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
@@ -27,26 +28,6 @@ const POLICY_TYPES = ['Life', 'Health', 'Critical Illness', 'Disability', 'Motor
 const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Motor', 'Travel', 'Property', 'Other']
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-const formatDate = (d: string) => {
-  if (!d) return '—'
-  try { return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) }
-  catch { return '—' }
-}
-
-const formatRelativeTime = (dateStr: string) => {
-  if (!dateStr) return '—'
-  try {
-    const now = new Date()
-    const date = new Date(dateStr)
-    const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    if (diffHours < 1) return 'Just now'
-    if (diffHours < 24) return `${diffHours}h ago`
-    const diffDays = Math.floor(diffHours / 24)
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
-  } catch { return '—' }
-}
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
