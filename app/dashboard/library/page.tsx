@@ -40,6 +40,9 @@ interface AtlasResult {
     completionPercent: number
   }
   mayaCollectionScript: string | null
+  faFormRequestScript: string | null
+  claimAttachments: { name: string; type: string; description: string }[]
+  attachmentCount: number
   readyToGenerate: boolean
 }
 

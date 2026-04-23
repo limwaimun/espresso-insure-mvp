@@ -165,14 +165,15 @@ async function verifySender(whatsappNumber: string): Promise<{
 
   // Log unknown sender attempt (phone redacted in log; full number stored in alert DB row)
   console.warn(`[webhook] Unknown sender: ${redactPhone(whatsappNumber)}`)
-  await supabase.from('alerts').insert({
+  const { error: unknownAlertError } = await supabase.from('alerts').insert({
     type: 'security',
     title: 'Unknown WhatsApp sender',
     body: `Message received from unregistered number: ${whatsappNumber}. Not responded to.`,
     priority: 'medium',
     resolved: false,
     // No ifa_id — this is a system-level alert
-  }).catch(() => {}) // Non-fatal
+  })
+  if (unknownAlertError) console.warn('[webhook] unknown-sender alert insert failed:', unknownAlertError.message)
 
   return { type: 'unknown', ifaId: null, clientId: null, ifaName: null, clientName: null, ifaWhatsApp: null }
 }
@@ -187,14 +188,15 @@ async function notifyFA(
   mayaReply: string
 ) {
   // 1. Create dashboard alert
-  await supabase.from('alerts').insert({
+  const { error: notifyAlertError } = await supabase.from('alerts').insert({
     ifa_id: ifaId,
     type: 'client_message',
     title: `${clientName} messaged Maya`,
     body: `Client said: "${messageSummary.slice(0, 200)}"\n\nMaya replied: "${mayaReply.slice(0, 200)}"`,
     priority: 'low',
     resolved: false,
-  }).catch(err => console.error('[notify] alert insert failed:', safeErrMsg(err)))
+  })
+  if (notifyAlertError) console.error('[notify] alert insert failed:', notifyAlertError.message)
 
   // 2. WhatsApp notification to FA (uses the 24h window — the FA has been in
   //    contact with Maya by virtue of having an active account)
@@ -321,14 +323,15 @@ export async function POST(request: NextRequest) {
   const isInjection = detectInjectionAttempt(messageText)
   if (isInjection) {
     // Log security event but don't reveal we detected it
-    await supabase.from('alerts').insert({
+    const { error: injectionAlertError } = await supabase.from('alerts').insert({
       ifa_id: sender.ifaId,
       type: 'security',
       title: 'Possible prompt injection attempt',
       body: `From: ${senderNumber} (${sender.clientName || 'IFA'})\nMessage: "${messageText.slice(0, 300)}"`,
       priority: 'high',
       resolved: false,
-    }).catch(() => {})
+    })
+    if (injectionAlertError) console.warn('[webhook] injection alert insert failed:', injectionAlertError.message)
     // Maya will still respond naturally due to identity lock in system prompt
     // but we've logged it for the FA
     console.warn(`[webhook] Injection attempt detected from ${redactPhone(senderNumber)}`)
@@ -445,7 +448,7 @@ export async function POST(request: NextRequest) {
             })
 
             // 6. Notify FA via Supabase alert
-            await supabase.from('alerts').insert({
+            const { error: mediaAlertError } = await supabase.from('alerts').insert({
               ifa_id: ifaId,
               client_id: clientId,
               type: 'client_message',
@@ -453,7 +456,8 @@ export async function POST(request: NextRequest) {
               body: `${messageType}: ${fileName}${mediaCaption ? ` — "${mediaCaption}"` : ''} — saved to claim attachments`,
               priority: 'info',
               resolved: false,
-            }).catch(() => {})
+            })
+            if (mediaAlertError) console.warn('[webhook] media alert insert failed:', mediaAlertError.message)
 
             // Storage path contains ifaId/claimId — log without them to reduce log-data exposure
             console.log(`[webhook] Media saved for client (${mimeType}, ${fileBuffer.byteLength} bytes)`)
