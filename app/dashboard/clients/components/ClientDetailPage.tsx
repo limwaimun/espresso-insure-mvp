@@ -861,12 +861,12 @@ export default function ClientDetailPage({
       </div>
 
       {/* Next of kin + DOB row */}
-      {(client.nok_name || client.dob || client.notes) && (
+      {(client.nok_name || client.birthday || client.notes) && (
         <div style={{ display: 'flex', gap: 24, marginBottom: 20, padding: '12px 16px', background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, flexWrap: 'wrap' }}>
-          {client.dob && (
+          {client.birthday && (
             <div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fontWeight: 500, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>Date of birth</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{new Date(client.dob).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410' }}>{new Date(client.birthday).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
             </div>
           )}
           {client.nok_name && (

@@ -372,7 +372,7 @@ export default function ImportClientsModal({
           ifa_id: ifaId, name: client.name, email: client.email,
           whatsapp: client.phone, company: client.company,
           type: client.type || 'individual', tier: client.tier || 'silver',
-          dob: (client as any).dob || null,
+          birthday: (client as any).dob || null,
           notes: (client as any).notes || null,
           nok_name: (client as any).nok_name || null,
           nok_relationship: (client as any).nok_relationship || null,
