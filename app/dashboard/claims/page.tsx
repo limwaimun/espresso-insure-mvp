@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import ClaimAttachments from '@/components/ClaimAttachments'
+import DocList from '@/components/DocList'
 import { createClient } from '@/lib/supabase/client'
 
 type FilterType = 'all' | 'open' | 'resolved' | 'high'
@@ -49,13 +49,11 @@ export default function ClaimsPage() {
   const [copied, setCopied] = useState(false)
   const [newForm, setNewForm] = useState({ client_id: '', title: '', body: '', priority: 'medium' })
   const [saving, setSaving] = useState(false)
-  const [ifaId, setIfaId] = useState('')
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
 
   useEffect(() => {
     load()
     supabase.from('clients').select('id, name, company').order('name').then(({ data }) => setClients(data || []))
-    supabase.auth.getUser().then(({ data: { user } }) => { if (user) setIfaId(user.id) })
   }, [])
 
   async function load() {
@@ -269,9 +267,9 @@ export default function ClaimsPage() {
                 </button>
               </div>
             {/* Expanded attachments */}
-            {expandedClaim === claim.id && ifaId && (
+            {expandedClaim === claim.id && (
               <div style={{ gridColumn: '1 / -1', padding: '12px 20px 16px', borderTop: '0.5px solid #F1EFE8', background: '#FAFAF8' }}>
-                <ClaimAttachments claimId={claim.id} clientId={claim.client_id} ifaId={ifaId} />
+                <DocList parentId={claim.id} apiEndpoint="/api/claim-doc" parentParam="claimId" editable label="Attachments" />
               </div>
             )}
           </div>
