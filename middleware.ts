@@ -4,91 +4,60 @@ import { isAdminUserId } from '@/lib/admin-ids'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
+
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/trial', '/login', '/confirmed']
-  const isPublicRoute = publicRoutes.some(route => pathname === route)
-  
-  // If it's a public route, allow access
-  if (isPublicRoute) {
+  if (publicRoutes.some(route => pathname === route)) {
     return NextResponse.next()
   }
-  
-  // Protect /admin routes - ADMIN ONLY ACCESS
-  if (pathname.startsWith('/admin')) {
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookies = Object.fromEntries(
-      cookieHeader.split('; ').filter(Boolean).map(c => {
-        const idx = c.indexOf('=')
-        return [c.slice(0, idx), c.slice(idx + 1)]
-      })
-    )
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          getAll: () => Object.entries(cookies).map(([name, value]) => ({ name, value })),
-          setAll: () => {},
-        },
-      }
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!isAdminUserId(user?.id)) {
-      // Redirect non-admins to dashboard
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
+  // Routes below either require auth (/admin, /dashboard) or are unprotected
+  const needsAuth = pathname.startsWith('/admin') || pathname.startsWith('/dashboard')
+  if (!needsAuth) {
     return NextResponse.next()
   }
-  
-  // Protect /dashboard/* routes - AUTHENTICATED USER ACCESS
-  if (pathname.startsWith('/dashboard')) {
-    let supabaseResponse = NextResponse.next({
-      request,
-    })
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-            supabaseResponse = NextResponse.next({
-              request,
-            })
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            )
-          },
+  // === SHARED AUTH FLOW ===
+  // One createServerClient setup for both /admin and /dashboard. Uses Next's
+  // native cookie API and propagates refreshed session cookies back to the
+  // client — essential for session rotation to persist across requests.
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
         },
-      }
-    )
-
-    // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    // If not authenticated, redirect to login
-    if (!user) {
-      const url = new URL('/login', request.url)
-      return NextResponse.redirect(url)
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
     }
+  )
 
-    // Refresh session if expired
-    await supabase.auth.getUser()
+  // Authenticate. getUser() handles session refresh internally and, via the
+  // setAll callback above, writes rotated cookies back to the response.
+  const { data: { user } } = await supabase.auth.getUser()
 
-    return supabaseResponse
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
-  
-  // For all other routes, allow access
-  return NextResponse.next()
+
+  // === ROUTE-SPECIFIC AUTHORIZATION ===
+  // /admin: must be an admin user. Non-admins are redirected to /dashboard
+  // rather than /login, since they're authenticated — just not authorized.
+  if (pathname.startsWith('/admin') && !isAdminUserId(user.id)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return supabaseResponse
 }
 
 export const config = {
