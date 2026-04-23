@@ -4,22 +4,11 @@ import { useState, useRef } from 'react'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
+import type { Alert } from '@/lib/types'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-// Duplicated here from ClientDetailPage to keep ClaimCard standalone.
-// TODO: When we extract types to a shared types.ts, remove this duplicate
-// and import from there instead.
-
-export interface Alert {
-  id: string
-  type: string
-  title: string
-  body?: string
-  resolved: boolean
-  priority: string
-  status?: string
-  created_at: string
-}
+// Re-exports: keep ClientDetailPage's existing `import { Alert } from './ClaimCard'`
+// working during the unification transition.
+export type { Alert } from '@/lib/types'
 
 // ── Component ──────────────────────────────────────────────────────────────
 

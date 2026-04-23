@@ -43,3 +43,28 @@ export interface Policy {
   created_at: string | null
   updated_at: string                 // NOT NULL as of Batch 21
 }
+
+
+// ── Alert (maps to public.alerts) ─────────────────────────────────────────
+//
+// Alerts is a catch-all notifications/events table. Conceptual types in
+// the `type` column include: 'claim' | 'renewal' | 'document' | 'payment'
+// | 'client_message'. Not enforced at the DB level — add a CHECK constraint
+// when the set stabilises.
+
+export interface Alert {
+  id: string
+  client_id: string | null
+  ifa_id: string
+
+  type: string
+  title: string
+  body: string | null
+
+  priority: string | null      // default 'medium'
+  status: string | null        // default 'open'
+  resolved: boolean | null     // default false
+
+  created_at: string | null
+  updated_at: string           // NOT NULL as of Batch 21
+}

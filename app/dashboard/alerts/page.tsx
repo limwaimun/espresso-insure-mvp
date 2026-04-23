@@ -4,27 +4,23 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { Alert } from '@/lib/types';
 
 type AlertType = 'all' | 'renewal' | 'claim' | 'payment' | 'birthday' | 'resolved';
 
-interface Alert {
-  id: string;
-  title: string;
-  body: string;
-  type: string;
-  priority: 'high' | 'medium' | 'info';
-  resolved: boolean;
-  created_at: string;
+// Alert with the joined clients relation used on this page.
+// Uses the canonical Alert from lib/types and extends with the join shape.
+type AlertWithClient = Alert & {
   clients: {
-    id: string;
-    name: string;
-    company: string;
-    whatsapp: string;
-  } | null;
+    id: string
+    name: string
+    company: string | null
+    whatsapp: string | null
+  } | null
 }
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<AlertWithClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AlertType>('all');
   const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set());
@@ -63,9 +59,15 @@ export default function AlertsPage() {
 
   const sortedAlerts = [...filteredAlerts].sort((a, b) => {
     if (a.resolved !== b.resolved) return a.resolved ? 1 : -1;
-    const priorityOrder = { high: 0, medium: 1, info: 2 };
-    if (a.priority !== b.priority) return priorityOrder[a.priority] - priorityOrder[b.priority];
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    // Null/unknown priorities sort to the end.
+    const priorityOrder: Record<string, number> = { high: 0, medium: 1, info: 2 };
+    const aPri = priorityOrder[a.priority ?? ''] ?? 3;
+    const bPri = priorityOrder[b.priority ?? ''] ?? 3;
+    if (aPri !== bPri) return aPri - bPri;
+    // Null created_at sorts to the end (epoch 0).
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
   });
 
   const tabs = [
@@ -100,7 +102,8 @@ export default function AlertsPage() {
     }, 1000);
   };
 
-  const formatTimeAgo = (dateString: string): string => {
+  const formatTimeAgo = (dateString: string | null): string => {
+    if (!dateString) return '—';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -115,7 +118,7 @@ export default function AlertsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string | null) => {
     switch (priority) {
       case 'high': return { bg: 'rgba(208, 96, 96, 0.2)', text: '#D06060', border: '#D06060' };
       case 'medium': return { bg: 'rgba(212, 160, 48, 0.2)', text: '#D4A030', border: '#D4A030' };
@@ -133,7 +136,7 @@ export default function AlertsPage() {
     }
   };
 
-  const getBorderColor = (priority: string) => {
+  const getBorderColor = (priority: string | null) => {
     switch (priority) {
       case 'high': return '#D06060';
       case 'medium': return '#D4A030';
@@ -306,7 +309,7 @@ export default function AlertsPage() {
                 </div>
                 
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#C9B99A', lineHeight: 1.5, marginBottom: '16px', maxWidth: '800px' }}>
-                  {alert.body.length > 120 ? `${alert.body.substring(0, 120)}...` : alert.body}
+                  {(() => { const body = alert.body ?? ''; return body.length > 120 ? `${body.substring(0, 120)}...` : body; })()}
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
