@@ -1,31 +1,21 @@
 // lib/admin.ts
 //
-// Single source of truth for admin access checks.
-// Import from here in any file that needs to verify admin status.
+// Server-side admin helpers that need the Supabase client + cookies.
+// Use this for layout.tsx files and server components that need to
+// verify both session AND admin status.
 //
-// To add a new admin:
-//   1. Add their auth.users.id UUID to ADMIN_USER_IDS below
-//   2. Deploy
-//   3. Done — applies to all admin-gated routes and pages automatically.
+// For Edge-runtime code (middleware) or pure sync checks when you
+// already have a userId, import from '@/lib/admin-ids' directly.
 //
-// Long-term (post-MVP): replace the hardcoded list with a `role` column
-// on `profiles` table, and update the two helpers below to query it.
+// The sync helpers are re-exported here so existing callers don't
+// need to change their imports.
 
 import { createClient } from '@/lib/supabase/server'
+import { ADMIN_USER_IDS, isAdminUserId } from '@/lib/admin-ids'
 
-export const ADMIN_USER_IDS: readonly string[] = [
-  '1a5b902c-9e3a-44cd-970a-bb852b1cd5e4', // Wayne
-]
-
-// Simple sync check when you already have a verified userId in hand.
-// Used by API routes that have already confirmed the session.
-export function isAdminUserId(userId: string | null | undefined): boolean {
-  if (!userId) return false
-  return ADMIN_USER_IDS.includes(userId)
-}
+export { ADMIN_USER_IDS, isAdminUserId }
 
 // Async check that verifies the current session AND that the user is an admin.
-// Used by layout.tsx files and any server component that needs to gate access.
 // Returns the user object on success, null if not admin / not logged in.
 export async function getAdminUser() {
   const supabase = await createClient()

@@ -1,11 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-
-// ── ADMIN USER IDs ─────────────────────────────────────────────────────────
-// Add your Supabase user ID here (Settings → Authentication → Users → your row)
-const ADMIN_USER_IDS = [
-  '1a5b902c-9e3a-44cd-970a-bb852b1cd5e4',
-]
+import { isAdminUserId } from '@/lib/admin-ids'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -42,7 +37,7 @@ export async function proxy(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+    if (!isAdminUserId(user?.id)) {
       // Redirect non-admins to dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
