@@ -1,5 +1,29 @@
 'use client'
 
+/**
+ * Maya Playground — dev/training sandbox
+ * ─────────────────────────────────────────
+ * This route is deliberately isolated from the production WhatsApp flow.
+ * It exists so Wayne (and future prompt engineers) can simulate
+ * client-FA-Maya interactions in the browser to train and iterate on
+ * Maya's prompts, tool definitions, and reply behavior — without
+ * sending real messages or writing to real client conversations.
+ *
+ * Production architecture (confirmed):
+ *   Real clients → WhatsApp → app/api/whatsapp/webhook/route.ts → Maya
+ *
+ * This playground will not participate in that flow. Post-launch, the
+ * playground will be restricted to the SIT (non-production) environment
+ * only, used for testing prompt and behavior changes before promotion.
+ *
+ * IMPORTANT: playground and webhook are currently SEPARATE code paths
+ * with their own prompts, tools, and context builders. Any Maya
+ * behavior change made here must also be applied manually to the
+ * WhatsApp webhook (and vice versa) until the two paths are refactored
+ * to share logic (via e.g. lib/maya/).
+ */
+
+
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
