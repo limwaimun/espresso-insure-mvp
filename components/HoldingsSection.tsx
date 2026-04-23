@@ -15,7 +15,7 @@ import {
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
 import { formatDate } from '@/lib/dates'
 import { formatMoney, formatPct } from '@/lib/money'
-import { calcPnl, calcAnnualIncome } from '@/lib/holdings-calc'
+import { calcPnl, calcAnnualIncome, reviewPill, heldDuration } from '@/lib/holdings'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -110,14 +110,6 @@ const thCell = (widthPct: number, rightAlign = false): React.CSSProperties => ({
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 // Returns a pill class name matching the global pill-* CSS classes Policies uses.
-function reviewPill(last_reviewed_at: string | null): { cls: string; text: string } {
-  if (!last_reviewed_at) return { cls: 'pill-red', text: 'Never reviewed' }
-  const days = Math.floor((Date.now() - new Date(last_reviewed_at).getTime()) / 86400000)
-  if (days <= 30)  return { cls: 'pill-green', text: days === 0 ? 'Today' : `Reviewed ${days}d ago` }
-  if (days <= 180) return { cls: 'pill-amber', text: `Reviewed ${days}d ago` }
-  return                   { cls: 'pill-red',   text: `Reviewed ${days}d ago` }
-}
-
 // ── HoldingRow ─────────────────────────────────────────────────────────────
 
 function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
@@ -389,15 +381,6 @@ function KV({ label, value }: { label: string; value: React.ReactNode }) {
     </div>
   )
 }
-function heldDuration(inception: string): string {
-  const months = Math.floor((Date.now() - new Date(inception).getTime()) / (30.44 * 86400000))
-  const y = Math.floor(months / 12)
-  const m = months % 12
-  if (y === 0) return `${m}m`
-  if (m === 0) return `${y}y`
-  return `${y}y ${m}m`
-}
-
 // ── Main section ───────────────────────────────────────────────────────────
 
 const DEFAULT_FORM = {
