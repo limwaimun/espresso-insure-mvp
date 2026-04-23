@@ -16,6 +16,7 @@ import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@
 import { formatDate } from '@/lib/dates'
 import { formatMoney, formatPct } from '@/lib/money'
 import { calcPnl, calcAnnualIncome, reviewPill, heldDuration } from '@/lib/holdings'
+import { PerfItem, KV } from '@/components/HoldingsDisplayPrimitives'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -365,22 +366,6 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
 }
 
 // Small helpers for the expanded row
-function PerfItem({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <span style={{ fontSize: 10, color: '#854F0B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{label}</span>
-      <span style={{ fontSize: 15, fontWeight: 500, color: '#1A1410', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
-    </div>
-  )
-}
-function KV({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
-      <span style={{ fontSize: 13, color: '#1A1410' }}>{value}</span>
-    </div>
-  )
-}
 // ── Main section ───────────────────────────────────────────────────────────
 
 const DEFAULT_FORM = {
