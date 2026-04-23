@@ -201,13 +201,14 @@ const btnAddSection: React.CSSProperties = {
 
 // ── PortalMenu is now imported from @/components/PortalMenu (shared with HoldingsSection)
 
-function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming }: {
+function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey }: {
   policy: Policy
   ifaId: string
   onEdit: (p: Policy) => void
   onAskMaya: (p: Policy, action: 'summarize' | 'renewal_reminder') => void
   confirmingDelete: boolean
   setConfirming: (id: string | null) => void
+  cardRefreshKey: number
 }) {
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -291,6 +292,7 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
               </div>
             </div>
             <DocList
+              key={`policy-doc-${policy.id}-${cardRefreshKey}`}
               parentId={policy.id}
               apiEndpoint="/api/policy-doc"
               parentParam="policyId"
@@ -311,12 +313,13 @@ function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConf
 
 // ── ClaimCard ──────────────────────────────────────────────────────────────
 
-function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete }: {
+function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, cardRefreshKey }: {
   claim: Alert
   ifaId: string
   onEdit: (claim: Alert) => void
   onAskMaya: (c: Alert, action: 'status_update' | 'message_insurer' | 'message_client') => void
   onDelete: (id: string) => void
+  cardRefreshKey: number
 }) {
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -394,6 +397,7 @@ function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete }: {
 
       {/* Read-only docs on the card. Add/delete lives in the Edit claim modal. */}
       <DocList
+        key={`claim-doc-${claim.id}-${cardRefreshKey}`}
         parentId={claim.id}
         apiEndpoint="/api/claim-doc"
         parentParam="claimId"
@@ -494,6 +498,13 @@ export default function ClientDetailPage({
   const [editClaimError, setEditClaimError] = useState('')
   const [confirmDeleteClaimId, setConfirmDeleteClaimId] = useState<string | null>(null)
   const [claimDeleting, setClaimDeleting] = useState(false)
+
+  // Forces card-level DocList to re-fetch after the edit modal closes.
+  // Both PolicyRow and ClaimCard render their own DocList; bumping this
+  // counter via a prop triggers a key change, which remounts DocList and
+  // re-runs its internal fetch — picking up any adds/deletes from the modal.
+  const [cardRefreshKey, setCardRefreshKey] = useState(0)
+  const bumpCardRefresh = () => setCardRefreshKey(k => k + 1)
 
   // Maya action stub modal — fires when user clicks any "Draft X with Maya" menu item
   const [mayaStub, setMayaStub] = useState<{ title: string; context: string } | null>(null)
@@ -596,6 +607,7 @@ export default function ClientDetailPage({
       setEditingPolicyId(null)
       setPolicyFiles([])
       setPolicySaving(false)
+      bumpCardRefresh()
 
       // Optimistic activity entry (for add only — edits don't need a timeline line)
       if (!isEdit) {
@@ -754,6 +766,7 @@ export default function ClientDetailPage({
     setEditingClaim(null)
     setEditClaimError('')
     setEditClaimSaving(false)
+    bumpCardRefresh()
   }
 
   async function saveEditedClaim() {
@@ -1030,6 +1043,7 @@ export default function ClientDetailPage({
                       onAskMaya={handlePolicyAskMaya}
                       confirmingDelete={confirmDeleteId === policy.id}
                       setConfirming={setConfirmDeleteId}
+                      cardRefreshKey={cardRefreshKey}
                     />
                   ))}
                 </tbody>
@@ -1181,6 +1195,7 @@ export default function ClientDetailPage({
                   onEdit={openEditClaim}
                   onAskMaya={handleClaimAskMaya}
                   onDelete={(id) => setConfirmDeleteClaimId(id)}
+                  cardRefreshKey={cardRefreshKey}
                 />
               ))}
             </div>
@@ -1288,7 +1303,7 @@ export default function ClientDetailPage({
 
       {/* == ADD / EDIT POLICY MODAL == */}
       {showAddPolicy && (
-        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFiles([]) }}>
+        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFiles([]); bumpCardRefresh() }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
             {/* Group 1: Identifiers */}
@@ -1393,7 +1408,7 @@ export default function ClientDetailPage({
                 {editingPolicyId ? <Save size={14} /> : <Plus size={14} />}
                 {policySaving ? 'Saving…' : (editingPolicyId ? 'Save changes' : 'Add policy')}
               </button>
-              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFiles([]) }} style={btnOutline}>Cancel</button>
+              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFiles([]); bumpCardRefresh() }} style={btnOutline}>Cancel</button>
             </div>
           </div>
         </Modal>
