@@ -9,10 +9,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Run all independent queries in parallel — much faster than sequential awaits.
-  // The last entry chains auth.getUser() → profile fetch so profile runs
-  // inside Round 1 (parallel with everything else) instead of waiting for
-  // Round 2. Saves one SG→US round trip (~400ms) per page load.
+  // Run all independent queries in parallel — much faster than sequential awaits
   const [
     { data: client },
     { data: policies },
@@ -21,7 +18,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     { data: claims },
     { data: allAlerts },
     { data: clientConvos },
-    [userResult, profileResult],
+    { data: { user } },
   ] = await Promise.all([
     supabase.from('clients').select('*').eq('id', id).single(),
     supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true }),
@@ -30,25 +27,18 @@ export default async function ClientProfilePage({ params }: PageProps) {
     supabase.from('alerts').select('*').eq('client_id', id).eq('type', 'claim').order('created_at', { ascending: false }),
     supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
     supabase.from('conversations').select('id').eq('client_id', id),
-    // Chained: auth first, then profile using user.id. Falls back to
-    // { data: null } profile when unauthenticated — same as before.
-    supabase.auth.getUser().then(async (userResp) => {
-      const { data: { user } } = userResp
-      const profile = user
-        ? await supabase.from('profiles').select('name').eq('id', user.id).single()
-        : { data: null }
-      return [userResp, profile] as const
-    }),
+    supabase.auth.getUser(),
   ])
 
-  const { data: { user } } = userResult
   const conversations = conversationsData?.[0] ?? null
 
-  // Second round — only clientMessages now (profile moved into Round 1 above).
-  // Still depends on clientConvos from Round 1, so can't be further parallelized.
-  const clientMessages = clientConvos && clientConvos.length > 0
-    ? await supabase.from('messages').select('*').in('conversation_id', clientConvos.map((c: any) => c.id)).order('created_at', { ascending: false }).limit(10).then(r => r.data || [])
-    : []
+  // Second round — depends on first round results, but run in parallel with each other
+  const [clientMessages, profileResult] = await Promise.all([
+    clientConvos && clientConvos.length > 0
+      ? supabase.from('messages').select('*').in('conversation_id', clientConvos.map((c: any) => c.id)).order('created_at', { ascending: false }).limit(10).then(r => r.data || [])
+      : Promise.resolve([]),
+    supabase.from('profiles').select('name').eq('id', user?.id ?? '').single(),
+  ])
 
   const ifaName = profileResult.data?.name ?? 'Your Advisor'
 
