@@ -11,53 +11,14 @@ import HoldingRow from '@/components/HoldingRow'
 import { Plus, Save, Bot, Trash2, Check, Copy, Compass } from 'lucide-react'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
 import { buildHoldingReviewPrompt, buildHoldingUpdatePrompt } from '@/lib/maya-prompts'
+import {
+  ASSET_CLASSES, GEOGRAPHIES, SECTORS,
+  DEFAULT_FORM, holdingToFormValues, formToPayload,
+} from '@/lib/holdings-form'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 // Holding now imported from lib/types (canonical DB row shape)
-
-// ── Batch 8: classification dropdowns ──────────────────────────────────────
-
-const ASSET_CLASSES = [
-  'Equity',
-  'Fixed Income',
-  'Multi-Asset',
-  'Cash',
-  'REIT',
-  'Alternatives',
-  'Structured',
-  'Crypto',
-  'Other',
-] as const
-
-const GEOGRAPHIES = [
-  'Global',
-  'Singapore',
-  'Asia ex-Japan',
-  'Emerging Markets',
-  'US',
-  'Europe',
-  'Japan',
-  'Greater China',
-  'ASEAN',
-  'Other',
-] as const
-
-const SECTORS = [
-  'Diversified',
-  'Corp credit',
-  'Technology',
-  'Financials',
-  'Healthcare',
-  'Consumer',
-  'Energy',
-  'Industrials',
-  'Real estate',
-  'Utilities',
-  'Materials',
-  'Communications',
-  'Other',
-] as const
 
 // ── Batch 8: P&L + yield calculation helpers ───────────────────────────────
 
@@ -82,29 +43,6 @@ const thCell = (widthPct: number, rightAlign = false): React.CSSProperties => ({
 // ── HoldingRow ─────────────────────────────────────────────────────────────
 
 // ── Main section ───────────────────────────────────────────────────────────
-
-const DEFAULT_FORM = {
-  product_type: 'unit_trust',
-  product_name: '',
-  provider: '',
-  platform: '',
-  units_held: '',
-  last_nav: '',
-  current_value: '',
-  currency: 'SGD',
-  risk_rating: 'moderate',
-  inception_date: '',
-  notes: '',
-  // Batch 8
-  asset_class: '',
-  asset_class_other: '',
-  geography: '',
-  geography_other: '',
-  sector: '',
-  sector_other: '',
-  avg_cost_price: '',
-  distribution_yield: '',
-}
 
 export default function HoldingsSection({ clientId, ifaId }: { clientId: string; ifaId: string }) {
   const supabase = createClient()
@@ -157,28 +95,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
   }
 
   function openEdit(h: Holding) {
-    setForm({
-      product_type: h.product_type,
-      product_name: h.product_name,
-      provider: h.provider,
-      platform: h.platform ?? '',
-      units_held: h.units_held != null ? String(h.units_held) : '',
-      last_nav: h.last_nav != null ? String(h.last_nav) : '',
-      current_value: h.current_value != null ? String(h.current_value) : '',
-      currency: h.currency,
-      risk_rating: h.risk_rating ?? 'moderate',
-      inception_date: h.inception_date ?? '',
-      notes: h.notes ?? '',
-      // Batch 8
-      asset_class: h.asset_class ?? '',
-      asset_class_other: h.asset_class_other ?? '',
-      geography: h.geography ?? '',
-      geography_other: h.geography_other ?? '',
-      sector: h.sector ?? '',
-      sector_other: h.sector_other ?? '',
-      avg_cost_price: h.avg_cost_price != null ? String(h.avg_cost_price) : '',
-      distribution_yield: h.distribution_yield != null ? String(h.distribution_yield) : '',
-    })
+    setForm(holdingToFormValues(h))
     setEditingHoldingId(h.id)
     setFormError('')
     setHoldingFiles([])
@@ -229,33 +146,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
     if (!form.provider.trim())     { setFormError('Provider is required'); return }
     setSaving(true)
     setFormError('')
-    const autoValue = form.units_held && form.last_nav
-      ? Number(form.units_held) * Number(form.last_nav)
-      : null
-    const payload: any = {
-      client_id: clientId,
-      ifa_id: ifaId,
-      product_type: form.product_type,
-      product_name: form.product_name,
-      provider: form.provider,
-      platform: form.platform || null,
-      units_held: form.units_held ? Number(form.units_held) : null,
-      last_nav: form.last_nav ? Number(form.last_nav) : null,
-      current_value: form.current_value ? Number(form.current_value) : autoValue,
-      currency: form.currency,
-      risk_rating: form.risk_rating,
-      inception_date: form.inception_date || null,
-      notes: form.notes || null,
-      // Batch 8 classification + cost basis + yield
-      asset_class:       form.asset_class       || null,
-      asset_class_other: form.asset_class === 'Other' ? (form.asset_class_other || null) : null,
-      geography:         form.geography         || null,
-      geography_other:   form.geography === 'Other' ? (form.geography_other || null) : null,
-      sector:            form.sector            || null,
-      sector_other:      form.sector === 'Other' ? (form.sector_other || null) : null,
-      avg_cost_price:    form.avg_cost_price    ? Number(form.avg_cost_price) : null,
-      distribution_yield: form.distribution_yield ? Number(form.distribution_yield) : null,
-    }
+    const payload = formToPayload(form, clientId, ifaId)
     try {
       let holdingId: string | null = editingHoldingId
       if (editingHoldingId) {
