@@ -18,30 +18,11 @@ import { formatDate } from '@/lib/dates'
 import { formatMoney, formatPct } from '@/lib/money'
 import { calcPnl, calcAnnualIncome, reviewPill, heldDuration } from '@/lib/holdings'
 import { PerfItem, KV } from '@/components/HoldingsDisplayPrimitives'
+import { buildHoldingReviewPrompt, buildHoldingUpdatePrompt } from '@/lib/maya-prompts'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 // Holding now imported from lib/types (canonical DB row shape)
-
-// ── Constants ──────────────────────────────────────────────────────────────
-
-const TYPE_LABELS: Record<string, string> = {
-  unit_trust: 'Unit trust',
-  etf: 'ETF',
-  ilp: 'ILP',
-  annuity: 'Annuity',
-  structured_product: 'Structured',
-  other: 'Other',
-}
-
-const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-  unit_trust: { bg: '#E6F1FB', text: '#185FA5' },
-  etf:        { bg: '#EAF3DE', text: '#27500A' },
-  ilp:        { bg: '#FAEEDA', text: '#854F0B' },
-  annuity:    { bg: '#EEEDFE', text: '#3C3489' },
-  structured_product: { bg: '#FCEBEB', text: '#A32D2D' },
-  other:      { bg: '#F1EFE8', text: '#5F5E5A' },
-}
 
 // ── Batch 8: classification dropdowns ──────────────────────────────────────
 
@@ -343,39 +324,9 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
 
   // Maya stubs — preview of the prompt that will be sent once agent wiring is done (Batch 3)
   function askMayaStub(h: Holding, action: 'review' | 'client_update') {
-    if (action === 'review') {
-      setMayaStub({
-        title: `Review ${h.product_name} with Maya`,
-        prompt: `Please review this holding for my client and share:
-1. A short plain-English explanation of what this fund/product is
-2. Its suitability given the client's risk rating (${h.risk_rating || 'unspecified'})
-3. Any recent market context I should know before the next client review
-4. Suggested talking points for the conversation
-
-Holding: ${h.product_name}
-Provider: ${h.provider}${h.platform ? ` (${h.platform})` : ''}
-Type: ${TYPE_LABELS[h.product_type] || h.product_type}
-Current value: ${h.currency} ${Number(h.current_value || 0).toLocaleString()}
-Units: ${h.units_held ?? '—'} @ ${h.last_nav ?? '—'} (last NAV)
-Inception: ${h.inception_date || '—'}
-Last reviewed: ${h.last_reviewed_at ? new Date(h.last_reviewed_at).toLocaleDateString() : 'Never'}
-Notes: ${h.notes || 'None'}`,
-      })
-    } else {
-      setMayaStub({
-        title: `Draft client update for ${h.product_name}`,
-        prompt: `Draft a warm, concise update message I can send to my client about their ${h.product_name} holding.
-
-Include:
-- A friendly greeting using the client's first name
-- A brief note on recent performance (current value ${h.currency} ${Number(h.current_value || 0).toLocaleString()})
-- Any relevant market context for ${TYPE_LABELS[h.product_type] || h.product_type}
-- An offer to discuss at the next review
-- A warm sign-off
-
-Keep it under 150 words. Tone: professional but personal.`,
-      })
-    }
+    setMayaStub(action === 'review'
+      ? buildHoldingReviewPrompt(h)
+      : buildHoldingUpdatePrompt(h))
   }
 
   async function getHarbourScript() {
