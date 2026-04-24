@@ -2,22 +2,14 @@
 
 import type { Holding } from '@/lib/types'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
 import DocList from '@/components/DocList'
 import HoldingRow from '@/components/HoldingRow'
-import {
-  Plus, Save, Bot, Pencil, Trash2, Check, Copy, Compass,
-  ChevronDown, ChevronRight, MoreVertical,
-} from 'lucide-react'
+import { Plus, Save, Bot, Trash2, Check, Copy, Compass } from 'lucide-react'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
-import { formatDate } from '@/lib/dates'
-import { formatMoney, formatPct } from '@/lib/money'
-import { calcPnl, calcAnnualIncome, reviewPill, heldDuration } from '@/lib/holdings'
-import { PerfItem, KV } from '@/components/HoldingsDisplayPrimitives'
 import { buildHoldingReviewPrompt, buildHoldingUpdatePrompt } from '@/lib/maya-prompts'
 
 // ── Types ──────────────────────────────────────────────────────────────────
