@@ -191,7 +191,9 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
             {/* Performance block (cream) — only show if any perf signal exists */}
             {(pnl || yieldPct != null) && (
               <div style={{
-                background: '#FAEEDA', borderRadius: 8,
+                background: '#FBFAF7',
+                border: '0.5px solid #F1EFE8',
+                borderRadius: 8,
                 padding: '14px 18px',
                 display: 'flex', gap: 32, flexWrap: 'wrap',
                 marginBottom: 16,
