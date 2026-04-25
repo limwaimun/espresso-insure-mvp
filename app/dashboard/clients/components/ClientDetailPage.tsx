@@ -12,11 +12,12 @@ import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
 import MayaStubModal from './MayaStubModal'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
 import {
-  X, Plus, Save, Upload, Download, Check, MessageCircle, Copy, Trash2,
+  X, Plus, Save, Upload, Download, Check, MessageCircle, Copy,
   Pencil, Bot, Phone, Mail, Cake, MapPin, ChevronDown, ChevronRight, MoreVertical,
 } from 'lucide-react'
 import { createClient } from '../../../../lib/supabase/client'
@@ -1142,38 +1143,26 @@ export default function ClientDetailPage({
 
       {/* == POLICY DELETE CONFIRM MODAL == */}
       {confirmDeleteId && (
-        <Modal title="Delete policy?" onClose={() => setConfirmDeleteId(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', margin: 0, lineHeight: 1.5 }}>
-              This will permanently remove this policy and its uploaded document. This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => deletePolicy(confirmDeleteId)} disabled={deleting}
-                style={{ flex: 1, background: '#A32D2D', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', opacity: deleting ? 0.7 : 1 }}>
-                <Trash2 size={14} /> {deleting ? 'Deleting…' : 'Delete policy'}
-              </button>
-              <button onClick={() => setConfirmDeleteId(null)} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmDeleteModal
+          title="Delete policy?"
+          body="This will permanently remove this policy and its uploaded document. This action cannot be undone."
+          confirmLabel="Delete policy"
+          busy={deleting}
+          onConfirm={() => deletePolicy(confirmDeleteId)}
+          onClose={() => setConfirmDeleteId(null)}
+        />
       )}
 
       {/* == CLAIM DELETE CONFIRM MODAL == */}
       {confirmDeleteClaimId && (
-        <Modal title="Delete claim?" onClose={() => setConfirmDeleteClaimId(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', margin: 0, lineHeight: 1.5 }}>
-              This will permanently remove this claim from the client's record. This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => deleteClaim(confirmDeleteClaimId)} disabled={claimDeleting}
-                style={{ flex: 1, background: '#A32D2D', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', opacity: claimDeleting ? 0.7 : 1 }}>
-                <Trash2 size={14} /> {claimDeleting ? 'Deleting…' : 'Delete claim'}
-              </button>
-              <button onClick={() => setConfirmDeleteClaimId(null)} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmDeleteModal
+          title="Delete claim?"
+          body="This will permanently remove this claim from the client's record. This action cannot be undone."
+          confirmLabel="Delete claim"
+          busy={claimDeleting}
+          onConfirm={() => deleteClaim(confirmDeleteClaimId)}
+          onClose={() => setConfirmDeleteClaimId(null)}
+        />
       )}
 
       {/* == MAYA STUB PREVIEW MODAL == */}
