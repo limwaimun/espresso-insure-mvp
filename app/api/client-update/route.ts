@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { clientId, ifaId: _unused, name, company, whatsapp, email, birthday, address } = await request.json()
+    const { clientId, ifaId: _unused, name, type, company, whatsapp, email, birthday, address } = await request.json()
 
     if (_unused && _unused !== userId) {
       console.warn(`[client-update] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
@@ -26,17 +26,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Validate type — must be one of the three allowed enum values, or omitted.
+    // Omitted = unchanged. Any other string = reject (defends against client-side
+    // tampering writing arbitrary strings into the type column).
+    const ALLOWED_TYPES = new Set(['individual', 'sme', 'corporate'])
+    if (type !== undefined && type !== null && !ALLOWED_TYPES.has(type)) {
+      return NextResponse.json({ error: 'Invalid type — must be individual, sme, or corporate' }, { status: 400 })
+    }
+
     // ── Update, scoped to verified userId ─────────────────────────────────
+    // Build update payload. type is only included when explicitly provided
+    // — undefined means 'don't change it'. This keeps backward compatibility
+    // with any caller that doesn't send type.
+    const updatePayload: Record<string, string | null> = {
+      name: name.trim(),
+      company: company?.trim() || null,
+      whatsapp: whatsapp?.trim() || null,
+      email: email?.trim() || null,
+      birthday: birthday || null,
+      address: address?.trim() || null,
+    }
+    if (type !== undefined && type !== null) {
+      updatePayload.type = type
+    }
+
     const { error } = await supabase
       .from('clients')
-      .update({
-        name: name.trim(),
-        company: company?.trim() || null,
-        whatsapp: whatsapp?.trim() || null,
-        email: email?.trim() || null,
-        birthday: birthday || null,
-        address: address?.trim() || null,
-      })
+      .update(updatePayload)
       .eq('id', clientId)
       .eq('ifa_id', userId)
 
