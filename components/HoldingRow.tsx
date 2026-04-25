@@ -188,72 +188,73 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
         <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
           <td colSpan={5} style={{ padding: '18px 24px 22px 34px' }}>
 
-            {/* Performance block (cream) — only show if any perf signal exists */}
+            {/* Section styles — identical 4-col grid across all three for vertical alignment */}
+
+            {/* PERFORMANCE — hidden if no perf signal */}
             {(pnl || yieldPct != null) && (
-              <div style={{
-                background: '#FBFAF7',
-                border: '0.5px solid #F1EFE8',
-                borderRadius: 8,
-                padding: '14px 18px',
-                display: 'flex', gap: 32, flexWrap: 'wrap',
-                marginBottom: 16,
-              }}>
-                {pnl && (
-                  <>
-                    <PerfItem label="Unrealized gain" value={
-                      <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D' }}>
-                        {pnl.absolute >= 0 ? '+' : '−'}{holding.currency} {Math.abs(Math.round(pnl.absolute)).toLocaleString()}
-                      </span>
-                    } />
-                    <PerfItem label="Return" value={
-                      <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D' }}>
-                        {formatPct(pnl.percent)}
-                      </span>
-                    } />
-                    {pnl.annualized != null && (
-                      <PerfItem label="Annualized" value={
-                        <span style={{ color: pnl.annualized >= 0 ? '#0F6E56' : '#A32D2D' }}>
-                          {formatPct(pnl.annualized)} p.a.
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, marginBottom: 12 }}>Performance</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 24px' }}>
+                  {pnl && (
+                    <>
+                      <PerfItem label="Unrealized gain" value={
+                        <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 500 }}>
+                          {pnl.absolute >= 0 ? '+' : '−'}{holding.currency} {Math.abs(Math.round(pnl.absolute)).toLocaleString()}
                         </span>
                       } />
-                    )}
-                  </>
-                )}
-                {yieldPct != null && (
-                  <PerfItem label="Distribution yield" value={`${yieldPct.toFixed(2)}%`} />
-                )}
-                {income != null && (
-                  <PerfItem label="Annual income" value={`${holding.currency} ${Math.round(income).toLocaleString()}`} />
-                )}
-                {holding.inception_date && (
-                  <PerfItem label="Held" value={heldDuration(holding.inception_date)} />
-                )}
+                      <PerfItem label="Return" value={
+                        <span style={{ color: pnl.absolute >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 500 }}>
+                          {formatPct(pnl.percent)}
+                        </span>
+                      } />
+                      {pnl.annualized != null && (
+                        <PerfItem label="Annualized" value={
+                          <span style={{ color: pnl.annualized >= 0 ? '#0F6E56' : '#A32D2D', fontWeight: 500 }}>
+                            {formatPct(pnl.annualized)} p.a.
+                          </span>
+                        } />
+                      )}
+                    </>
+                  )}
+                  {yieldPct != null && (
+                    <PerfItem label="Distribution yield" value={<span style={{ fontWeight: 500 }}>{`${yieldPct.toFixed(2)}%`}</span>} />
+                  )}
+                  {income != null && (
+                    <PerfItem label="Annual income" value={<span style={{ fontWeight: 500 }}>{`${holding.currency} ${Math.round(income).toLocaleString()}`}</span>} />
+                  )}
+                  {holding.inception_date && (
+                    <PerfItem label="Held" value={<span style={{ fontWeight: 500 }}>{heldDuration(holding.inception_date)}</span>} />
+                  )}
+                </div>
               </div>
             )}
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: '16px 24px',
-              marginBottom: 16,
-            }}>
-              {holding.avg_cost_price != null && (
-                <>
-                  <KV label="Avg. cost price" value={Number(holding.avg_cost_price).toFixed(4)} />
-                  {holding.units_held != null && (
-                    <KV label="Total invested" value={
-                      `${holding.currency} ${(Number(holding.avg_cost_price) * Number(holding.units_held))
-                        .toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                    } />
-                  )}
-                </>
-              )}
-              <KV label="Inception" value={formatDate(holding.inception_date)} />
-              <KV label="Last NAV date" value={formatDate(holding.last_nav_date)} />
-              <KV label="Currency" value={holding.currency} />
-              <KV label="Platform" value={holding.platform || '—'} />
-              <KV label="Risk rating" value={holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'} />
-              <KV label="Last reviewed" value={formatDate(holding.last_reviewed_at)} />
+            {/* POSITION — always shown */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, marginBottom: 12 }}>Position</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 24px' }}>
+                <KV label="Units held" value={holding.units_held != null ? Number(holding.units_held).toLocaleString() : '—'} />
+                <KV label="Avg. cost price" value={holding.avg_cost_price != null ? Number(holding.avg_cost_price).toFixed(4) : '—'} />
+                <KV label="Last NAV" value={holding.last_nav != null ? Number(holding.last_nav).toFixed(4) : '—'} />
+                <KV label="Last NAV date" value={formatDate(holding.last_nav_date)} />
+                <KV label="Total invested" value={
+                  holding.avg_cost_price != null && holding.units_held != null
+                  ? `${holding.currency} ${(Number(holding.avg_cost_price) * Number(holding.units_held)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                  : '—'
+                } />
+                <KV label="Currency" value={holding.currency} />
+                <KV label="Platform" value={holding.platform || '—'} />
+              </div>
+            </div>
+
+            {/* REVIEW — always shown */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, marginBottom: 12 }}>Review</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 24px' }}>
+                <KV label="Risk rating" value={holding.risk_rating ? (RISK_LABELS[holding.risk_rating] || holding.risk_rating) : '—'} />
+                <KV label="Inception" value={formatDate(holding.inception_date)} />
+                <KV label="Last reviewed" value={formatDate(holding.last_reviewed_at)} />
+              </div>
             </div>
 
             <DocList
@@ -264,7 +265,7 @@ function HoldingRow({ holding, onEdit, onAskMaya, onMarkReviewed, onDelete }: {
             />
 
             {holding.notes && (
-              <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
+              <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8', marginTop: 14 }}>
                 <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
                 <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{holding.notes}</div>
               </div>
