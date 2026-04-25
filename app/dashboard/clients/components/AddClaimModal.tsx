@@ -26,7 +26,7 @@ import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 
-const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Motor', 'Travel', 'Property', 'Other']
+const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Personal Accident', 'Motor', 'Travel', 'Property', 'Other']
 
 interface AddClaimModalProps {
   clientId: string
@@ -153,9 +153,9 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
               value={form.priority}
               onChange={e => set('priority', e.target.value)}
             >
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
               <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
             </select>
           </div>
         </div>

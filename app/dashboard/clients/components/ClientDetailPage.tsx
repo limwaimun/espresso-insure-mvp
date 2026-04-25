@@ -13,6 +13,7 @@ import ClaimCard, { Alert } from './ClaimCard'
 import MayaStubModal from './MayaStubModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import EditClientModal from './EditClientModal'
+import AddClaimModal from './AddClaimModal'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
@@ -75,10 +76,7 @@ export default function ClientDetailPage({
   const [policyFiles, setPolicyFiles] = useState<File[]>([])
 
   // Claim modal state
-  const [claimForm, setClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
-  const [claimFiles, setClaimFiles] = useState<File[]>([])
-  const [claimSaving, setClaimSaving] = useState(false)
-  const [claimError, setClaimError] = useState('')
+  // Add-claim form state lives inside the extracted AddClaimModal
 
   // Edit Claim modal — separate from Add Claim so the two flows don't collide
   const [editingClaim, setEditingClaim] = useState<Alert | null>(null)
@@ -220,85 +218,6 @@ export default function ClientDetailPage({
     setPolicySaving(false)
     setPolicyFiles([])
     setShowAddPolicy(true)
-  }
-
-  async function saveClaim() {
-    if (!claimForm.title.trim()) { setClaimError('Title is required'); return }
-    if (!resolvedIfaId) { setClaimError('Session error — please refresh'); return }
-    setClaimSaving(true)
-    try {
-      const res = await fetch('/api/claim-create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId: client.id,
-          ifaId: resolvedIfaId,
-          title: claimForm.title,
-          type: 'claim',
-          priority: claimForm.priority,
-          body: claimForm.body,
-          claim_type: claimForm.type,
-        }),
-      })
-      if (!res.ok) {
-        const d = await res.json()
-        setClaimError(d.error ?? 'Failed to create claim')
-        setClaimSaving(false)
-        return
-      }
-      // Grab the new claim ID for doc upload. Route may return { claim: {...} }
-      // or the row directly — handle both shapes.
-      const payload = await res.json().catch(() => ({}))
-      // Log so we can diagnose if uploads aren't attaching — the response
-      // shape tells us which key holds the new claim ID.
-      console.log('[claim-create] response payload:', payload)
-      const newClaimId: string | undefined =
-        payload?.claim?.id ?? payload?.id ?? payload?.alert?.id ?? payload?.data?.id
-
-      // If files were queued but we couldn't get the new claim's ID, stop
-      // here and tell the user loudly — silently dropping uploads is the
-      // bug we're fixing.
-      if (claimFiles.length > 0 && !newClaimId) {
-        const keys = Object.keys(payload || {}).join(', ') || 'empty'
-        setClaimError(`Claim created but attachments could not be uploaded — server response shape was unexpected (keys: ${keys}). Please close this dialog and use "Edit claim" on the new claim to add documents.`)
-        setClaimSaving(false)
-        return
-      }
-
-      // Upload queued documents sequentially.
-      if (newClaimId && claimFiles.length > 0) {
-        const failures: string[] = []
-        for (const file of claimFiles) {
-          const fd = new FormData()
-          fd.append('file', file)
-          fd.append('claimId', newClaimId)
-          const up = await fetch('/api/claim-doc', { method: 'POST', body: fd })
-          if (!up.ok) {
-            const d = await up.json().catch(() => ({}))
-            failures.push(`${file.name}: ${d.error ?? up.statusText ?? `HTTP ${up.status}`}`)
-          }
-        }
-        if (failures.length) {
-          setClaimError(`Claim created, but some uploads failed — ${failures.join('; ')}`)
-          setClaimSaving(false)
-          return
-        }
-      }
-
-      setShowAddClaim(false)
-      setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
-      setClaimFiles([])
-      setClaimSaving(false)
-      setLocalActivity(prev => [{
-        date: new Date().toISOString(),
-        text: `Claim opened: ${claimForm.title}`,
-        type: 'claim',
-      }, ...prev])
-      router.refresh()
-    } catch {
-      setClaimError('Something went wrong — please try again')
-      setClaimSaving(false)
-    }
   }
 
   async function deletePolicy(policyId: string) {
@@ -757,11 +676,7 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Claims</span>
-          <button onClick={() => {
-            setClaimForm({ title: '', type: 'Health', priority: 'medium', body: '' })
-            setClaimFiles([])
-            setClaimError(''); setShowAddClaim(true)
-          }} style={btnAddSection}>
+          <button onClick={() => setShowAddClaim(true)} style={btnAddSection}>
             <Plus size={12} /> New claim
           </button>
         </div>
@@ -980,55 +895,22 @@ export default function ClientDetailPage({
         </Modal>
       )}
 
-      {/* == ADD CLAIM MODAL (new) == */}
+      {/* == ADD CLAIM MODAL == */}
       {showAddClaim && (
-        <Modal title="New claim" onClose={() => { setShowAddClaim(false); setClaimError(''); setClaimFiles([]) }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Claim title *</label>
-              <input style={inputStyle} value={claimForm.title} onChange={e => setClaimForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Health claim — clinic visit" />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Claim type</label>
-                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={claimForm.type} onChange={e => setClaimForm(p => ({ ...p, type: e.target.value }))}>
-                  {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Priority</label>
-                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={claimForm.priority} onChange={e => setClaimForm(p => ({ ...p, priority: e.target.value }))}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Description</label>
-              <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={4} value={claimForm.body} onChange={e => setClaimForm(p => ({ ...p, body: e.target.value }))} placeholder="What happened? Any context that will help track this claim." />
-            </div>
-
-            <DocUploadField
-              multi
-              label="Documents"
-              files={claimFiles}
-              onFilesChange={setClaimFiles}
-              onError={msg => setClaimError(msg)}
-            />
-
-            {claimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{claimError}</p>}
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={saveClaim} disabled={claimSaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: claimSaving ? 0.7 : 1 }}>
-                <Plus size={14} />{claimSaving ? 'Creating…' : 'Create claim'}
-              </button>
-              <button onClick={() => { setShowAddClaim(false); setClaimFiles([]) }} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <AddClaimModal
+          clientId={client.id}
+          ifaId={resolvedIfaId}
+          onClose={() => setShowAddClaim(false)}
+          onCreated={(activityText) => {
+            setShowAddClaim(false)
+            setLocalActivity(prev => [{
+              date: new Date().toISOString(),
+              text: activityText,
+              type: 'claim',
+            }, ...prev])
+            router.refresh()
+          }}
+        />
       )}
 
       {/* == EDIT CLAIM MODAL == */}
