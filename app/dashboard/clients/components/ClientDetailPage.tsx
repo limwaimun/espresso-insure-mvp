@@ -11,6 +11,7 @@ import DocUploadField from '@/components/DocUploadField'
 import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
+import MayaStubModal from './MayaStubModal'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
@@ -1177,26 +1178,10 @@ export default function ClientDetailPage({
 
       {/* == MAYA STUB PREVIEW MODAL == */}
       {mayaStub && (
-        <Modal title={mayaStub.title} onClose={() => setMayaStub(null)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '12px 14px' }}>
-              <Bot size={18} color="#BA7517" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#854F0B', marginBottom: 4 }}>Coming soon</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460', lineHeight: 1.5 }}>
-                  Maya will draft this for you in the next update. Here's the prompt we're preparing to send:
-                </div>
-              </div>
-            </div>
-            <div style={{ background: '#FBFAF7', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Prompt preview</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', lineHeight: 1.6, fontStyle: 'italic' }}>"{mayaStub.context}"</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setMayaStub(null)} style={btnOutline}>Close</button>
-            </div>
-          </div>
-        </Modal>
+        <MayaStubModal
+          stub={mayaStub}
+          onClose={() => setMayaStub(null)}
+        />
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
