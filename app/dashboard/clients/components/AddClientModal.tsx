@@ -7,8 +7,8 @@
 //
 // Visually mirrors HoldingForm: cream palette, shared <Modal> wrapper,
 // inputStyle/labelStyle/btnPrimary/btnOutline from @/lib/styles. The
-// older AddPolicyModal and EditClientModal still use the dark palette
-// — that's tech debt to clean up in a future batch, NOT here.
+// inline modals in ClientDetailPage.tsx still use the older dark palette
+// — that's tech debt to clean up via inline-modal extraction work, NOT here.
 //
 // On successful save, returns the new client's id via onAdded() so the
 // parent can router.push to the new client's detail page.
