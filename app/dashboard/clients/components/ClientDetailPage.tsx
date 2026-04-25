@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
-import CountryCodeSelect from '@/components/CountryCodeSelect'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
@@ -13,6 +12,7 @@ import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
 import MayaStubModal from './MayaStubModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
+import EditClientModal from './EditClientModal'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
@@ -60,13 +60,7 @@ export default function ClientDetailPage({
   const [showWAInstructions, setShowWAInstructions] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const [editForm, setEditForm] = useState({
-    name: client.name, company: client.company ?? '',
-    whatsapp: client.whatsapp ?? '', email: client.email ?? '',
-    birthday: client.birthday ?? '', address: client.address ?? '',
-  })
-  const [editSaving, setEditSaving] = useState(false)
-  const [editError, setEditError] = useState('')
+  // Edit-client form state now lives inside the extracted modal component
 
   const [policyForm, setPolicyForm] = useState({
     insurer: '', product_name: '', policy_number: '', type: '',
@@ -136,16 +130,6 @@ export default function ClientDetailPage({
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
   const tierColor = calculatedTier === 'platinum' ? '#E5E4E2' : calculatedTier === 'gold' ? '#BA7517' : calculatedTier === 'silver' ? '#6B6460' : '#CD7F32'
-
-  async function saveEdit() {
-    if (!editForm.name.trim()) { setEditError('Name is required'); return }
-    setEditSaving(true)
-    try {
-      const res = await fetch('/api/client-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, ifaId: resolvedIfaId, ...editForm }) })
-      if (!res.ok) { const d = await res.json(); setEditError(d.error ?? 'Failed'); setEditSaving(false); return }
-      setShowEdit(false); router.refresh()
-    } catch { setEditError('Something went wrong'); setEditSaving(false) }
-  }
 
   async function savePolicy() {
     if (!policyForm.insurer || !policyForm.type || !policyForm.premium) { setPolicyError('Insurer, type and premium are required'); return }
@@ -875,27 +859,12 @@ export default function ClientDetailPage({
 
       {/* == EDIT CLIENT MODAL == */}
       {showEdit && (
-        <Modal title="Edit Client" onClose={() => { setShowEdit(false); setEditError('') }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} /></div>
-              <div><label style={labelStyle}>Company</label><input style={inputStyle} value={editForm.company} onChange={e => setEditForm(p => ({ ...p, company: e.target.value }))} /></div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><CountryCodeSelect value={editForm.whatsapp} onChange={v => setEditForm(p => ({ ...p, whatsapp: v }))} label="WhatsApp" /></div>
-              <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} /></div>
-            </div>
-            <div><label style={labelStyle}>Date of Birth</label><input style={{ ...inputStyle, colorScheme: 'dark' } as React.CSSProperties} type="date" value={editForm.birthday} onChange={e => setEditForm(p => ({ ...p, birthday: e.target.value }))} /></div>
-            <div><label style={labelStyle}>Address</label><textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={2} value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} /></div>
-            {editError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{editError}</p>}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={saveEdit} disabled={editSaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: editSaving ? 0.7 : 1 }}>
-                <Save size={14} />{editSaving ? 'Saving…' : 'Save changes'}
-              </button>
-              <button onClick={() => setShowEdit(false)} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <EditClientModal
+          client={client}
+          ifaId={resolvedIfaId}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); router.refresh() }}
+        />
       )}
 
       {/* == ADD / EDIT POLICY MODAL == */}
