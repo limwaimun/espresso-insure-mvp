@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
+import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 
@@ -90,36 +91,108 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
         </td>
       </tr>
 
-      {/* Expanded detail row — stacked metadata with generous breathing room */}
-      {expanded && (
-        <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
-          <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 48px', alignItems: 'flex-start', marginBottom: policy.notes ? 20 : 0 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Start date</span>
-                <span style={{ fontSize: 13, color: '#1A1410' }}>{policy.start_date ? formatDate(policy.start_date) : '—'}</span>
+      {/* Expanded detail — three sections (Coverage / Money / Lifecycle) +
+          Documents and Identifiers + optional Notes. Mirrors HoldingRow's
+          B46 layout: 4-column grids, cream palette, section headers in
+          muted grey uppercase. */}
+      {expanded && (() => {
+        // Derive money + lifecycle data
+        const FREQ_MULT: Record<string, number> = {
+          'monthly': 12, 'quarterly': 4, 'half-yearly': 2, 'annual': 1, 'single': 1,
+        }
+        const freq = (policy.premium_frequency || 'annual').toLowerCase()
+        const annualTotal = (Number(policy.premium) || 0) * (FREQ_MULT[freq] ?? 1)
+
+        const daysLeft = policy.renewal_date
+          ? Math.ceil((new Date(policy.renewal_date).getTime() - Date.now()) / 86400000)
+          : null
+        const daysLeftDisplay = daysLeft == null
+          ? '—'
+          : daysLeft < 0
+            ? `${Math.abs(daysLeft)} days overdue`
+            : daysLeft === 0
+              ? 'Today'
+              : `${daysLeft} days`
+
+        const sectionHeaderStyle: React.CSSProperties = {
+          fontSize: 10,
+          color: '#9B9088',
+          textTransform: 'uppercase',
+          letterSpacing: '0.07em',
+          fontWeight: 500,
+          marginBottom: 12,
+        }
+        const gridStyle: React.CSSProperties = {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '16px 24px',
+        }
+
+        return (
+          <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
+            <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+
+              {/* COVERAGE — what's being insured. Insurer omitted since
+                  it's already prominent in the collapsed row. Policy #
+                  moved here from a separate Identifiers section so the
+                  4-column grid fills cleanly. */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={sectionHeaderStyle}>Coverage</div>
+                <div style={gridStyle}>
+                  <KV label="Type" value={policy.type || '—'} />
+                  <KV label="Sum assured" value={policy.sum_assured ? `SGD ${Number(policy.sum_assured).toLocaleString()}` : '—'} />
+                  <KV label="Product name" value={policy.product_name || '—'} />
+                  <KV label="Policy #" value={policy.policy_number || '—'} />
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Frequency</span>
-                <span style={{ fontSize: 13, color: '#1A1410', textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>
+
+              {/* MONEY — what it costs. Strict 4-column grid; the empty
+                  cell keeps column boundaries aligned with Coverage and
+                  Lifecycle above/below. */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={sectionHeaderStyle}>Money</div>
+                <div style={gridStyle}>
+                  <KV label="Premium" value={policy.premium != null ? `SGD ${Number(policy.premium).toLocaleString()}` : '—'} />
+                  <KV label="Frequency" value={<span style={{ textTransform: 'capitalize' }}>{policy.premium_frequency || 'Annual'}</span>} />
+                  <KV label="Annual total" value={annualTotal > 0 ? `SGD ${annualTotal.toLocaleString()}` : '—'} />
+                  <div />
+                </div>
               </div>
-            </div>
-            <DocList
-              key={`policy-doc-${policy.id}-${cardRefreshKey}`}
-              parentId={policy.id}
-              apiEndpoint="/api/policy-doc"
-              parentParam="policyId"
-              label="Documents"
-            />
-            {policy.notes && (
-              <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
-                <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
-                <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{policy.notes}</div>
+
+              {/* LIFECYCLE — is it active and current */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={sectionHeaderStyle}>Lifecycle</div>
+                <div style={gridStyle}>
+                  <KV label="Status" value={<span style={{ textTransform: 'capitalize' }}>{policy.status || 'active'}</span>} />
+                  <KV label="Start date" value={policy.start_date ? formatDate(policy.start_date) : '—'} />
+                  <KV label="Renewal date" value={policy.renewal_date ? formatDate(policy.renewal_date) : '—'} />
+                  <KV label="Days left" value={daysLeftDisplay} />
+                </div>
               </div>
-            )}
-          </td>
-        </tr>
-      )}
-    </>
+
+              {/* DOCUMENTS — full-width below the three semantic sections.
+                  Identifiers section dropped; Policy # now sits in Coverage. */}
+              <div style={{ marginBottom: policy.notes ? 20 : 0 }}>
+                <div style={sectionHeaderStyle}>Documents</div>
+                <DocList
+                  key={`policy-doc-${policy.id}-${cardRefreshKey}`}
+                  parentId={policy.id}
+                  apiEndpoint="/api/policy-doc"
+                  parentParam="policyId"
+                  label=""
+                />
+              </div>
+
+              {/* NOTES — full-width if present */}
+              {policy.notes && (
+                <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
+                  <div style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Notes</div>
+                  <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>{policy.notes}</div>
+                </div>
+              )}
+            </td>
+          </tr>
+        )
+      })()}    </>
   )
 }
