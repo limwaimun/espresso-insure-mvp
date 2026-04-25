@@ -6,7 +6,6 @@ import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
 import PortalMenu from '@/components/PortalMenu'
 import Modal from '@/components/Modal'
-import DocUploadField from '@/components/DocUploadField'
 import DocList from '@/components/DocList'
 import PolicyRow, { Policy } from './PolicyRow'
 import ClaimCard, { Alert } from './ClaimCard'
@@ -14,6 +13,7 @@ import MayaStubModal from './MayaStubModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import EditClientModal from './EditClientModal'
 import AddClaimModal from './AddClaimModal'
+import PolicyForm from './PolicyForm'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
 import { inputStyle, labelStyle, btnPrimary, btnOutline, btnAddSection } from '@/lib/styles'
@@ -62,18 +62,11 @@ export default function ClientDetailPage({
   const [copied, setCopied] = useState(false)
 
   // Edit-client form state now lives inside the extracted modal component
-
-  const [policyForm, setPolicyForm] = useState({
-    insurer: '', product_name: '', policy_number: '', type: '',
-    premium: '', premium_frequency: 'annual', sum_assured: '',
-    start_date: '', renewal_date: '', status: 'active', notes: '',
-  })
-  const [policySaving, setPolicySaving] = useState(false)
-  const [policyError, setPolicyError] = useState('')
-  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null)
+  // Policy form state likewise lives inside PolicyForm; parent only
+  // tracks which policy (if any) is being edited.
+  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [policyFiles, setPolicyFiles] = useState<File[]>([])
 
   // Claim modal state
   // Add-claim form state lives inside the extracted AddClaimModal
@@ -128,97 +121,6 @@ export default function ClientDetailPage({
   const setupMessage = `Hi ${client.name.split(' ')[0]}! I've set up a WhatsApp group for us with Maya, my AI assistant. She'll help manage your insurance — renewals, claims, and any questions — 24/7. I'll add you now!`
 
   const tierColor = calculatedTier === 'platinum' ? '#E5E4E2' : calculatedTier === 'gold' ? '#BA7517' : calculatedTier === 'silver' ? '#6B6460' : '#CD7F32'
-
-  async function savePolicy() {
-    if (!policyForm.insurer || !policyForm.type || !policyForm.premium) { setPolicyError('Insurer, type and premium are required'); return }
-    if (!resolvedIfaId) { setPolicyError('Session error — please refresh the page'); return }
-    setPolicySaving(true)
-    try {
-      const isEdit = !!editingPolicyId
-      const endpoint = isEdit ? '/api/policy-update' : '/api/policy-add'
-      const payload = isEdit
-        ? {
-            policyId: editingPolicyId,
-            ifaId: resolvedIfaId,
-            ...policyForm,
-            premium: parseFloat(policyForm.premium),
-            sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null,
-          }
-        : {
-            clientId: client.id,
-            ifaId: resolvedIfaId,
-            ...policyForm,
-            premium: parseFloat(policyForm.premium),
-            sum_assured: policyForm.sum_assured ? parseFloat(policyForm.sum_assured) : null,
-          }
-
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      if (!res.ok) { const d = await res.json(); setPolicyError(d.error ?? 'Failed'); setPolicySaving(false); return }
-
-      // Upload queued docs. Add mode queues via DocUploadField; Edit mode
-      // manages docs live via <DocList editable /> so queue is always empty.
-      const newPolicy = isEdit ? null : await res.json()
-      const targetPolicyId = isEdit ? editingPolicyId : newPolicy?.policy?.id
-      if (!isEdit && policyFiles.length > 0 && targetPolicyId) {
-        const failures: string[] = []
-        for (const file of policyFiles) {
-          const fd = new FormData()
-          fd.append('file', file)
-          fd.append('policyId', targetPolicyId)
-          fd.append('ifaId', resolvedIfaId)
-          const r = await fetch('/api/policy-doc', { method: 'POST', body: fd })
-          if (!r.ok) {
-            const d = await r.json().catch(() => ({}))
-            console.error('[policy-doc POST] failed:', r.status, d)
-            failures.push(`${file.name}: ${d.error ?? `HTTP ${r.status}`}`)
-          }
-        }
-        if (failures.length) {
-          setPolicyError(`Policy created, but some uploads failed — ${failures.join('; ')}`)
-          setPolicySaving(false)
-          return
-        }
-      }
-
-      setShowAddPolicy(false)
-      setEditingPolicyId(null)
-      setPolicyFiles([])
-      setPolicySaving(false)
-      bumpCardRefresh()
-
-      // Optimistic activity entry (for add only — edits don't need a timeline line)
-      if (!isEdit) {
-        setLocalActivity(prev => [{
-          date: new Date().toISOString(),
-          text: `${policyForm.insurer} ${policyForm.type} added ($${parseFloat(policyForm.premium).toLocaleString()}/yr)`,
-          type: 'policy',
-        }, ...prev])
-      }
-
-      router.refresh()
-    } catch { setPolicyError('Something went wrong — please try again'); setPolicySaving(false) }
-  }
-
-  function openEditPolicy(policy: Policy) {
-    setPolicyForm({
-      insurer: policy.insurer ?? '',
-      product_name: policy.product_name ?? '',
-      policy_number: policy.policy_number ?? '',
-      type: policy.type ?? '',
-      premium: policy.premium != null ? String(policy.premium) : '',
-      premium_frequency: policy.premium_frequency ?? 'annual',
-      sum_assured: policy.sum_assured != null ? String(policy.sum_assured) : '',
-      start_date: policy.start_date ?? '',
-      renewal_date: policy.renewal_date ?? '',
-      status: policy.status ?? 'active',
-      notes: policy.notes ?? '',
-    })
-    setEditingPolicyId(policy.id)
-    setPolicyError('')
-    setPolicySaving(false)
-    setPolicyFiles([])
-    setShowAddPolicy(true)
-  }
 
   async function deletePolicy(policyId: string) {
     setDeleting(true)
@@ -512,10 +414,7 @@ export default function ClientDetailPage({
       <div className="panel" style={{ marginBottom: 24 }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="panel-title">Policies</span>
-          <button onClick={() => {
-            setPolicyForm({ insurer: '', product_name: '', policy_number: '', type: '', premium: '', premium_frequency: 'annual', sum_assured: '', start_date: '', renewal_date: '', status: 'active', notes: '' })
-            setEditingPolicyId(null); setPolicyFiles([]); setPolicyError(''); setPolicySaving(false); setShowAddPolicy(true)
-          }} style={btnAddSection}>
+          <button onClick={() => { setEditingPolicy(null); setShowAddPolicy(true) }} style={btnAddSection}>
             <Plus size={12} /> Add policy
           </button>
         </div>
@@ -539,7 +438,7 @@ export default function ClientDetailPage({
                       key={policy.id}
                       policy={policy}
                       ifaId={resolvedIfaId}
-                      onEdit={openEditPolicy}
+                      onEdit={(p) => { setEditingPolicy(p); setShowAddPolicy(true) }}
                       onAskMaya={handlePolicyAskMaya}
                       confirmingDelete={confirmDeleteId === policy.id}
                       setConfirming={setConfirmDeleteId}
@@ -784,115 +683,26 @@ export default function ClientDetailPage({
 
       {/* == ADD / EDIT POLICY MODAL == */}
       {showAddPolicy && (
-        <Modal title={editingPolicyId ? 'Edit policy' : 'Add policy'} onClose={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyError(''); setPolicyFiles([]); bumpCardRefresh() }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {/* Group 1: Identifiers */}
-            <div>
-              <label style={labelStyle}>Insurer *</label>
-              <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.insurer} onChange={e => setPolicyForm(p => ({ ...p, insurer: e.target.value }))}>
-                <option value="">Select insurer…</option>
-                {INSURERS.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Product name</label>
-              <input style={inputStyle} placeholder="e.g. AIA Life Treasure II" value={policyForm.product_name} onChange={e => setPolicyForm(p => ({ ...p, product_name: e.target.value }))} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Policy number</label>
-              <input style={inputStyle} placeholder="e.g. AIA-2024-12345" value={policyForm.policy_number} onChange={e => setPolicyForm(p => ({ ...p, policy_number: e.target.value }))} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Policy type *</label>
-              <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.type} onChange={e => setPolicyForm(p => ({ ...p, type: e.target.value }))}>
-                <option value="">Select type…</option>
-                {POLICY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-
-            {/* Group 2: Money — visual separator */}
-            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Annual premium (SGD) *</label>
-                <input style={inputStyle} type="number" placeholder="e.g. 3600" value={policyForm.premium} onChange={e => setPolicyForm(p => ({ ...p, premium: e.target.value }))} />
-              </div>
-              <div>
-                <label style={labelStyle}>Frequency</label>
-                <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.premium_frequency} onChange={e => setPolicyForm(p => ({ ...p, premium_frequency: e.target.value }))}>
-                  <option value="annual">Annual</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="half-yearly">Half-yearly</option>
-                </select>
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Sum assured (SGD)</label>
-                <input style={inputStyle} type="number" placeholder="e.g. 500000" value={policyForm.sum_assured} onChange={e => setPolicyForm(p => ({ ...p, sum_assured: e.target.value }))} />
-              </div>
-            </div>
-
-            {/* Group 3: Dates */}
-            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Start date</label>
-                <input style={inputStyle} type="date" value={policyForm.start_date} onChange={e => setPolicyForm(p => ({ ...p, start_date: e.target.value }))} />
-              </div>
-              <div>
-                <label style={labelStyle}>Renewal date</label>
-                <input style={inputStyle} type="date" value={policyForm.renewal_date} onChange={e => setPolicyForm(p => ({ ...p, renewal_date: e.target.value }))} />
-              </div>
-            </div>
-
-            {/* Group 4: Metadata */}
-            <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 14 }}>
-              <label style={labelStyle}>Status</label>
-              <select style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties} value={policyForm.status} onChange={e => setPolicyForm(p => ({ ...p, status: e.target.value }))}>
-                <option value="active">Active</option>
-                <option value="lapsed">Lapsed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Notes</label>
-              <textarea style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties} rows={2} placeholder="e.g. Single mother, 2 young kids" value={policyForm.notes} onChange={e => setPolicyForm(p => ({ ...p, notes: e.target.value }))} />
-            </div>
-
-            {/* Document handling: Edit mode uses live DocList (add/delete
-                fire immediately). Add mode queues files, uploaded after the
-                policy row is created. */}
-            {editingPolicyId ? (
-              <DocList
-                parentId={editingPolicyId}
-                apiEndpoint="/api/policy-doc"
-                parentParam="policyId"
-                label="Documents"
-                editable
-              />
-            ) : (
-              <DocUploadField
-                multi
-                label="Documents"
-                files={policyFiles}
-                onFilesChange={setPolicyFiles}
-                onError={msg => setPolicyError(msg)}
-              />
-            )}
-
-            {policyError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{policyError}</p>}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={savePolicy} disabled={policySaving} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: policySaving ? 0.7 : 1 }}>
-                {editingPolicyId ? <Save size={14} /> : <Plus size={14} />}
-                {policySaving ? 'Saving…' : (editingPolicyId ? 'Save changes' : 'Add policy')}
-              </button>
-              <button onClick={() => { setShowAddPolicy(false); setEditingPolicyId(null); setPolicyFiles([]); bumpCardRefresh() }} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <PolicyForm
+          mode={editingPolicy ? 'edit' : 'add'}
+          initialPolicy={editingPolicy ?? undefined}
+          clientId={client.id}
+          ifaId={resolvedIfaId}
+          onClose={() => { setShowAddPolicy(false); setEditingPolicy(null); bumpCardRefresh() }}
+          onSaved={(activityText) => {
+            setShowAddPolicy(false)
+            setEditingPolicy(null)
+            bumpCardRefresh()
+            if (activityText) {
+              setLocalActivity(prev => [{
+                date: new Date().toISOString(),
+                text: activityText,
+                type: 'policy',
+              }, ...prev])
+            }
+            router.refresh()
+          }}
+        />
       )}
 
       {/* == ADD CLAIM MODAL == */}
