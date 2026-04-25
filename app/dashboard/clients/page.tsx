@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ImportClientsModal from '@/components/ImportClientsModal'
+import AddClientModal from './components/AddClientModal'
 
 interface Client {
   id: string
@@ -39,6 +41,8 @@ export default function ClientsPage() {
   const [ifaId, setIfaId] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
+  const router = useRouter()
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -91,6 +95,18 @@ export default function ClientsPage() {
         />
       )}
 
+      {/* Add client modal */}
+      {showAdd && ifaId && (
+        <AddClientModal
+          ifaId={ifaId}
+          onClose={() => setShowAdd(false)}
+          onAdded={(newId) => {
+            setShowAdd(false)
+            router.push(`/dashboard/clients/${newId}`)
+          }}
+        />
+      )}
+
       {/* Upgrade modal */}
       {showUpgradeModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -124,6 +140,11 @@ export default function ClientsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Clients</h1>
         <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => (plan === 'solo' || plan === 'trial') && clients.length >= CLIENT_LIMIT ? setShowUpgradeModal(true) : setShowAdd(true)}
+            style={{ background: '#BA7517', border: '0.5px solid #BA7517', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+            + Add client
+          </button>
           <button
             onClick={() => (plan === 'solo' || plan === 'trial') && clients.length >= CLIENT_LIMIT ? setShowUpgradeModal(true) : setShowImport(true)}
             style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#3D3532' }}>
