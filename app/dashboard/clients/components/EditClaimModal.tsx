@@ -78,6 +78,13 @@ function fmtMoney(v: string | number | null | undefined): string {
   return `SGD ${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
 }
 
+// Helper: integer days between two dates (later - earlier).
+function daysBetween(later: string | Date, earlier: string | Date): number {
+  const a = new Date(later).getTime()
+  const b = new Date(earlier).getTime()
+  return Math.floor((a - b) / 86400000)
+}
+
 // Helper: convert a numeric DB value to a string suitable for an input.
 // numeric(12,2) comes back as a string from postgres ("5000.00").
 function numToStr(v: string | number | null | undefined): string {
@@ -365,6 +372,43 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
                   />
                 </div>
               </div>
+
+              {/* Derived lifecycle values — read-only. Days open derives
+                  from today vs filed_date. Days to resolve from paid_at vs
+                  filed_date. Both show '—' when the underlying date isn't
+                  set yet. */}
+              {(() => {
+                const daysOpen = form.filed_date ? daysBetween(new Date(), form.filed_date) : null
+                const daysToResolve = (form.filed_date && c.paid_at)
+                  ? daysBetween(c.paid_at, form.filed_date)
+                  : null
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={labelStyle}>Days open (auto)</label>
+                      <div style={{
+                        ...inputStyle,
+                        background: '#FBFAF7',
+                        color: '#6B6460',
+                        cursor: 'default',
+                      } as React.CSSProperties}>
+                        {daysOpen != null ? `${daysOpen} days` : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Days to resolve (auto)</label>
+                      <div style={{
+                        ...inputStyle,
+                        background: '#FBFAF7',
+                        color: '#6B6460',
+                        cursor: 'default',
+                      } as React.CSSProperties}>
+                        {daysToResolve != null ? `${daysToResolve} days` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
 
               <div>
                 <label style={labelStyle}>Insurer claim ref</label>
