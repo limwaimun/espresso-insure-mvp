@@ -527,18 +527,30 @@ export default function ClientDetailPage({
         </div>
         <div className="panel-body">
           {claims.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {claims.map(claim => (
-                <ClaimCard
-                  key={claim.id}
-                  claim={claim}
-                  ifaId={resolvedIfaId}
-                  onEdit={(c) => setEditingClaim(c)}
-                  onAskMaya={handleClaimAskMaya}
-                  onDelete={(id) => setConfirmDeleteClaimId(id)}
-                  cardRefreshKey={cardRefreshKey}
-                />
-              ))}
+            <div className="table">
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.5px solid #E8E2DA' }}>
+                    <th style={{ width: '36%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Title</th>
+                    <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Type</th>
+                    <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Status</th>
+                    <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Priority</th>
+                    <th style={{ width: '16%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Date</th>
+                    <th style={{ width: '6%' }}></th>
+                  </tr>
+                </thead>
+                <tbody>{claims.map(claim => (
+                  <ClaimCard
+                    key={claim.id}
+                    claim={claim}
+                    ifaId={resolvedIfaId}
+                    onEdit={(c) => setEditingClaim(c)}
+                    onAskMaya={handleClaimAskMaya}
+                    onDelete={(id) => setConfirmDeleteClaimId(id)}
+                    cardRefreshKey={cardRefreshKey}
+                  />
+                ))}</tbody>
+              </table>
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>No claims history.</div>
