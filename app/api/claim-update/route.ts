@@ -52,6 +52,13 @@ export async function POST(request: NextRequest) {
       insurer_claim_ref,
       insurer_handler_name,
       insurer_handler_contact,
+      // B64a: user-supplied transition timestamps. When provided, the
+      // API uses these instead of now() for back-dating support. The
+      // form sends them as ISO date strings (YYYY-MM-DD); we convert
+      // to ISO timestamp at midnight UTC for storage.
+      approved_at,
+      denied_at,
+      paid_at,
     } = body_raw
 
     if (_unused && _unused !== userId) {
@@ -71,6 +78,41 @@ export async function POST(request: NextRequest) {
     }
     if (priority !== undefined && !ALLOWED_PRIORITIES.has(priority)) {
       return NextResponse.json({ error: `Invalid priority: ${priority}` }, { status: 400 })
+    }
+
+    // ── B64a: Validate user-supplied transition timestamps ──────────────
+    // FA can back-date approvals/denials/paid to capture when the
+    // transition actually happened (vs when they got around to logging
+    // it). We accept ISO date strings (YYYY-MM-DD), reject future dates,
+    // and convert to a full ISO timestamp at midnight UTC for storage.
+    function normaliseUserTimestamp(v: unknown, label: string): string | null | undefined {
+      if (v === undefined) return undefined  // not provided — keep existing behaviour
+      if (v === null || v === '') return null  // explicit null — clear (but we don't expose this on the form yet)
+      if (typeof v !== 'string') {
+        throw new Error(`${label} must be a date string`)
+      }
+      // ISO date YYYY-MM-DD: convert to a full ISO timestamp at UTC midnight
+      const m = v.match(/^\d{4}-\d{2}-\d{2}$/)
+      if (!m) {
+        throw new Error(`${label} must be in YYYY-MM-DD format`)
+      }
+      const todayISO = new Date().toISOString().slice(0, 10)
+      if (v > todayISO) {
+        throw new Error(`${label} cannot be in the future`)
+      }
+      return `${v}T00:00:00Z`
+    }
+
+    let userApprovedAt: string | null | undefined
+    let userDeniedAt: string | null | undefined
+    let userPaidAt: string | null | undefined
+    try {
+      userApprovedAt = normaliseUserTimestamp(approved_at, 'approved_at')
+      userDeniedAt = normaliseUserTimestamp(denied_at, 'denied_at')
+      userPaidAt = normaliseUserTimestamp(paid_at, 'paid_at')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Invalid timestamp'
+      return NextResponse.json({ error: msg }, { status: 400 })
     }
 
     // ── Read current state (so we know which timestamps to auto-set) ─────
@@ -107,32 +149,52 @@ export async function POST(request: NextRequest) {
     if (deductible_amount !== undefined)
       patch.deductible_amount = deductible_amount === '' || deductible_amount === null ? null : Number(deductible_amount)
 
-    // ── Status transition logic ──────────────────────────────────────────
+    // ── Status transition logic (B64a: with user-supplied timestamps) ────
     // When status changes to approved/denied/paid for the first time,
     // set the corresponding _at timestamp (only if not already set).
     // Terminal states (denied, paid) also set closed_at.
+    //
+    // B64a: if the FA supplies an explicit *_at value (back-dating),
+    // use that instead of now(). Form sends YYYY-MM-DD; normaliseUserTimestamp
+    // converted those to ISO timestamps above.
     if (status !== undefined && status !== existing.status) {
       patch.status = status
       const now = new Date().toISOString()
 
       if (status === 'approved' && !existing.approved_at) {
-        patch.approved_at = now
+        patch.approved_at = userApprovedAt ?? now
       }
       if (status === 'denied' && !existing.denied_at) {
-        patch.denied_at = now
+        patch.denied_at = userDeniedAt ?? now
       }
       if (status === 'paid') {
-        if (!existing.paid_at) patch.paid_at = now
+        if (!existing.paid_at) patch.paid_at = userPaidAt ?? now
         // If a claim went paid without ever being explicitly approved,
-        // set approved_at too (paid implies approved).
-        if (!existing.approved_at) patch.approved_at = now
+        // set approved_at too (paid implies approved). Use user's
+        // approved_at if supplied, else paid_at, else now.
+        if (!existing.approved_at) patch.approved_at = userApprovedAt ?? userPaidAt ?? now
       }
+      // closed_at always uses now() per design — not user-editable.
       if (TERMINAL_STATUS.has(status) && !existing.closed_at) {
         patch.closed_at = now
       }
     } else if (status !== undefined) {
       // status sent but no transition (same value) — still write it for safety
       patch.status = status
+    }
+
+    // B64a: allow OVERRIDE of existing timestamps when FA sends explicit
+    // values (correcting a mistake on a claim that's already in that state).
+    // Only writes if the user-supplied value differs from what's already
+    // in patch (don't double-write).
+    if (userApprovedAt !== undefined && patch.approved_at === undefined) {
+      patch.approved_at = userApprovedAt
+    }
+    if (userDeniedAt !== undefined && patch.denied_at === undefined) {
+      patch.denied_at = userDeniedAt
+    }
+    if (userPaidAt !== undefined && patch.paid_at === undefined) {
+      patch.paid_at = userPaidAt
     }
 
     if (Object.keys(patch).length === 0) {
