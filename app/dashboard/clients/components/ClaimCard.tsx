@@ -99,14 +99,21 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   const menuRef = useRef<HTMLButtonElement>(null)
 
   const [localPriority, setLocalPriority] = useState(c.priority || 'medium')
+  const [localStatus, setLocalStatus] = useState(c.status || 'open')
 
-  // Sync localPriority from prop on parent re-render — fixes stale
-  // dropdown after router.refresh().
+  // Sync local state from props on parent re-render — fixes stale
+  // dropdown values after router.refresh().
   useEffect(() => {
     setLocalPriority(c.priority || 'medium')
   }, [c.priority])
+  useEffect(() => {
+    setLocalStatus(c.status || 'open')
+  }, [c.status])
 
-  const status = c.status || 'open'
+  // Status used for both the row dropdown's value and the pill display
+  // in the expanded view's status history. Driven by localStatus so the
+  // dropdown reflects in-flight changes immediately.
+  const status = localStatus
   const { bg: statusBg, text: statusFg } = statusColor(status)
 
   const claimDate = c.created_at
@@ -124,6 +131,11 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   function handlePriorityChange(priority: string) {
     setLocalPriority(priority)
     saveToServer({ priority })
+  }
+
+  function handleStatusChange(status: string) {
+    setLocalStatus(status)
+    saveToServer({ status })
   }
 
   // Derived values for the expanded sections
@@ -179,20 +191,23 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
         <td style={{ padding: '12px 10px', fontSize: 12, color: '#6B6460' }}>
           {c.claim_type || '—'}
         </td>
-        <td style={{ padding: '12px 10px' }}>
-          <span style={{
-            fontSize: 10,
-            fontFamily: 'DM Sans, sans-serif',
-            background: statusBg,
-            color: statusFg,
-            padding: '2px 8px',
-            borderRadius: 10,
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            {STATUS_LABELS[status] ?? status}
-          </span>
+        <td style={{ padding: '12px 10px' }} onClick={e => e.stopPropagation()}>
+          <select
+            value={localStatus}
+            onChange={e => handleStatusChange(e.target.value)}
+            style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11,
+              background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 5,
+              padding: '4px 8px', cursor: 'pointer', outline: 'none',
+              color: statusFg,
+              fontWeight: 500,
+            }}>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="approved">Approved</option>
+            <option value="denied">Denied</option>
+            <option value="paid">Paid</option>
+          </select>
         </td>
         <td style={{ padding: '12px 10px' }} onClick={e => e.stopPropagation()}>
           <select
@@ -209,7 +224,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
             <option value="high">High</option>
           </select>
         </td>
-        <td style={{ padding: '12px 10px', fontSize: 12, color: '#6B6460', fontFamily: 'DM Mono, monospace' }}>
+        <td style={{ padding: '12px 10px', fontSize: 13, color: '#1A1410' }}>
           {claimDate}
         </td>
         <td style={{ padding: '12px 10px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
