@@ -13,6 +13,7 @@ import MayaStubModal from './MayaStubModal'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import EditClientModal from './EditClientModal'
 import AddClaimModal from './AddClaimModal'
+import EditClaimModal from './EditClaimModal'
 import PolicyForm from './PolicyForm'
 import type { Holding, Message, Conversation, CoverageItem, TimelineItem, Metric, ClientData, Props } from '@/lib/types'
 import { formatDate, formatRelativeTime } from '@/lib/dates'
@@ -71,11 +72,8 @@ export default function ClientDetailPage({
   // Claim modal state
   // Add-claim form state lives inside the extracted AddClaimModal
 
-  // Edit Claim modal — separate from Add Claim so the two flows don't collide
+  // Edit Claim modal — form state lives inside the extracted EditClaimModal
   const [editingClaim, setEditingClaim] = useState<Alert | null>(null)
-  const [editClaimForm, setEditClaimForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
-  const [editClaimSaving, setEditClaimSaving] = useState(false)
-  const [editClaimError, setEditClaimError] = useState('')
   const [confirmDeleteClaimId, setConfirmDeleteClaimId] = useState<string | null>(null)
   const [claimDeleting, setClaimDeleting] = useState(false)
 
@@ -150,57 +148,6 @@ export default function ClientDetailPage({
   // Docs in the edit modal are managed inline via <DocList editable />
   // — add/delete happen immediately against the server. This Save button
   // only persists text-field changes (title, type, priority, body).
-  function openEditClaim(c: Alert) {
-    setEditClaimForm({
-      title: c.title ?? '',
-      type: (c as any).claim_type ?? 'Health',
-      priority: c.priority ?? 'medium',
-      body: c.body ?? '',
-    })
-    setEditClaimError('')
-    setEditClaimSaving(false)
-    setEditingClaim(c)
-  }
-
-  function closeEditClaim() {
-    setEditingClaim(null)
-    setEditClaimError('')
-    setEditClaimSaving(false)
-    bumpCardRefresh()
-  }
-
-  async function saveEditedClaim() {
-    if (!editingClaim) return
-    if (!editClaimForm.title.trim()) { setEditClaimError('Title is required'); return }
-    if (!resolvedIfaId) { setEditClaimError('Session error — please refresh'); return }
-    setEditClaimSaving(true)
-    try {
-      const res = await fetch('/api/claim-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          claimId: editingClaim.id,
-          ifaId: resolvedIfaId,
-          title: editClaimForm.title,
-          body: editClaimForm.body,
-          priority: editClaimForm.priority,
-          claim_type: editClaimForm.type,
-        }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setEditClaimError(d.error ?? `Save failed (HTTP ${res.status})`)
-        setEditClaimSaving(false)
-        return
-      }
-      closeEditClaim()
-      router.refresh()
-    } catch {
-      setEditClaimError('Something went wrong — please try again')
-      setEditClaimSaving(false)
-    }
-  }
-
   // Maya stubs — for now these just show a "Coming soon" preview modal.
   // Next batch will wire these to the Compass/Maya agents with proper prompts.
   function handlePolicyAskMaya(policy: Policy, action: 'summarize' | 'renewal_reminder') {
@@ -587,7 +534,7 @@ export default function ClientDetailPage({
                   key={claim.id}
                   claim={claim}
                   ifaId={resolvedIfaId}
-                  onEdit={openEditClaim}
+                  onEdit={(c) => setEditingClaim(c)}
                   onAskMaya={handleClaimAskMaya}
                   onDelete={(id) => setConfirmDeleteClaimId(id)}
                   cardRefreshKey={cardRefreshKey}
@@ -726,81 +673,13 @@ export default function ClientDetailPage({
 
       {/* == EDIT CLAIM MODAL == */}
       {editingClaim && (
-        <Modal title="Edit claim" onClose={closeEditClaim}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Claim title *</label>
-              <input
-                style={inputStyle}
-                value={editClaimForm.title}
-                onChange={e => setEditClaimForm(p => ({ ...p, title: e.target.value }))}
-                placeholder="e.g. Health claim — clinic visit"
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Claim type</label>
-                <select
-                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
-                  value={editClaimForm.type}
-                  onChange={e => setEditClaimForm(p => ({ ...p, type: e.target.value }))}
-                >
-                  {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Priority</label>
-                <select
-                  style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
-                  value={editClaimForm.priority}
-                  onChange={e => setEditClaimForm(p => ({ ...p, priority: e.target.value }))}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Description</label>
-              <textarea
-                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
-                rows={4}
-                value={editClaimForm.body}
-                onChange={e => setEditClaimForm(p => ({ ...p, body: e.target.value }))}
-                placeholder="What happened? Any context that will help track this claim."
-              />
-            </div>
-
-            {/* Documents — managed inline. Add/delete fire immediately
-                against the server; there's no "save" gesture for docs. */}
-            <div>
-              <label style={labelStyle}>Documents</label>
-              <DocList
-                parentId={editingClaim.id}
-                apiEndpoint="/api/claim-doc"
-                parentParam="claimId"
-                label="Documents"
-                editable
-              />
-            </div>
-
-            {editClaimError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{editClaimError}</p>}
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={saveEditedClaim}
-                disabled={editClaimSaving}
-                style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: editClaimSaving ? 0.7 : 1 }}
-              >
-                <Save size={14} />{editClaimSaving ? 'Saving…' : 'Save changes'}
-              </button>
-              <button onClick={closeEditClaim} style={btnOutline}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        <EditClaimModal
+          claim={editingClaim}
+          ifaId={resolvedIfaId}
+          cardRefreshKey={cardRefreshKey}
+          onClose={() => { setEditingClaim(null); bumpCardRefresh() }}
+          onSaved={() => { setEditingClaim(null); bumpCardRefresh(); router.refresh() }}
+        />
       )}
 
       {/* == POLICY DELETE CONFIRM MODAL == */}
