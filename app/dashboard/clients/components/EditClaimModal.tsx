@@ -110,6 +110,12 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
     insurer_handler_name: c.insurer_handler_name ?? '',
     insurer_handler_contact: c.insurer_handler_contact ?? '',
     denial_reason: c.denial_reason ?? '',
+    // Status timestamps — editable for back-dating. Pre-fill from
+    // existing values if set; default to today otherwise. The save
+    // payload only sends the relevant ones for the current status.
+    approved_at: c.approved_at ? c.approved_at.slice(0, 10) : todayISO(),
+    denied_at: c.denied_at ? c.denied_at.slice(0, 10) : todayISO(),
+    paid_at: c.paid_at ? c.paid_at.slice(0, 10) : todayISO(),
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -132,6 +138,9 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
       insurer_handler_name: c.insurer_handler_name ?? '',
       insurer_handler_contact: c.insurer_handler_contact ?? '',
       denial_reason: c.denial_reason ?? '',
+      approved_at: c.approved_at ? c.approved_at.slice(0, 10) : todayISO(),
+      denied_at: c.denied_at ? c.denied_at.slice(0, 10) : todayISO(),
+      paid_at: c.paid_at ? c.paid_at.slice(0, 10) : todayISO(),
     })
     setError('')
   }, [claim])
@@ -171,6 +180,14 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
           insurer_handler_name: form.insurer_handler_name || null,
           insurer_handler_contact: form.insurer_handler_contact || null,
           denial_reason: form.denial_reason || null,
+          // Send timestamps only for the relevant status. API uses these
+          // instead of auto-now() per B64a. closed_at is API-managed.
+          ...(form.status === 'approved' ? { approved_at: form.approved_at || null } : {}),
+          ...(form.status === 'denied' ? { denied_at: form.denied_at || null } : {}),
+          ...(form.status === 'paid' ? {
+            approved_at: form.approved_at || null,
+            paid_at: form.paid_at || null,
+          } : {}),
         }),
       })
       if (!res.ok) {
@@ -243,6 +260,60 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
             {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
+
+        {/* Status-transition timestamps — editable for back-dating.
+            Conditionally rendered based on current status. Defaults
+            to today when not yet set. */}
+        {form.status === 'approved' && (
+          <div>
+            <label style={labelStyle}>Approved date</label>
+            <input
+              style={inputStyle}
+              type="date"
+              max={todayISO()}
+              value={form.approved_at}
+              onChange={e => set('approved_at', e.target.value)}
+            />
+          </div>
+        )}
+
+        {form.status === 'denied' && (
+          <div>
+            <label style={labelStyle}>Denied date</label>
+            <input
+              style={inputStyle}
+              type="date"
+              max={todayISO()}
+              value={form.denied_at}
+              onChange={e => set('denied_at', e.target.value)}
+            />
+          </div>
+        )}
+
+        {form.status === 'paid' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Approved date</label>
+              <input
+                style={inputStyle}
+                type="date"
+                max={todayISO()}
+                value={form.approved_at}
+                onChange={e => set('approved_at', e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Paid date</label>
+              <input
+                style={inputStyle}
+                type="date"
+                max={todayISO()}
+                value={form.paid_at}
+                onChange={e => set('paid_at', e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Denial reason — only shown when status is denied */}
         {form.status === 'denied' && (
