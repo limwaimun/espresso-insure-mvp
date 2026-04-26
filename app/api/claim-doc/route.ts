@@ -26,11 +26,11 @@ function sanitizeFilename(name: string): string {
 }
 
 // Verify that `claimId` is an alert of type 'claim' owned by `userId`.
-// Claims live in the alerts table with type='claim'. We also fetch the
+// Claims live in the dedicated `claims` table (post-B57 schema migration). We also fetch the
 // client_id here because claim_attachments.client_id is NOT NULL.
 async function assertClaimOwnership(claimId: string, userId: string) {
   const { data, error } = await supabase
-    .from('alerts')
+    .from('claims')
     .select('id, type, client_id')
     .eq('id', claimId)
     .eq('ifa_id', userId)

@@ -24,7 +24,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     supabase.from('policies').select('*').eq('client_id', id).order('renewal_date', { ascending: true }),
     supabase.from('holdings').select('*').eq('client_id', id).order('created_at', { ascending: false }),
     supabase.from('conversations').select('*, messages(id, role, content, created_at)').eq('client_id', id).order('last_message_at', { ascending: false }).limit(1),
-    supabase.from('alerts').select('*').eq('client_id', id).eq('type', 'claim').order('created_at', { ascending: false }),
+    supabase.from('claims').select('*').eq('client_id', id).order('created_at', { ascending: false }),
     supabase.from('alerts').select('*').eq('client_id', id).order('created_at', { ascending: false }).limit(10),
     supabase.from('conversations').select('id').eq('client_id', id),
     supabase.auth.getUser(),

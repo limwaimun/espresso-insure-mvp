@@ -7,8 +7,17 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
-// Claims are stored in the `alerts` table with type='claim'.
-// This endpoint creates a new claim, scoped to the verified user's session.
+// Claims live in the dedicated `claims` table (post-B57 schema migration).
+// Previously they were stored in `alerts` with type='claim' and a [Type]
+// body prefix; that's all gone now. claim_type is a real column,
+// validated against an enum.
+
+const ALLOWED_TYPES = new Set([
+  'Health', 'Life', 'Critical Illness', 'Disability',
+  'Personal Accident', 'Motor', 'Travel', 'Property', 'Other',
+])
+
+const ALLOWED_PRIORITIES = new Set(['low', 'medium', 'high'])
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +33,15 @@ export async function POST(request: NextRequest) {
       title,
       body,
       priority = 'medium',
-      claim_type, // optional classifier (Health/Life/Motor/etc)
+      claim_type = 'Other',
+      // New optional fields (Phase B schema)
+      policy_id,
+      incident_date,
+      filed_date,
+      estimated_amount,
+      insurer_claim_ref,
+      insurer_handler_name,
+      insurer_handler_contact,
     } = await request.json()
 
     if (_unused && _unused !== userId) {
@@ -33,6 +50,14 @@ export async function POST(request: NextRequest) {
 
     if (!clientId || !title?.trim()) {
       return NextResponse.json({ error: 'clientId and title are required' }, { status: 400 })
+    }
+
+    if (!ALLOWED_TYPES.has(claim_type)) {
+      return NextResponse.json({ error: `Invalid claim_type: ${claim_type}` }, { status: 400 })
+    }
+
+    if (!ALLOWED_PRIORITIES.has(priority)) {
+      return NextResponse.json({ error: `Invalid priority: ${priority}` }, { status: 400 })
     }
 
     // ── Ownership check: client belongs to verified userId ────────────────
@@ -47,27 +72,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found or unauthorized' }, { status: 404 })
     }
 
-    // ── Build body with claim_type prefix if provided ────────────────────
-    // We stash claim_type into the body text since the alerts table doesn't
-    // have a dedicated column for it. Shape: "[Type] Description"
-    const prefixedBody = claim_type && body
-      ? `[${claim_type}] ${body}`
-      : claim_type
-        ? `[${claim_type}]`
-        : (body || '')
+    // ── If policy_id provided, verify it belongs to this client ───────────
+    if (policy_id) {
+      const { data: policyCheck } = await supabase
+        .from('policies')
+        .select('id')
+        .eq('id', policy_id)
+        .eq('client_id', clientId)
+        .eq('ifa_id', userId)
+        .single()
+      if (!policyCheck) {
+        return NextResponse.json({ error: 'Policy not found or does not belong to this client' }, { status: 400 })
+      }
+    }
 
     // ── Insert claim ──────────────────────────────────────────────────────
     const { data: claim, error } = await supabase
-      .from('alerts')
+      .from('claims')
       .insert({
         ifa_id: userId,
         client_id: clientId,
-        type: 'claim',
+        policy_id: policy_id || null,
         title: title.trim(),
-        body: prefixedBody,
+        body: body || null,
         priority,
         status: 'open',
-        resolved: false,
+        claim_type,
+        incident_date: incident_date || null,
+        filed_date: filed_date || null,
+        estimated_amount: estimated_amount != null && estimated_amount !== '' ? Number(estimated_amount) : null,
+        insurer_claim_ref: insurer_claim_ref || null,
+        insurer_handler_name: insurer_handler_name || null,
+        insurer_handler_contact: insurer_handler_contact || null,
       })
       .select('id')
       .single()

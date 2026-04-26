@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
-// Claims live in the `alerts` table with type='claim'.
+// Claims live in the dedicated `claims` table (post-B57 schema migration).
 // This route deletes a claim, scoped to the verified user's session.
 
 export async function POST(request: NextRequest) {
@@ -28,15 +28,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing claimId' }, { status: 400 })
     }
 
-    // ── Delete, scoped to verified userId and type='claim' ────────────────
-    // The extra type filter prevents this endpoint from being repurposed
-    // to delete non-claim alerts (security alerts, renewals, etc.)
+    // ── Delete, scoped to verified userId ──────────────────────────────────
     const { error } = await supabase
-      .from('alerts')
+      .from('claims')
       .delete()
       .eq('id', claimId)
       .eq('ifa_id', userId)
-      .eq('type', 'claim')
 
     if (error) {
       console.error('[claim-delete] delete error:', error.message)

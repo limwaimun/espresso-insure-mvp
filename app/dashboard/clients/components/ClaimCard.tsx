@@ -24,9 +24,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
 
-  const [localStatus, setLocalStatus] = useState(
-    claim.resolved ? 'resolved' : (claim.status === 'in_progress' ? 'in_progress' : 'open')
-  )
+  const [localStatus, setLocalStatus] = useState(claim.status || 'open')
   const [localPriority, setLocalPriority] = useState(claim.priority || 'medium')
 
   const claimDate = claim.created_at
@@ -47,7 +45,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
 
   function handleStatusChange(status: string) {
     setLocalStatus(status)
-    saveToServer({ status, resolved: status === 'resolved' })
+    saveToServer({ status })
   }
 
   function handlePriorityChange(priority: string) {
@@ -113,11 +111,17 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
               fontFamily: 'DM Sans, sans-serif', fontSize: 11,
               background: '#F7F4F0', border: '0.5px solid #E8E2DA', borderRadius: 5,
               padding: '4px 8px', cursor: 'pointer', outline: 'none',
-              color: localStatus === 'resolved' ? '#0F6E56' : localStatus === 'in_progress' ? '#4A9EBF' : '#854F0B',
+              color: localStatus === 'paid' ? '#0F6E56'
+                : localStatus === 'approved' ? '#0F6E56'
+                : localStatus === 'denied' ? '#A32D2D'
+                : localStatus === 'in_progress' ? '#4A9EBF'
+                : '#854F0B',
             }}>
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
+            <option value="approved">Approved</option>
+            <option value="denied">Denied</option>
+            <option value="paid">Paid</option>
           </select>
         </div>
 
