@@ -19,6 +19,11 @@ import DocUploadField from '@/components/DocUploadField'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 import type { Policy } from '@/lib/types'
 
+// Helper: today's date in YYYY-MM-DD for HTML date input max= attribute.
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Personal Accident', 'Motor', 'Travel', 'Property', 'Other']
 
 interface AddClaimModalProps {
@@ -66,6 +71,10 @@ export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCr
     if (!form.title.trim()) { setError('Title is required'); return }
     if (!form.policy_id)    { setError('Please select a policy'); return }
     if (!ifaId)             { setError('Session error — please refresh'); return }
+    if (form.incident_date && form.filed_date && form.incident_date > form.filed_date) {
+      setError('Incident date cannot be later than filed date')
+      return
+    }
 
     setSaving(true)
     try {
@@ -273,6 +282,7 @@ export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCr
                   <input
                     style={inputStyle}
                     type="date"
+                    max={todayISO()}
                     value={form.incident_date}
                     onChange={e => set('incident_date', e.target.value)}
                   />
@@ -282,6 +292,7 @@ export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCr
                   <input
                     style={inputStyle}
                     type="date"
+                    max={todayISO()}
                     value={form.filed_date}
                     onChange={e => set('filed_date', e.target.value)}
                   />

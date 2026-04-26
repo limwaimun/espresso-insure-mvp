@@ -21,7 +21,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save, ChevronDown, ChevronRight } from 'lucide-react'
 import Modal from '@/components/Modal'
 import DocList from '@/components/DocList'
@@ -65,6 +65,11 @@ interface EditClaimModalProps {
   onSaved: () => void
 }
 
+// Helper: today's date in YYYY-MM-DD format for HTML date input max= attribute.
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 // Helper: convert a numeric DB value to a string suitable for an input.
 // numeric(12,2) comes back as a string from postgres ("5000.00").
 function numToStr(v: string | number | null | undefined): string {
@@ -95,6 +100,27 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
   const [error, setError] = useState('')
   const [showMore, setShowMore] = useState(false)
 
+  // Re-seed form state when parent passes a different claim.
+  useEffect(() => {
+    setForm({
+      title: c.title ?? '',
+      type: c.claim_type ?? 'Health',
+      priority: c.priority ?? 'medium',
+      status: c.status ?? 'open',
+      body: c.body ?? '',
+      estimated_amount: numToStr(c.estimated_amount),
+      approved_amount: numToStr(c.approved_amount),
+      deductible_amount: numToStr(c.deductible_amount),
+      incident_date: c.incident_date ?? '',
+      filed_date: c.filed_date ?? '',
+      insurer_claim_ref: c.insurer_claim_ref ?? '',
+      insurer_handler_name: c.insurer_handler_name ?? '',
+      insurer_handler_contact: c.insurer_handler_contact ?? '',
+      denial_reason: c.denial_reason ?? '',
+    })
+    setError('')
+  }, [claim])
+
   function set<K extends keyof typeof form>(field: K, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
     setError('')
@@ -103,6 +129,10 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
   async function handleSave() {
     if (!form.title.trim()) { setError('Title is required'); return }
     if (!ifaId)             { setError('Session error — please refresh'); return }
+    if (form.incident_date && form.filed_date && form.incident_date > form.filed_date) {
+      setError('Incident date cannot be later than filed date')
+      return
+    }
 
     setSaving(true)
     try {
@@ -287,6 +317,7 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
                   <input
                     style={inputStyle}
                     type="date"
+                    max={todayISO()}
                     value={form.incident_date}
                     onChange={e => set('incident_date', e.target.value)}
                   />
@@ -296,6 +327,7 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
                   <input
                     style={inputStyle}
                     type="date"
+                    max={todayISO()}
                     value={form.filed_date}
                     onChange={e => set('filed_date', e.target.value)}
                   />

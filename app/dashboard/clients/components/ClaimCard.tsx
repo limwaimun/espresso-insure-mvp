@@ -22,6 +22,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
@@ -94,6 +95,8 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
 }) {
   const c = claim as ClaimRow
 
+  const router = useRouter()
+
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
@@ -121,11 +124,20 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
     : '—'
 
   async function saveToServer(patch: Record<string, unknown>) {
-    fetch('/api/claim-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimId: c.id, ifaId, ...patch }),
-    }).catch(err => console.error('[claim-update] failed:', err))
+    try {
+      const res = await fetch('/api/claim-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimId: c.id, ifaId, ...patch }),
+      })
+      if (res.ok) {
+        // Re-fetch parent so EditClaimModal opens with current values
+        // (fixes stale-state when FA card-edits then opens Edit modal).
+        router.refresh()
+      }
+    } catch (err) {
+      console.error('[claim-update] failed:', err)
+    }
   }
 
   function handlePriorityChange(priority: string) {
