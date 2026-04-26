@@ -70,6 +70,14 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+// Helper: format a string-or-number value as 'SGD X,XXX' or '—'.
+function fmtMoney(v: string | number | null | undefined): string {
+  if (v == null || v === '') return '—'
+  const n = typeof v === 'string' ? parseFloat(v) : v
+  if (isNaN(n)) return '—'
+  return `SGD ${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
 // Helper: convert a numeric DB value to a string suitable for an input.
 // numeric(12,2) comes back as a string from postgres ("5000.00").
 function numToStr(v: string | number | null | undefined): string {
@@ -310,6 +318,30 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
                   />
                 </div>
               </div>
+
+              {/* Net payout — derived read-only display: approved - deductible */}
+              {(() => {
+                const a = form.approved_amount
+                const d = form.deductible_amount
+                if (!a) return null
+                const aN = parseFloat(a)
+                if (isNaN(aN)) return null
+                const dN = d ? parseFloat(d) : 0
+                const net = aN - (isNaN(dN) ? 0 : dN)
+                return (
+                  <div>
+                    <label style={labelStyle}>Net payout (auto)</label>
+                    <div style={{
+                      ...inputStyle,
+                      background: '#FBFAF7',
+                      color: '#6B6460',
+                      cursor: 'default',
+                    } as React.CSSProperties}>
+                      {fmtMoney(net)}
+                    </div>
+                  </div>
+                )
+              })()}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
