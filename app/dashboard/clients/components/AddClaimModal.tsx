@@ -1,36 +1,30 @@
 // AddClaimModal — new-claim creation flow.
 //
-// Fourth of the planned modal extractions from ClientDetailPage.tsx.
-// Self-contained: owns form state, doc upload queue, save flow,
-// retains the existing API integration (POST /api/claim-create then
-// POST /api/claim-doc for each queued file).
+// Post-B58: writes to the dedicated `claims` table with claim_type as a
+// real column (no [Type] body prefix).
 //
-// Data-model note: claims are currently stored in the `alerts` table
-// with type='claim', and claim_type (Health/Life/Motor/etc) is stuffed
-// into the body text as a '[Type] body' prefix because alerts has no
-// dedicated column for it. This is preserved exactly as the inline
-// version did. A separate Phase B effort will design a proper claims
-// schema (likely a dedicated `claims` table) before adding fields like
-// claim amount, payout date, insurer, policy linkage. Not addressed
-// in this batch.
+// Post-B59: policy_id is required (per spec — every claim ties to a policy).
+// New fields exposed under a collapsible "More details" section so the
+// common case stays lean: title / policy / type / priority + optional
+// description and metadata.
 //
-// Cream styled: shared <Modal> wrapper, inputStyle/labelStyle/
-// btnPrimary/btnOutline from @/lib/styles, matches HoldingForm and
-// AddClientModal.
+// Cream styled: shared <Modal>, lib/styles primitives.
 
 'use client'
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import Modal from '@/components/Modal'
 import DocUploadField from '@/components/DocUploadField'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
+import type { Policy } from '@/lib/types'
 
 const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Personal Accident', 'Motor', 'Travel', 'Property', 'Other']
 
 interface AddClaimModalProps {
   clientId: string
   ifaId: string
+  policies: Policy[]
   onClose: () => void
   /**
    * Called after the claim and any queued documents have been created
@@ -40,11 +34,28 @@ interface AddClaimModalProps {
   onCreated: (activityText: string) => void
 }
 
-export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: AddClaimModalProps) {
-  const [form, setForm] = useState({ title: '', type: 'Health', priority: 'medium', body: '' })
+const DEFAULT_FORM = {
+  title: '',
+  policy_id: '',
+  type: 'Health',
+  priority: 'medium',
+  body: '',
+  estimated_amount: '',
+  incident_date: '',
+  filed_date: '',
+  insurer_claim_ref: '',
+  insurer_handler_name: '',
+  insurer_handler_contact: '',
+}
+
+export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCreated }: AddClaimModalProps) {
+  const [form, setForm] = useState(DEFAULT_FORM)
   const [files, setFiles] = useState<File[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showMore, setShowMore] = useState(false)
+
+  const noPolicies = policies.length === 0
 
   function set<K extends keyof typeof form>(field: K, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -53,6 +64,7 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
 
   async function handleSave() {
     if (!form.title.trim()) { setError('Title is required'); return }
+    if (!form.policy_id)    { setError('Please select a policy'); return }
     if (!ifaId)             { setError('Session error — please refresh'); return }
 
     setSaving(true)
@@ -64,10 +76,16 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
           clientId,
           ifaId,
           title: form.title,
-          type: 'claim',
-          priority: form.priority,
-          body: form.body,
           claim_type: form.type,
+          priority: form.priority,
+          body: form.body || null,
+          policy_id: form.policy_id,
+          estimated_amount: form.estimated_amount || null,
+          incident_date: form.incident_date || null,
+          filed_date: form.filed_date || null,
+          insurer_claim_ref: form.insurer_claim_ref || null,
+          insurer_handler_name: form.insurer_handler_name || null,
+          insurer_handler_contact: form.insurer_handler_contact || null,
         }),
       })
       if (!res.ok) {
@@ -84,9 +102,6 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
       const newClaimId: string | undefined =
         payload?.claim?.id ?? payload?.id ?? payload?.alert?.id ?? payload?.data?.id
 
-      // If files were queued but we couldn't get the new claim's ID, stop
-      // here and tell the user loudly — silently dropping uploads is the
-      // bug we're fixing.
       if (files.length > 0 && !newClaimId) {
         const keys = Object.keys(payload || {}).join(', ') || 'empty'
         setError(`Claim created but attachments could not be uploaded — server response shape was unexpected (keys: ${keys}). Please close this dialog and use "Edit claim" on the new claim to add documents.`)
@@ -94,7 +109,6 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
         return
       }
 
-      // Upload queued documents sequentially.
       if (newClaimId && files.length > 0) {
         const failures: string[] = []
         for (const file of files) {
@@ -124,6 +138,21 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
   return (
     <Modal title="New claim" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {noPolicies && (
+          <div style={{
+            background: '#FBF7EE',
+            border: '0.5px solid #E8E2DA',
+            borderRadius: 6,
+            padding: '10px 12px',
+            fontSize: 12,
+            color: '#854F0B',
+            lineHeight: 1.5,
+          }}>
+            This client has no policies yet. Add a policy first, then come back to create a claim.
+          </div>
+        )}
+
         <div>
           <label style={labelStyle}>Claim title *</label>
           <input
@@ -132,7 +161,25 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
             onChange={e => set('title', e.target.value)}
             placeholder="e.g. Health claim — clinic visit"
             autoFocus
+            disabled={noPolicies}
           />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Policy *</label>
+          <select
+            style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
+            value={form.policy_id}
+            onChange={e => set('policy_id', e.target.value)}
+            disabled={noPolicies}
+          >
+            <option value="">{noPolicies ? 'No policies available' : 'Select a policy…'}</option>
+            {policies.map(p => {
+              // Display: "Insurer · Type · Product Name" or "Insurer · Type"
+              const label = [p.insurer, p.type, p.product_name].filter(Boolean).join(' · ') || p.id
+              return <option key={p.id} value={p.id}>{label}</option>
+            })}
+          </select>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -142,6 +189,7 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
               style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
               value={form.type}
               onChange={e => set('type', e.target.value)}
+              disabled={noPolicies}
             >
               {CLAIM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -152,6 +200,7 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
               style={{ ...inputStyle, appearance: 'none' } as React.CSSProperties}
               value={form.priority}
               onChange={e => set('priority', e.target.value)}
+              disabled={noPolicies}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -160,15 +209,107 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
           </div>
         </div>
 
-        <div>
-          <label style={labelStyle}>Description</label>
-          <textarea
-            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
-            rows={4}
-            value={form.body}
-            onChange={e => set('body', e.target.value)}
-            placeholder="What happened? Any context that will help track this claim."
-          />
+        {/* Collapsible "More details" — optional fields */}
+        <div style={{ borderTop: '0.5px solid #F1EFE8', paddingTop: 14 }}>
+          <button
+            type="button"
+            onClick={() => setShowMore(s => !s)}
+            disabled={noPolicies}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: noPolicies ? 'not-allowed' : 'pointer',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              color: '#6B6460',
+              fontFamily: 'inherit',
+            }}
+          >
+            {showMore ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            More details (optional)
+          </button>
+
+          {showMore && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+              <div>
+                <label style={labelStyle}>Description</label>
+                <textarea
+                  style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 } as React.CSSProperties}
+                  rows={3}
+                  value={form.body}
+                  onChange={e => set('body', e.target.value)}
+                  placeholder="What happened? Any context that will help track this claim."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Estimated amount (SGD)</label>
+                  <input
+                    style={inputStyle}
+                    type="number"
+                    placeholder="e.g. 1500"
+                    value={form.estimated_amount}
+                    onChange={e => set('estimated_amount', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Insurer claim ref</label>
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. AIA-CLM-2026-0042"
+                    value={form.insurer_claim_ref}
+                    onChange={e => set('insurer_claim_ref', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Incident date</label>
+                  <input
+                    style={inputStyle}
+                    type="date"
+                    value={form.incident_date}
+                    onChange={e => set('incident_date', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Filed date</label>
+                  <input
+                    style={inputStyle}
+                    type="date"
+                    value={form.filed_date}
+                    onChange={e => set('filed_date', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Insurer handler</label>
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. Mary Tan"
+                    value={form.insurer_handler_name}
+                    onChange={e => set('insurer_handler_name', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Handler contact</label>
+                  <input
+                    style={inputStyle}
+                    placeholder="email or phone"
+                    value={form.insurer_handler_contact}
+                    onChange={e => set('insurer_handler_contact', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <DocUploadField
@@ -184,8 +325,14 @@ export default function AddClaimModal({ clientId, ifaId, onClose, onCreated }: A
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={handleSave}
-            disabled={saving}
-            style={{ ...btnPrimary, flex: 1, justifyContent: 'center', opacity: saving ? 0.7 : 1 }}
+            disabled={saving || noPolicies}
+            style={{
+              ...btnPrimary,
+              flex: 1,
+              justifyContent: 'center',
+              opacity: (saving || noPolicies) ? 0.5 : 1,
+              cursor: (saving || noPolicies) ? 'not-allowed' : 'pointer',
+            }}
           >
             <Plus size={14} />
             {saving ? 'Creating…' : 'Create claim'}

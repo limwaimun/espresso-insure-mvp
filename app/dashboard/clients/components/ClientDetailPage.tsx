@@ -710,6 +710,7 @@ export default function ClientDetailPage({
         <AddClaimModal
           clientId={client.id}
           ifaId={resolvedIfaId}
+          policies={policies}
           onClose={() => setShowAddClaim(false)}
           onCreated={(activityText) => {
             setShowAddClaim(false)
