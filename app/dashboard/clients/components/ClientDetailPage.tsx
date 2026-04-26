@@ -379,8 +379,7 @@ export default function ClientDetailPage({
                     <th style={{ width: '6%', borderBottom: '0.5px solid #E8E2DA' }}></th>
                   </tr>
                 </thead>
-                <tbody>
-                  {policies.map(policy => (
+                <tbody>{policies.map(policy => (
                     <PolicyRow
                       key={policy.id}
                       policy={policy}
