@@ -162,7 +162,8 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   })()
 
   const daysOpen = c.filed_date ? daysBetween(new Date(), c.filed_date) : null
-  const daysToResolve = (c.filed_date && c.paid_at) ? daysBetween(c.paid_at, c.filed_date) : null
+  // Days to resolve = closed_at - filed_date (terminal: denied OR paid).
+  const daysToResolve = (c.filed_date && c.closed_at) ? daysBetween(c.closed_at, c.filed_date) : null
 
   const timestampRows = [
     { label: 'Approved', value: c.approved_at },

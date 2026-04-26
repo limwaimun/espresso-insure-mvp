@@ -379,8 +379,11 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
                   set yet. */}
               {(() => {
                 const daysOpen = form.filed_date ? daysBetween(new Date(), form.filed_date) : null
-                const daysToResolve = (form.filed_date && c.paid_at)
-                  ? daysBetween(c.paid_at, form.filed_date)
+                // Days to resolve = closed_at - filed_date. closed_at is auto-
+                // set when the claim transitions to a terminal status (paid OR
+                // denied), so this captures both resolution paths correctly.
+                const daysToResolve = (form.filed_date && c.closed_at)
+                  ? daysBetween(c.closed_at, form.filed_date)
                   : null
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
