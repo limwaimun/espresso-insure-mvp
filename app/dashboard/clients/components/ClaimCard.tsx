@@ -119,9 +119,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   const status = localStatus
   const { bg: statusBg, text: statusFg } = statusColor(status)
 
-  const claimDate = c.created_at
-    ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : '—'
+  const claimDate = formatDate(c.filed_date || c.created_at)
 
   async function saveToServer(patch: Record<string, unknown>) {
     try {

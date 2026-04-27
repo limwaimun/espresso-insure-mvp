@@ -535,7 +535,7 @@ export default function ClientDetailPage({
                     <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Type</th>
                     <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Status</th>
                     <th style={{ width: '14%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Priority</th>
-                    <th style={{ width: '16%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Date</th>
+                    <th style={{ width: '16%', textAlign: 'left', padding: '10px', fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500 }}>Filed</th>
                     <th style={{ width: '6%' }}></th>
                   </tr>
                 </thead>
