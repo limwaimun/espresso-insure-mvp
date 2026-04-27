@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
+import { validateClaimDateSequence } from '@/lib/dates'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     // ── Read current state (so we know which timestamps to auto-set) ─────
     const { data: existing, error: readErr } = await supabase
       .from('claims')
-      .select('id, status, approved_at, denied_at, paid_at, closed_at')
+      .select('id, status, incident_date, filed_date, approved_at, denied_at, paid_at, closed_at')
       .eq('id', claimId)
       .eq('ifa_id', userId)
       .single()
@@ -199,6 +200,29 @@ export async function POST(request: NextRequest) {
 
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ success: true, noop: true })
+    }
+
+    // ── B64c-2b: validate final date sequencing (server backstop) ────────
+    // Runs after all patch-building so we check the merged final state
+    // (existing values + patch overrides). Skips when no date field is
+    // in patch — but note the form sends all fields on every save, so
+    // in practice this fires whenever EditClaimModal saves a claim.
+    // For rows with pre-existing illogical dates, this means edits get
+    // blocked until dates are fixed (intentional — forces data hygiene).
+    const dateKeys = ['incident_date', 'filed_date', 'approved_at', 'denied_at', 'paid_at'] as const
+    const dateFieldsTouched = dateKeys.some(k => k in patch)
+    if (dateFieldsTouched) {
+      const merged = {
+        incident_date: 'incident_date' in patch ? (patch.incident_date as string | null) : existing.incident_date,
+        filed_date:    'filed_date'    in patch ? (patch.filed_date    as string | null) : existing.filed_date,
+        approved_at:   'approved_at'   in patch ? (patch.approved_at   as string | null) : existing.approved_at,
+        denied_at:     'denied_at'     in patch ? (patch.denied_at     as string | null) : existing.denied_at,
+        paid_at:       'paid_at'       in patch ? (patch.paid_at       as string | null) : existing.paid_at,
+      }
+      const v = validateClaimDateSequence(merged)
+      if (!v.ok) {
+        return NextResponse.json({ error: v.error }, { status: 400 })
+      }
     }
 
     // ── Update, scoped to verified userId ────────────────────────────────
