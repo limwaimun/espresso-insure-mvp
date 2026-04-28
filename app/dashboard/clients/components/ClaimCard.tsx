@@ -163,12 +163,27 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   // Days to resolve = closed_at - filed_date (terminal: denied OR paid).
   const daysToResolve = (c.filed_date && c.closed_at) ? daysBetween(c.closed_at, c.filed_date) : null
 
+  // B65: timestamps are tagged stale or fresh based on current status,
+  // so the render can de-emphasize stale ones. A timestamp is fresh if
+  // it reflects the row's current state (approved=approved_at fresh;
+  // paid=approved_at+paid_at+closed_at fresh; denied=denied_at+closed_at
+  // fresh). Anything else means the row passed through that state but
+  // has since transitioned out — keep visible for audit, just dim.
+  const FRESH_BY_STATUS: Record<string, Set<string>> = {
+    'open':        new Set(),
+    'in_progress': new Set(),
+    'approved':    new Set(['Approved']),
+    'denied':      new Set(['Denied', 'Closed']),
+    'paid':        new Set(['Approved', 'Paid', 'Closed']),
+  }
+  const freshLabels = FRESH_BY_STATUS[status] ?? new Set<string>()
+
   const timestampRows = [
     { label: 'Approved', value: c.approved_at },
     { label: 'Denied', value: c.denied_at },
     { label: 'Paid', value: c.paid_at },
     { label: 'Closed', value: c.closed_at },
-  ].filter(r => r.value)
+  ].filter(r => r.value).map(r => ({ ...r, stale: !freshLabels.has(r.label) }))
 
   const sectionHeaderStyle: React.CSSProperties = {
     fontSize: 10,
@@ -264,10 +279,11 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
               {/* Body (description) — first since it's the most-referenced text */}
+              {/* B65: color #6B6460 -> #1A1410 to match KV value color in adjacent sections */}
               {c.body && (
                 <div>
                   <div style={sectionHeaderStyle}>Description</div>
-                  <div style={{ fontSize: 13, color: '#6B6460', lineHeight: 1.6 }}>
+                  <div style={{ fontSize: 13, color: '#1A1410', lineHeight: 1.6 }}>
                     {c.body}
                   </div>
                 </div>
@@ -295,14 +311,33 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
                 </div>
               </div>
 
-              {/* LIFECYCLE */}
+              {/* LIFECYCLE — B65 #C: status-conditional cells. Always shows */}
+              {/* incident + filed + days metrics. Status-conditional adds: */}
+              {/*   approved -> Approved date */}
+              {/*   denied   -> Denied date   */}
+              {/*   paid     -> Approved date + Paid date */}
+              {/* Grid wraps automatically (4-col -> 4 or 6 cells, two rows for 6). */}
               <div>
                 <div style={sectionHeaderStyle}>Lifecycle</div>
                 <div style={gridStyle}>
-                  <KV label="Incident date" value={c.incident_date ? formatDate(c.incident_date) : '—'} />
-                  <KV label="Filed date" value={c.filed_date ? formatDate(c.filed_date) : '—'} />
-                  <KV label="Days open" value={daysOpen != null ? `${daysOpen} days` : '—'} />
-                  <KV label="Days to resolve" value={daysToResolve != null ? `${daysToResolve} days` : '—'} />
+                  {(() => {
+                    const lifecycleCells: Array<{ label: string; value: string }> = [
+                      { label: 'Incident date', value: c.incident_date ? formatDate(c.incident_date) : '—' },
+                      { label: 'Filed date',    value: c.filed_date    ? formatDate(c.filed_date)    : '—' },
+                    ]
+                    if (status === 'approved' || status === 'paid') {
+                      lifecycleCells.push({ label: 'Approved', value: c.approved_at ? formatDate(c.approved_at) : '—' })
+                    }
+                    if (status === 'denied') {
+                      lifecycleCells.push({ label: 'Denied', value: c.denied_at ? formatDate(c.denied_at) : '—' })
+                    }
+                    if (status === 'paid') {
+                      lifecycleCells.push({ label: 'Paid', value: c.paid_at ? formatDate(c.paid_at) : '—' })
+                    }
+                    lifecycleCells.push({ label: 'Days open',       value: daysOpen      != null ? `${daysOpen} days`      : '—' })
+                    lifecycleCells.push({ label: 'Days to resolve', value: daysToResolve != null ? `${daysToResolve} days` : '—' })
+                    return lifecycleCells.map(cell => <KV key={cell.label} label={cell.label} value={cell.value} />)
+                  })()}
                 </div>
               </div>
 
@@ -317,12 +352,15 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
               )}
 
               {/* STATUS HISTORY — only if any timestamps set */}
+              {/* B65: stale rows (transitions row passed through but not in current state) */}
+              {/* render in muted #9B9088 instead of secondary #6B6460. Audit trail kept */}
+              {/* fully visible, just visually de-emphasized so current state stands out. */}
               {timestampRows.length > 0 && (
                 <div>
                   <div style={sectionHeaderStyle}>Status history</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {timestampRows.map(r => (
-                      <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6B6460' }}>
+                      <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: r.stale ? '#9B9088' : '#6B6460' }}>
                         <span>{r.label}</span>
                         <span style={{ fontFamily: 'DM Mono, monospace' }}>{formatDate(r.value!)}</span>
                       </div>
