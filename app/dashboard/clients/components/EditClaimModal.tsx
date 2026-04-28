@@ -26,7 +26,7 @@ import { Save, ChevronDown, ChevronRight } from 'lucide-react'
 import Modal from '@/components/Modal'
 import DocList from '@/components/DocList'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
-import { formatDate } from '@/lib/dates'
+import { formatDate, validateClaimDateSequence } from '@/lib/dates'
 import type { Alert } from '@/lib/types'
 
 const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Personal Accident', 'Motor', 'Travel', 'Property', 'Other']
@@ -153,10 +153,19 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
   async function handleSave() {
     if (!form.title.trim()) { setError('Title is required'); return }
     if (!ifaId)             { setError('Session error — please refresh'); return }
-    if (form.incident_date && form.filed_date && form.incident_date > form.filed_date) {
-      setError('Incident date cannot be later than filed date')
-      return
-    }
+    // B64c-2c: validate full claim date sequence (8 pairwise rules) via
+    // shared helper. Mirrors the save payload's status-conditional *_at
+    // sending so we don't false-positive on form's 'today' defaults for
+    // non-relevant statuses. Server-side backstop in /api/claim-update
+    // catches any cases the form skips (e.g. stale DB values not in form).
+    const dateCheck = validateClaimDateSequence({
+      incident_date: form.incident_date || null,
+      filed_date:    form.filed_date || null,
+      approved_at:   (form.status === 'approved' || form.status === 'paid') ? (form.approved_at || null) : null,
+      denied_at:     form.status === 'denied' ? (form.denied_at || null) : null,
+      paid_at:       form.status === 'paid' ? (form.paid_at || null) : null,
+    })
+    if (!dateCheck.ok) { setError(dateCheck.error); return }
 
     setSaving(true)
     try {
