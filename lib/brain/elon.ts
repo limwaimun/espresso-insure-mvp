@@ -2,9 +2,6 @@
 
 import { sendTelegram, escapeHtml } from "./telegram";
 
-const ELON_PREAMBLE =
-  "🛑 DO NOT check files, list dirs, or run commands. Reply 'Ready' and wait silently. Act only when I send 'GO'.\n\n";
-
 export function buildElonMessage(order: any): string {
   const steps: string[] = Array.isArray(order?.spec?.steps) ? order.spec.steps : [];
   const verification: string = order?.spec?.verification ?? "(none specified)";
@@ -14,7 +11,6 @@ export function buildElonMessage(order: any): string {
   const completeUrl = `${baseUrl}/api/brain/complete`;
 
   const parts: string[] = [
-    ELON_PREAMBLE,
     `Task: ${order.title}`,
     "",
     `Intent: ${order.intent}`,
