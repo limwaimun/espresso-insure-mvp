@@ -272,11 +272,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("brain_tick error:", err);
-    await supabase
-      .from("execution_log")
-      .insert({ action: "brain_tick", success: false, error_message: err?.message ?? "unknown" })
-      .then(() => {})
-      .catch(() => {});
+    try {
+      await supabase
+        .from("execution_log")
+        .insert({ action: "brain_tick", success: false, error_message: err?.message ?? "unknown" });
+    } catch {}
     return NextResponse.json({ ok: false, error: err?.message ?? "unknown" }, { status: 500 });
   }
 }
