@@ -7,14 +7,6 @@
     {
       "path": "/api/brain/mirror",
       "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/brain/tick",
-      "schedule": "15 * * * *"
-    },
-    {
-      "path": "/api/brain/verify",
-      "schedule": "30 * * * *"
     }
   ]
 }
