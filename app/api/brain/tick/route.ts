@@ -220,18 +220,83 @@ export async function POST(req: NextRequest) {
       "Decide what to do. JSON only.",
     ].join("\n");
 
-    const response = await anthropic.messages.create({
-      model: BRAIN_MODEL,
-      max_tokens: 4096,
-      system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
-      messages: [{ role: "user", content: userMessage }],
-    });
+    let text = "";
+    let toolCallCount = 0;
+    const toolCallLog: Array<{ name: string; input: any; result_size: number }> = [];
 
-    const text = response.content
-      .filter((b: any) => b.type === "text")
-      .map((b: any) => b.text)
-      .join("\n")
-      .trim();
+    if (BRAIN_USE_TOOLS) {
+      // Tool-use loop: Brain can call list_dir / read_file / grep_repo before composing.
+      const messages: any[] = [{ role: "user", content: userMessage }];
+
+      while (true) {
+        if (toolCallCount >= MAX_TOOL_CALLS_PER_TICK) {
+          // Force final response — strip tools so Claude must emit text.
+          const final = await anthropic.messages.create({
+            model: BRAIN_MODEL,
+            max_tokens: 4096,
+            system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream) +
+              "\n\n[Tool budget exhausted. Output your final JSON answer now using only what you have.]",
+            messages,
+          });
+          text = final.content
+            .filter((b: any) => b.type === "text")
+            .map((b: any) => b.text)
+            .join("\n")
+            .trim();
+          break;
+        }
+
+        const response: any = await anthropic.messages.create({
+          model: BRAIN_MODEL,
+          max_tokens: 4096,
+          system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
+          tools: BRAIN_TOOLS as any,
+          messages,
+        });
+
+        const stopReason = response.stop_reason;
+        const toolUseBlocks = response.content.filter((b: any) => b.type === "tool_use");
+
+        if (stopReason !== "tool_use" || toolUseBlocks.length === 0) {
+          // No more tool calls — this is the final response.
+          text = response.content
+            .filter((b: any) => b.type === "text")
+            .map((b: any) => b.text)
+            .join("\n")
+            .trim();
+          break;
+        }
+
+        // Append assistant turn (with tool_use blocks) and execute each tool.
+        messages.push({ role: "assistant", content: response.content });
+
+        const toolResults: any[] = [];
+        for (const block of toolUseBlocks) {
+          const result = await executeBrainTool(block.name, block.input);
+          toolCallCount++;
+          toolCallLog.push({ name: block.name, input: block.input, result_size: result.length });
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: block.id,
+            content: result,
+          });
+        }
+        messages.push({ role: "user", content: toolResults });
+      }
+    } else {
+      // Legacy single-call path (current production behavior).
+      const response = await anthropic.messages.create({
+        model: BRAIN_MODEL,
+        max_tokens: 4096,
+        system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
+        messages: [{ role: "user", content: userMessage }],
+      });
+      text = response.content
+        .filter((b: any) => b.type === "text")
+        .map((b: any) => b.text)
+        .join("\n")
+        .trim();
+    }
     const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
 
     let parsed: any;
@@ -271,6 +336,8 @@ export async function POST(req: NextRequest) {
           workstream: activeWorkstream,
           tick: tick_count,
           asked_question: r.id,
+          tool_calls: toolCallCount,
+          tool_log: toolCallLog,
         }),
       });
       return NextResponse.json({
