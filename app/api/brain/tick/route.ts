@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
       while (true) {
         if (toolCallCount >= MAX_TOOL_CALLS_PER_TICK) {
           // Force final response — strip tools so Claude must emit text.
-          const final = await anthropic.messages.create({
+          const final: any = await anthropic.messages.create({
             model: BRAIN_MODEL,
             max_tokens: 8192,
             system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream) +
@@ -308,11 +308,19 @@ export async function POST(req: NextRequest) {
             tool_choice: { type: "tool", name: "propose_work" } as any,
             messages,
           });
-          text = final.content
-            .filter((b: any) => b.type === "text")
-            .map((b: any) => b.text)
-            .join("\n")
-            .trim();
+          // tool_choice forces propose_work — extract its input.
+          const finalProposeBlock = final.content.find((b: any) => b.type === "tool_use" && b.name === "propose_work");
+          if (finalProposeBlock) {
+            toolCallLog.push({ name: "propose_work", input: finalProposeBlock.input, result_size: 0 });
+            decisionFromTool = finalProposeBlock.input;
+          } else {
+            // Fallback — should not happen with forced tool_choice but handle gracefully.
+            text = final.content
+              .filter((b: any) => b.type === "text")
+              .map((b: any) => b.text)
+              .join("\n")
+              .trim();
+          }
           break;
         }
 
