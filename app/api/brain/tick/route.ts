@@ -67,6 +67,59 @@ const BRAIN_TOOLS = [
       required: ["pattern"],
     },
   },
+  {
+    name: "propose_work",
+    description: "Emit your final decision. Call this tool EXACTLY ONCE when you are done exploring the codebase. Do not call list_dir/read_file/grep_repo after calling this. Do not narrate before or after calling this. Choose decision_type: 'orders' to propose 1-3 work orders, 'question' to ask Wayne for clarification, or 'no_action' to skip this tick.",
+    input_schema: {
+      type: "object",
+      properties: {
+        decision_type: {
+          type: "string",
+          enum: ["orders", "question", "no_action"],
+          description: "What kind of decision you are making.",
+        },
+        orders: {
+          type: "array",
+          description: "Required when decision_type='orders'. 1-3 work orders.",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              intent: { type: "string" },
+              rationale: { type: "string" },
+              workstream: { type: "string" },
+              files_to_change: { type: "array", items: { type: "string" } },
+              risk_level: { type: "string", enum: ["low", "medium", "high"] },
+              category: {
+                type: "string",
+                enum: ["copy", "observability", "security_observability", "feature", "security", "bug", "infra", "data"],
+              },
+              spec: {
+                type: "object",
+                properties: {
+                  steps: { type: "array", items: { type: "string" } },
+                  verification: { type: "string" },
+                },
+                required: ["steps", "verification"],
+              },
+            },
+            required: ["title", "intent", "risk_level", "category"],
+          },
+        },
+        question: {
+          type: "object",
+          description: "Required when decision_type='question'.",
+          properties: {
+            question: { type: "string" },
+            options: { type: "array", items: { type: "string" } },
+            context: { type: "string" },
+          },
+          required: ["question", "options"],
+        },
+      },
+      required: ["decision_type"],
+    },
+  },
 ];
 
 // Execute a tool call by hitting the /api/brain/repo/* endpoint.
@@ -131,15 +184,18 @@ Next.js (Vercel), Supabase, Stripe, Resend, Anthropic.
 3. Small, reversible changes. One order = one focused change.
 
 # OUTPUT FORMAT (CRITICAL)
-You may use tools (list_dir, read_file, grep_repo) freely to explore code. Do NOT narrate your reasoning between tool calls. Do NOT write commentary like "let me check X" or "I see that Y". Just call tools.
+You have FOUR tools: list_dir, read_file, grep_repo, propose_work.
 
-When you are ready to respond, output ONLY one of these two forms, with NO prose, NO preamble, NO trailing commentary:
+Use list_dir / read_file / grep_repo to explore the codebase as needed. Do NOT narrate between exploration tool calls — just call tools silently.
 
-(A) An array of work orders: [{"title":...,"intent":...,...}, ...]
-(B) A question object: {"question":"...","options":[...],"context":"..."}
-(C) An empty array: []
+When you are ready to deliver your decision, you MUST call the propose_work tool. This is the ONLY way to emit your decision. Do NOT write JSON in text — call propose_work instead. Do NOT write any commentary in text at all. After calling propose_work, stop.
 
-Anything else (sentences, code blocks not strictly enclosing the JSON, "the answer is...") will fail downstream parsing. Be ruthlessly terse.
+propose_work has three modes:
+- decision_type='orders' with 1-3 work orders
+- decision_type='question' with a clarification question for Wayne
+- decision_type='no_action' to skip this tick
+
+Calling propose_work is mandatory. The tick is incomplete without it.
 4. Cap output at 3 work orders.
 5. Every order needs a Verifier-checkable verification step.
 6. Token-drain protection: if you see security risk to Anthropic spend (exposed agent endpoints, missing rate limits), propose security_observability work (logging/metrics, low risk) OR security work (real mitigations, high risk).
@@ -233,6 +289,7 @@ export async function POST(req: NextRequest) {
 
     let text = "";
     let toolCallCount = 0;
+    let decisionFromTool: any = null;
     const toolCallLog: Array<{ name: string; input: any; result_size: number }> = [];
 
     if (BRAIN_USE_TOOLS) {
@@ -278,7 +335,15 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        // Append assistant turn (with tool_use blocks) and execute each tool.
+        // Check for propose_work — terminal decision tool.
+        const proposeBlock = toolUseBlocks.find((b: any) => b.name === "propose_work");
+        if (proposeBlock) {
+          toolCallLog.push({ name: "propose_work", input: proposeBlock.input, result_size: 0 });
+          decisionFromTool = proposeBlock.input;
+          break;
+        }
+
+        // Append assistant turn (with tool_use blocks) and execute each non-terminal tool.
         messages.push({ role: "assistant", content: response.content });
 
         const toolResults: any[] = [];
@@ -308,22 +373,42 @@ export async function POST(req: NextRequest) {
         .join("\n")
         .trim();
     }
-    const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
-
     let parsed: any;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e: any) {
+    if (decisionFromTool) {
+      // Brain emitted via propose_work — translate the tool input into the legacy parsed shape.
+      const dt = decisionFromTool.decision_type;
+      if (dt === "orders") {
+        parsed = decisionFromTool.orders ?? [];
+      } else if (dt === "question") {
+        parsed = decisionFromTool.question;
+      } else {
+        parsed = []; // no_action
+      }
+    } else if (BRAIN_USE_TOOLS) {
+      // Tool-use path but Brain never called propose_work. Log and treat as no_action.
       await supabase.from("execution_log").insert({
-        action: "brain_tick_parse_fail",
+        action: "brain_tick_no_decision",
         success: false,
-        error_message: `parse failed: ${e.message}`,
+        error_message: "Brain finished without calling propose_work",
         raw_output: text.slice(0, 5000),
       });
-      return NextResponse.json(
-        { ok: false, error: "brain output unparseable", raw: text.slice(0, 500) },
-        { status: 500 }
-      );
+      parsed = [];
+    } else {
+      const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (e: any) {
+        await supabase.from("execution_log").insert({
+          action: "brain_tick_parse_fail",
+          success: false,
+          error_message: `parse failed: ${e.message}`,
+          raw_output: text.slice(0, 5000),
+        });
+        return NextResponse.json(
+          { ok: false, error: "brain output unparseable", raw: text.slice(0, 500) },
+          { status: 500 }
+        );
+      }
     }
 
     // Question shape detection — single object with question + options.
