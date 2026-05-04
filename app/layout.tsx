@@ -22,8 +22,37 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://espresso.insure'),
   title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
-  description: 'Give every solo agent the back-office of a top-tier brokerage. AI-powered insurance platform for IFAs across Southeast Asia.',
+  description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+  applicationName: 'Espresso',
+  keywords: ['IFA', 'financial adviser', 'insurance', 'Singapore', 'WhatsApp', 'AI assistant', 'back-office', 'renewals', 'claims'],
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://espresso.insure',
+    siteName: 'Espresso',
+    title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
+    description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+    locale: 'en_SG',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
+    description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
