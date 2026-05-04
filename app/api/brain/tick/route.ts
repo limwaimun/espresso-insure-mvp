@@ -303,7 +303,9 @@ export async function POST(req: NextRequest) {
             model: BRAIN_MODEL,
             max_tokens: 8192,
             system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream) +
-              "\n\n[Tool budget exhausted. Output your final JSON answer now using only what you have. NO prose. JSON only.]",
+              "\n\n[Tool budget exhausted. Call propose_work NOW with whatever decision you can make.]",
+            tools: BRAIN_TOOLS as any,
+            tool_choice: { type: "tool", name: "propose_work" } as any,
             messages,
           });
           text = final.content
@@ -319,6 +321,7 @@ export async function POST(req: NextRequest) {
           max_tokens: 8192,
           system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
           tools: BRAIN_TOOLS as any,
+          tool_choice: { type: "any" } as any,
           messages,
         });
 
@@ -502,6 +505,8 @@ export async function POST(req: NextRequest) {
         orders_inserted: inserted.length,
         auto_dispatched: dispatchedCount,
         notified: notifiedCount,
+        tool_calls: toolCallCount,
+        tool_log: toolCallLog,
       }),
     });
 
