@@ -205,20 +205,14 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                     <KV label="Dispatched" value={o.dispatched_at ? new Date(o.dispatched_at).toLocaleString('en-SG') : '—'} />
                     <KV label="Completed" value={o.completed_at ? new Date(o.completed_at).toLocaleString('en-SG') : '—'} />
                     <KV label="Pre-SHA" value={shortSha(o.pre_dispatch_commit_sha)} mono />
-                    <KV label="Post-SHA" value={shortSha(o.post_completion_commit_sha)} mono />
+                    <KV label="Post-SHA" value={shortSha(o.post_dispatch_commit_sha)} mono />
                   </div>
-                  {o.deploy_url && (
-                    <div style={{ marginTop: 12 }}>
-                      <a href={o.deploy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#BA7517', fontSize: 12, textDecoration: 'none' }}>
-                        View deploy →
-                      </a>
-                    </div>
-                  )}
-                  {o.error_message && (
-                    <div style={{ marginTop: 12, padding: '10px 12px', background: '#FCEBEB', border: '1px solid #F7C1C1', borderRadius: 6, color: '#A32D2D', fontSize: 12, fontFamily: 'DM Mono, monospace' }}>
-                      {o.error_message}
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    {o.auto_approved && pill('auto-approved', { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' })}
+                    {o.verification_result?.verified === true && pill('verified', { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' })}
+                    {o.verification_result?.verified === false && pill('verify failed', { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' })}
+                    {o.reverted_at && pill('reverted', { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' })}
+                  </div>
                 </div>
               )}
             </div>
