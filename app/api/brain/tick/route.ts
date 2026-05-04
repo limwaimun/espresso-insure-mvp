@@ -129,6 +129,17 @@ Next.js (Vercel), Supabase, Stripe, Resend, Anthropic.
 1. MAS-supervised. Anything touching policies, holdings, claims, billing, PII, or auth MUST be risk_level='high'. Never propose this as 'low'.
 2. Verify behavior against code before describing features.
 3. Small, reversible changes. One order = one focused change.
+
+# OUTPUT FORMAT (CRITICAL)
+You may use tools (list_dir, read_file, grep_repo) freely to explore code. Do NOT narrate your reasoning between tool calls. Do NOT write commentary like "let me check X" or "I see that Y". Just call tools.
+
+When you are ready to respond, output ONLY one of these two forms, with NO prose, NO preamble, NO trailing commentary:
+
+(A) An array of work orders: [{"title":...,"intent":...,...}, ...]
+(B) A question object: {"question":"...","options":[...],"context":"..."}
+(C) An empty array: []
+
+Anything else (sentences, code blocks not strictly enclosing the JSON, "the answer is...") will fail downstream parsing. Be ruthlessly terse.
 4. Cap output at 3 work orders.
 5. Every order needs a Verifier-checkable verification step.
 6. Token-drain protection: if you see security risk to Anthropic spend (exposed agent endpoints, missing rate limits), propose security_observability work (logging/metrics, low risk) OR security work (real mitigations, high risk).
@@ -233,9 +244,9 @@ export async function POST(req: NextRequest) {
           // Force final response — strip tools so Claude must emit text.
           const final = await anthropic.messages.create({
             model: BRAIN_MODEL,
-            max_tokens: 4096,
+            max_tokens: 8192,
             system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream) +
-              "\n\n[Tool budget exhausted. Output your final JSON answer now using only what you have.]",
+              "\n\n[Tool budget exhausted. Output your final JSON answer now using only what you have. NO prose. JSON only.]",
             messages,
           });
           text = final.content
@@ -248,7 +259,7 @@ export async function POST(req: NextRequest) {
 
         const response: any = await anthropic.messages.create({
           model: BRAIN_MODEL,
-          max_tokens: 4096,
+          max_tokens: 8192,
           system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
           tools: BRAIN_TOOLS as any,
           messages,
