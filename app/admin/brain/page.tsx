@@ -20,8 +20,6 @@ export interface WorkOrder {
   dispatched_at: string | null
   completed_at: string | null
   verified_at: string | null
-  pre_dispatch_commit_sha: string | null
-  post_dispatch_commit_sha: string | null
   auto_approved: boolean
   verification_result: any
   reverted_at: string | null
@@ -37,7 +35,7 @@ export default async function BrainAdminPage() {
 
   const { data, error } = await supabase
     .from('work_orders')
-    .select('id, title, intent, rationale, files_to_change, risk_level, category, workstream, spec, status, created_at, dispatched_at, completed_at, verified_at, pre_dispatch_commit_sha, post_dispatch_commit_sha, auto_approved, verification_result, reverted_at')
+    .select('id, title, intent, rationale, files_to_change, risk_level, category, workstream, spec, status, created_at, dispatched_at, completed_at, verified_at, auto_approved, verification_result, reverted_at')
     .order('created_at', { ascending: false })
     .limit(200)
 

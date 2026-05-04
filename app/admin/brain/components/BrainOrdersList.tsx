@@ -48,11 +48,6 @@ function relativeTime(iso: string | null): string {
   return new Date(iso).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })
 }
 
-function shortSha(sha: string | null): string {
-  if (!sha) return '—'
-  return sha.slice(0, 7)
-}
-
 const ACTIVE_STATUSES = new Set(['proposed', 'dispatched'])
 const DONE_STATUSES = new Set(['done', 'verified'])
 const FAILED_STATUSES = new Set(['failed', 'blocked', 'reverted', 'rejected'])
@@ -204,8 +199,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, marginTop: 12 }}>
                     <KV label="Dispatched" value={o.dispatched_at ? new Date(o.dispatched_at).toLocaleString('en-SG') : '—'} />
                     <KV label="Completed" value={o.completed_at ? new Date(o.completed_at).toLocaleString('en-SG') : '—'} />
-                    <KV label="Pre-SHA" value={shortSha(o.pre_dispatch_commit_sha)} mono />
-                    <KV label="Post-SHA" value={shortSha(o.post_dispatch_commit_sha)} mono />
+                    <KV label="Verified" value={o.verified_at ? new Date(o.verified_at).toLocaleString('en-SG') : '—'} />
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                     {o.auto_approved && pill('auto-approved', { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' })}

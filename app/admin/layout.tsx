@@ -32,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: '/admin/maya', label: 'Maya Playground', icon: '🤖' },
             { href: '/admin/library', label: 'Library & Atlas', icon: '📚' },
             { href: '/admin/agents', label: 'Agents', icon: '⚡' },
+            { href: '/admin/brain', label: 'Brain Loop', icon: '🧠' },
             { href: '/admin/accounts', label: 'FA Accounts', icon: '👥' },
             { href: '/dashboard', label: '← FA Dashboard', icon: '↩' },
           ].map(item => (
