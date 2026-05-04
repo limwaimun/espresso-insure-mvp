@@ -11,24 +11,43 @@ interface Claim {
   id: string
   title: string
   body: string
-  resolved: boolean
+  status: 'open' | 'in_progress' | 'approved' | 'denied' | 'paid'
   priority: 'high' | 'medium' | 'info'
+  claim_type: string
   created_at: string
   client_id: string
   clients: { name: string; company: string | null; whatsapp: string | null } | null
 }
 
-interface Client { id: string; name: string; company: string | null }
-
-const STATUS_STYLE = {
+const STATUS_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   urgent:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
-  resolved: { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
+  approved: { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
+  paid:     { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
+  denied:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
   open:     { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
+  in_progress: { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
 }
 const PRIORITY_STYLE = {
   high:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
   medium: { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
   info:   { bg: '#E6F1FB', color: '#185FA5', border: '#B5D4F4' },
+}
+
+function statusLabel(s: string): string {
+  switch (s) {
+    case 'open': return 'Open'
+    case 'in_progress': return 'In progress'
+    case 'approved': return 'Approved'
+    case 'paid': return 'Paid'
+    case 'denied': return 'Denied'
+    default: return s
+  }
+}
+
+function statusStyle(s: string) {
+  if (s === 'approved' || s === 'paid') return STATUS_STYLE.approved
+  if (s === 'denied') return STATUS_STYLE.denied
+  return STATUS_STYLE.open
 }
 
 const pill = (label: string, s: { bg: string; color: string; border: string }) => (
@@ -40,51 +59,24 @@ const pill = (label: string, s: { bg: string; color: string; border: string }) =
 export default function ClaimsPage() {
   const supabase = createClient()
   const [claims, setClaims] = useState<Claim[]>([])
-  const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
-  const [showNew, setShowNew] = useState(false)
   const [mayaModal, setMayaModal] = useState<{ name: string; title: string; wa: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
-  const [newForm, setNewForm] = useState({ client_id: '', title: '', body: '', priority: 'medium' })
-  const [saving, setSaving] = useState(false)
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
 
   useEffect(() => {
     load()
-    supabase.from('clients').select('id, name, company').order('name').then(({ data }) => setClients(data || []))
   }, [])
 
   async function load() {
     const { data } = await supabase
-      .from('alerts')
-      .select('id, title, body, resolved, priority, created_at, client_id, clients(name, company, whatsapp)')
+      .from('claims')
+      .select('id, title, body, status, priority, claim_type, created_at, client_id, clients(name, company, whatsapp)')
       .order('created_at', { ascending: false })
     setClaims((data || []) as any)
     setLoading(false)
-  }
-
-  async function createClaim() {
-    if (!newForm.client_id || !newForm.title) return
-    setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-    const { error } = await supabase.from('alerts').insert({
-      client_id: newForm.client_id,
-      ifa_id: user.id,
-      title: newForm.title,
-      body: newForm.body,
-      priority: newForm.priority,
-      resolved: false,
-      type: 'claim',
-    })
-    if (!error) {
-      setNewForm({ client_id: '', title: '', body: '', priority: 'medium' })
-      setShowNew(false)
-      load()
-    }
-    setSaving(false)
   }
 
   function openMayaModal(claim: Claim) {
@@ -102,25 +94,21 @@ export default function ClaimsPage() {
   }
 
   const totalClaims = claims.length
-  const openClaims = claims.filter(c => !c.resolved).length
-  const resolvedClaims = claims.filter(c => c.resolved).length
-  const highPriority = claims.filter(c => c.priority === 'high' && !c.resolved).length
+  const openClaims = claims.filter(c => c.status === 'open' || c.status === 'in_progress').length
+  const resolvedClaims = claims.filter(c => c.status === 'approved' || c.status === 'paid' || c.status === 'denied').length
+  const highPriority = claims.filter(c => c.priority === 'high' && (c.status === 'open' || c.status === 'in_progress')).length
 
   const filtered = claims.filter(c => {
     const client = c.clients as any
     const q = search.toLowerCase()
     if (q && !c.title?.toLowerCase().includes(q) && !client?.name?.toLowerCase().includes(q)) return false
-    if (filter === 'open') return !c.resolved
-    if (filter === 'resolved') return c.resolved
-    if (filter === 'high') return c.priority === 'high' && !c.resolved
+    if (filter === 'open') return c.status === 'open' || c.status === 'in_progress'
+    if (filter === 'resolved') return c.status === 'approved' || c.status === 'paid' || c.status === 'denied'
+    if (filter === 'high') return c.priority === 'high' && (c.status === 'open' || c.status === 'in_progress')
     return true
   })
 
   const daysAgo = (d: string) => { const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000); return days === 0 ? 'Today' : `${days}d ago` }
-
-
-
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' }
 
   return (
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
@@ -128,50 +116,10 @@ export default function ClaimsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Claims</h1>
-        <button onClick={() => setShowNew(true)} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+        <Link href="/dashboard/clients" style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500, textDecoration: 'none', display: 'inline-block' }}>
           + New claim
-        </button>
+        </Link>
       </div>
-
-      {/* New claim modal */}
-      {showNew && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: 12, padding: 28, width: 480, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 18, fontWeight: 500, color: '#1A1410', margin: 0 }}>New claim</h2>
-              <button onClick={() => setShowNew(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 20, color: '#5F5A57' }}>✕</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Client *</label>
-                <select value={newForm.client_id} onChange={e => setNewForm(p => ({ ...p, client_id: e.target.value }))} style={inputStyle}>
-                  <option value="">Select client…</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ''}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Title *</label>
-                <input value={newForm.title} onChange={e => setNewForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Health claim — clinic visit" style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Details</label>
-                <textarea value={newForm.body} onChange={e => setNewForm(p => ({ ...p, body: e.target.value }))} placeholder="Claim details, amount, insurer reference…" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-              </div>
-              <div>
-                <label style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Priority</label>
-                <select value={newForm.priority} onChange={e => setNewForm(p => ({ ...p, priority: e.target.value }))} style={inputStyle}>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="info">Info</option>
-                </select>
-              </div>
-              <button onClick={createClaim} disabled={saving || !newForm.client_id || !newForm.title} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '10px 0', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#FFFFFF', fontWeight: 500, opacity: saving || !newForm.client_id || !newForm.title ? 0.6 : 1 }}>
-                {saving ? 'Saving…' : 'Create claim'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Maya follow-up modal */}
       {mayaModal && (
@@ -241,8 +189,8 @@ export default function ClaimsPage() {
           <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>No claims found</div>
         ) : filtered.map((claim, i) => {
           const client = claim.clients as any
-          const statusS = claim.resolved ? STATUS_STYLE.resolved : claim.priority === 'high' ? STATUS_STYLE.urgent : STATUS_STYLE.open
-          const statusLabel = claim.resolved ? 'Resolved' : claim.priority === 'high' ? 'Urgent' : 'Open'
+          const sLabel = statusLabel(claim.status)
+          const sStyle = statusStyle(claim.status)
           const priorityS = PRIORITY_STYLE[claim.priority] || PRIORITY_STYLE.info
           return (
             <div key={claim.id} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 200px', padding: '14px 20px', borderBottom: expandedClaim !== claim.id && i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'start' }}>
@@ -254,7 +202,7 @@ export default function ClaimsPage() {
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', marginBottom: 3 }}>{claim.title}</div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }}>{claim.body}</div>
               </div>
-              <div>{pill(statusLabel, statusS)}</div>
+              <div>{pill(sLabel, sStyle)}</div>
               <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityS)}</div>
               <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{daysAgo(claim.created_at)}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
