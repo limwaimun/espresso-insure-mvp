@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import DocList from '@/components/DocList'
+import NewClaimModal from './components/NewClaimModal'
 import { createClient } from '@/lib/supabase/client'
 
 type FilterType = 'all' | 'open' | 'resolved' | 'high'
@@ -65,9 +66,12 @@ export default function ClaimsPage() {
   const [mayaModal, setMayaModal] = useState<{ name: string; title: string; wa: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
+  const [showNew, setShowNew] = useState(false)
+  const [ifaId, setIfaId] = useState<string>('')
 
   useEffect(() => {
     load()
+    supabase.auth.getUser().then(({ data }) => { if (data.user) setIfaId(data.user.id) })
   }, [])
 
   async function load() {
@@ -116,9 +120,16 @@ export default function ClaimsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Claims</h1>
-        <Link href="/dashboard/clients" style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500, textDecoration: 'none', display: 'inline-block' }}>
+        <button onClick={() => setShowNew(true)} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
           + New claim
-        </Link>
+        </button>
+        {showNew && ifaId && (
+          <NewClaimModal
+            ifaId={ifaId}
+            onClose={() => setShowNew(false)}
+            onCreated={() => { setShowNew(false); load() }}
+          />
+        )}
       </div>
 
       {/* Maya follow-up modal */}
