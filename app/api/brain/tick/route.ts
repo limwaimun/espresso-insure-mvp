@@ -15,6 +15,87 @@ const supabase = createClient(
 );
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const BRAIN_MODEL = "claude-opus-4-7";
+const BRAIN_USE_TOOLS = process.env.BRAIN_USE_TOOLS === "true";
+const BRAIN_BASE_URL = process.env.BRAIN_BASE_URL ?? "https://espresso.insure";
+const MAX_TOOL_CALLS_PER_TICK = 10;
+
+// Tool definitions for tool-use mode. Brain calls these via the /api/brain/repo/* endpoints.
+const BRAIN_TOOLS = [
+  {
+    name: "list_dir",
+    description: "List the contents of a directory in the espresso-insure-mvp repo on the main branch. Returns array of {name, type, path, size}. Use this to discover what files exist before reading them.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Repo-relative directory path (e.g. 'app/dashboard'). Empty string lists the repo root.",
+        },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "read_file",
+    description: "Read the full contents of a file in the espresso-insure-mvp repo on the main branch. Returns {content, size, sha}. Files larger than 50KB are rejected.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Repo-relative file path (e.g. 'app/dashboard/claims/page.tsx').",
+        },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "grep_repo",
+    description: "Search the repo for a code pattern. Returns up to 20 matches with paths. Use this to find where a function/import/symbol is used before deciding what files to read.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          description: "The code pattern to search for (e.g. 'verifySession', 'logAgentInvocation').",
+        },
+        path: {
+          type: "string",
+          description: "Optional path filter (e.g. 'app/api'). Empty string searches the whole repo.",
+        },
+      },
+      required: ["pattern"],
+    },
+  },
+];
+
+// Execute a tool call by hitting the /api/brain/repo/* endpoint.
+async function executeBrainTool(name: string, input: any): Promise<string> {
+  const cron = process.env.CRON_SECRET ?? "";
+  if (!cron) return JSON.stringify({ ok: false, error: "CRON_SECRET not configured" });
+
+  const headers = { Authorization: `Bearer ${cron}` };
+  let url: string;
+  if (name === "list_dir") {
+    url = `${BRAIN_BASE_URL}/api/brain/repo/list?path=${encodeURIComponent(input?.path ?? "")}`;
+  } else if (name === "read_file") {
+    url = `${BRAIN_BASE_URL}/api/brain/repo/read?path=${encodeURIComponent(input?.path ?? "")}`;
+  } else if (name === "grep_repo") {
+    url = `${BRAIN_BASE_URL}/api/brain/repo/grep?pattern=${encodeURIComponent(input?.pattern ?? "")}&path=${encodeURIComponent(input?.path ?? "")}`;
+  } else {
+    return JSON.stringify({ ok: false, error: `unknown tool: ${name}` });
+  }
+
+  try {
+    const res = await fetch(url, { headers });
+    const body = await res.text();
+    // Truncate very large responses to keep the model context manageable
+    return body.length > 30000 ? body.slice(0, 30000) + "...(truncated)" : body;
+  } catch (err: any) {
+    return JSON.stringify({ ok: false, error: err?.message ?? "tool fetch failed" });
+  }
+}
+
 
 // Auto-approve lane: low risk + observability-only categories.
 const AUTO_APPROVE_CATEGORIES = new Set(["copy", "observability", "security_observability"]);
