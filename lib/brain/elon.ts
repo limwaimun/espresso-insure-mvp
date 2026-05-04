@@ -4,6 +4,7 @@ import { sendTelegram, escapeHtml } from "./telegram";
 
 export function buildElonMessage(order: any): string {
   const steps: string[] = Array.isArray(order?.spec?.steps) ? order.spec.steps : [];
+  const operations: any[] = Array.isArray(order?.spec?.operations) ? order.spec.operations : [];
   const verification: string = order?.spec?.verification ?? "(none specified)";
   const files: string[] = Array.isArray(order?.files_to_change) ? order.files_to_change : [];
 
@@ -17,8 +18,27 @@ export function buildElonMessage(order: any): string {
   ];
   if (order.rationale) parts.push("", `Rationale: ${order.rationale}`);
   if (files.length) parts.push("", "Files to change:", ...files.map((f) => `- ${f}`));
-  if (steps.length)
+  if (operations.length) {
+    const opLines: string[] = [];
+    operations.forEach((op: any, i: number) => {
+      const n = i + 1;
+      if (op?.type === "write_file") {
+        const content = String(op.content ?? "");
+        opLines.push(`OP ${n} write_file path=${op.path}\n--- begin content ---\n${content}\n--- end content ---`);
+      } else if (op?.type === "patch_file") {
+        opLines.push(`OP ${n} patch_file path=${op.path}\n--- find ---\n${op.find}\n--- replace ---\n${op.replace}\n--- end patch ---`);
+      } else if (op?.type === "bash") {
+        opLines.push(`OP ${n} bash\n$ ${op.command}`);
+      } else if (op?.type === "delete_file") {
+        opLines.push(`OP ${n} delete_file path=${op.path}`);
+      } else {
+        opLines.push(`OP ${n} (unknown type=${op?.type}) — STOP and report`);
+      }
+    });
+    parts.push("", "Operations (execute each verbatim, in order):", ...opLines);
+  } else if (steps.length) {
     parts.push("", "Steps: " + steps.map((s, i) => `STEP ${i + 1}: ${s}`).join(" — "));
+  }
   parts.push(
     "",
     `Verification: ${verification}`,

@@ -96,11 +96,54 @@ const BRAIN_TOOLS = [
               },
               spec: {
                 type: "object",
+                description: "Either provide structured operations (preferred) OR steps (legacy English instructions). Always provide verification.",
                 properties: {
-                  steps: { type: "array", items: { type: "string" } },
-                  verification: { type: "string" },
+                  operations: {
+                    type: "array",
+                    description: "List of mechanical operations Elon will execute verbatim. Preferred over steps. Each operation must be unambiguous: literal content for writes, exact strings for patches, exact commands for bash. Files must use real paths verified via list_dir or read_file.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: {
+                          type: "string",
+                          enum: ["write_file", "patch_file", "bash", "delete_file"],
+                          description: "Operation kind.",
+                        },
+                        path: {
+                          type: "string",
+                          description: "Repo-relative path. Required for write_file, patch_file, delete_file.",
+                        },
+                        content: {
+                          type: "string",
+                          description: "Full file content. Required for write_file.",
+                        },
+                        find: {
+                          type: "string",
+                          description: "Exact existing string to find. Required for patch_file. Must appear exactly once in the file.",
+                        },
+                        replace: {
+                          type: "string",
+                          description: "Replacement string. Required for patch_file.",
+                        },
+                        command: {
+                          type: "string",
+                          description: "Shell command. Required for bash. Run from repo root.",
+                        },
+                      },
+                      required: ["type"],
+                    },
+                  },
+                  steps: {
+                    type: "array",
+                    description: "Legacy English-language steps. Use only if operations cannot express the work. Prefer operations when possible.",
+                    items: { type: "string" },
+                  },
+                  verification: {
+                    type: "string",
+                    description: "How Verifier should confirm the work landed correctly.",
+                  },
                 },
-                required: ["steps", "verification"],
+                required: ["verification"],
               },
             },
             required: ["title", "intent", "risk_level", "category"],
@@ -196,6 +239,26 @@ propose_work has three modes:
 - decision_type='no_action' to skip this tick
 
 Calling propose_work is mandatory. The tick is incomplete without it.
+
+# WORK ORDER QUALITY (CRITICAL)
+
+When you propose orders, the spec.operations field must contain LITERAL machine-executable operations. Elon executes them verbatim with no interpretation.
+
+You MUST verify every file path against the actual repo using list_dir or read_file BEFORE specifying it in an operation. Do not invent or guess paths. If you have not read or listed the path, do not write to it.
+
+Operation types:
+- write_file: { type: "write_file", path: "<verified-path>", content: "<full literal file content>" }
+- patch_file: { type: "patch_file", path: "<verified-path>", find: "<exact existing string>", replace: "<exact new string>" }
+- bash: { type: "bash", command: "<shell command run from repo root>" }
+- delete_file: { type: "delete_file", path: "<verified-path>" }
+
+For patch_file: the "find" string must appear EXACTLY ONCE in the target file. If the same line appears multiple times, include enough surrounding context (the function signature above it, the closing brace below it) so the find string is unique. You verified this by reading the file with read_file.
+
+For write_file: provide complete file content, not a diff. Elon will overwrite or create the file with exactly what you provide.
+
+For bash: keep commands simple and idempotent. Avoid interactive prompts. Use --yes flags where applicable.
+
+NEVER use spec.steps (English instructions) when spec.operations would work. Steps is a fallback for cases that genuinely can't be expressed as mechanical operations (e.g. design judgment).
 4. Cap output at 3 work orders.
 5. Every order needs a Verifier-checkable verification step.
 6. Token-drain protection: if you see security risk to Anthropic spend (exposed agent endpoints, missing rate limits), propose security_observability work (logging/metrics, low risk) OR security work (real mitigations, high risk).
