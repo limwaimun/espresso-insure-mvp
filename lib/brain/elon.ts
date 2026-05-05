@@ -2,60 +2,29 @@
 
 import { sendTelegram, escapeHtml } from "./telegram";
 
+// Builds the Telegram notification sent to Elon when an order is dispatched.
+// Kept under Telegram's 4096-char limit by emitting a short ping rather than
+// the full order body. The full spec is delivered via polling — laptop reads
+// /api/brain/queue, drops the JSON in ~/.openclaw/inbox/brain/, executor
+// processes from there. Telegram is purely a heads-up.
+//
+// Before B70 this function inlined the entire order (operations + verbatim
+// file contents) which routinely overflowed 4096 chars and caused
+// "Bad Request: message is too long" failures. See execution_log for events
+// pre-2026-05-05 ~13:30 UTC.
 export function buildElonMessage(order: any): string {
-  const steps: string[] = Array.isArray(order?.spec?.steps) ? order.spec.steps : [];
-  const operations: any[] = Array.isArray(order?.spec?.operations) ? order.spec.operations : [];
-  const verification: string = order?.spec?.verification ?? "(none specified)";
   const files: string[] = Array.isArray(order?.files_to_change) ? order.files_to_change : [];
-
-  const baseUrl = process.env.BRAIN_BASE_URL ?? "https://espresso-mvp.vercel.app";
-  const completeUrl = `${baseUrl}/api/brain/complete`;
-
-  const parts: string[] = [
-    `Task: ${order.title}`,
+  const filesPreview = files.length
+    ? `\nFiles: ${files.slice(0, 5).join(", ")}${files.length > 5 ? ` (+${files.length - 5} more)` : ""}`
+    : "";
+  return [
+    `🛠️ Order ready: ${order.title}`,
+    `Risk: ${order.risk_level} | Category: ${order.category} | Workstream: ${order.workstream ?? "n/a"}` + filesPreview,
     "",
-    `Intent: ${order.intent}`,
-  ];
-  if (order.rationale) parts.push("", `Rationale: ${order.rationale}`);
-  if (files.length) parts.push("", "Files to change:", ...files.map((f) => `- ${f}`));
-  if (operations.length) {
-    const opLines: string[] = [];
-    operations.forEach((op: any, i: number) => {
-      const n = i + 1;
-      if (op?.type === "write_file") {
-        const content = String(op.content ?? "");
-        opLines.push(`OP ${n} write_file path=${op.path}\n--- begin content ---\n${content}\n--- end content ---`);
-      } else if (op?.type === "patch_file") {
-        opLines.push(`OP ${n} patch_file path=${op.path}\n--- find ---\n${op.find}\n--- replace ---\n${op.replace}\n--- end patch ---`);
-      } else if (op?.type === "bash") {
-        opLines.push(`OP ${n} bash\n$ ${op.command}`);
-      } else if (op?.type === "delete_file") {
-        opLines.push(`OP ${n} delete_file path=${op.path}`);
-      } else {
-        opLines.push(`OP ${n} (unknown type=${op?.type}) — STOP and report`);
-      }
-    });
-    parts.push("", "Operations (execute each verbatim, in order):", ...opLines);
-  } else if (steps.length) {
-    parts.push("", "Steps: " + steps.map((s, i) => `STEP ${i + 1}: ${s}`).join(" — "));
-  }
-  parts.push(
+    `ID: ${order.id}`,
     "",
-    `Verification: ${verification}`,
-    "",
-    `Order ID: ${order.id}`,
-    `Risk: ${order.risk_level} | Category: ${order.category} | Workstream: ${order.workstream ?? "n/a"}`,
-    "",
-    "BEFORE you start: capture current commit sha (`git rev-parse HEAD`).",
-    "AFTER deploy: POST to the completion endpoint so the Brain knows you're done:",
-    `  POST ${completeUrl}`,
-    "  Headers: Authorization: Bearer $CRON_SECRET",
-    `  Body JSON: { "order_id": "${order.id}", "pre_dispatch_commit_sha": "<sha BEFORE your changes>", "post_completion_commit_sha": "<sha AFTER your changes>", "deploy_url": "<vercel deploy url>" }`,
-    "",
-    "Then: vercel --prod && git push origin main"
-  );
-
-  return parts.join("\n");
+    `Polling will deliver the full spec to ~/.openclaw/inbox/brain/. The executor cron picks it up automatically.`,
+  ].join("\n");
 }
 
 export function buildApprovalMessage(order: any, baseUrl: string): string {
