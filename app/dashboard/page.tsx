@@ -24,6 +24,7 @@ export default async function DashboardHome() {
     { data: policies },
     { data: alerts },
     { data: clients },
+    { data: claims },
     { data: overdueHoldings },
   ] = await Promise.all([
     user
@@ -33,6 +34,9 @@ export default async function DashboardHome() {
     supabase.from('policies').select('id, type, product_name, insurer, premium, renewal_date, start_date, status, created_at, client_id, clients!inner(id, name, company)'),
     supabase.from('alerts').select('id, title, type, priority, resolved, created_at, client_id, clients(id, name)').eq('resolved', false).order('created_at', { ascending: false }),
     supabase.from('clients').select('id, name, birthday'),
+    supabase.from('claims')
+      .select('id, title, status, priority, claim_type, created_at, client_id, clients(id, name)')
+      .order('created_at', { ascending: false }),
     supabase.from('holdings')
       .select('id, product_name, client_id, last_reviewed_at, clients(id, name)')
       .or(`last_reviewed_at.is.null,last_reviewed_at.lt.${new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()}`)
@@ -41,6 +45,7 @@ export default async function DashboardHome() {
 
   const allPolicies = policies || []
   const allAlerts = alerts || []
+  const allClaims = claims || []
   const allClients = clients || []
   const activePolicies = allPolicies.filter(p => p.status === 'active')
 
@@ -59,7 +64,7 @@ export default async function DashboardHome() {
     const d = new Date(p.renewal_date)
     return d >= now && d <= thirtyDays
   })
-  const openClaims = allAlerts.filter(a => a.priority === 'high' || a.type === 'claim')
+  const openClaims = allClaims.filter(a => a.status === 'open' || a.status === 'in_progress')
 
   // ── URGENT ─────────────────────────────────────────────────────────────────
   // Lapsed = DB status is lapsed (contract is dead)
@@ -76,7 +81,7 @@ export default async function DashboardHome() {
     const days = Math.ceil((d.getTime() - now.getTime()) / 86400000)
     return days >= 0 && days <= 7
   })
-  const highClaims = allAlerts.filter(a => a.priority === 'high' && !a.resolved)
+  const highClaims = allClaims.filter(a => a.priority === 'high' && (a.status === 'open' || a.status === 'in_progress'))
 
   // ── RELATIONSHIPS ──────────────────────────────────────────────────────────
   const birthdaysThisWeek = allClients
@@ -230,7 +235,7 @@ export default async function DashboardHome() {
               {secLabel('High-priority claims')}
               {highClaims.slice(0, 2).map(a => {
                 const c = a.clients as any
-                return card(`claim-${a.id}`, '📄', c?.name || 'Unknown', a.title || 'Open claim', pill('High', 'red'), `/dashboard/clients/${c?.id || ''}`)
+                return card(`claim-${a.id}`, '📄', c?.name || 'Unknown', a.title || 'Open claim', pill('High', 'red'), `/dashboard/clients/${a.client_id}`)
               })}
             </>
           )}
