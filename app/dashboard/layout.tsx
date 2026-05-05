@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const now = new Date()
   const ninetyDays = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [profileResult, renewalsResult, alertsResult] = await Promise.all([
+  const [profileResult, renewalsResult, alertsResult, claimsResult] = await Promise.all([
     supabase.from('profiles').select('name, plan').eq('id', user.id).single(),
     supabase.from('policies')
       .select('id', { count: 'exact', head: true })
@@ -21,12 +21,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .select('id, priority')
       .eq('ifa_id', user.id)
       .eq('resolved', false),
+    supabase.from('claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('ifa_id', user.id)
+      .in('status', ['open', 'in_progress']),
   ])
 
   const profile = profileResult.data
   const renewalsCount = renewalsResult.count || 0
   const allAlerts = alertsResult.data || []
   const highAlerts = allAlerts.filter((a: any) => a.priority === 'high').length
+  const openClaimsCount = claimsResult.count || 0
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F7F4F0' }}>
@@ -39,7 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }}>
         <DashboardSidebar
           profile={profile || undefined}
-          counts={{ conversations: 0, alerts: highAlerts, renewals: renewalsCount, claims: highAlerts }}
+          counts={{ conversations: 0, alerts: highAlerts, renewals: renewalsCount, claims: openClaimsCount }}
         />
       </aside>
       <main style={{ marginLeft: 240, flex: 1, minHeight: '100vh', background: '#F7F4F0' }}>
