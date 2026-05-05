@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { getAdminUser } from '@/lib/admin'
 import BrainOrdersList from './components/BrainOrdersList'
+import DirectivePanel from './components/DirectivePanel'
+import type { ActiveDirective } from './components/DirectivePanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +43,17 @@ export default async function BrainAdminPage() {
 
   const orders: WorkOrder[] = (data ?? []) as WorkOrder[]
 
+  // Try to expire stale directives, then read the active one.
+  try { await supabase.rpc('expire_stale_directives') } catch {}
+  const { data: activeDir } = await supabase
+    .from('brain_directives')
+    .select('id, title, description, workstream, expires_at, created_at, status')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const active: ActiveDirective | null = (activeDir ?? null) as ActiveDirective | null
+
   return (
     <div style={{ minHeight: '100vh', background: '#F7F4F0', padding: '32px 40px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -61,7 +74,10 @@ export default async function BrainAdminPage() {
             Failed to load work orders: {error.message}
           </div>
         ) : (
-          <BrainOrdersList orders={orders} />
+          <>
+            <DirectivePanel active={active} />
+            <BrainOrdersList orders={orders} />
+          </>
         )}
       </div>
     </div>
