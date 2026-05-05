@@ -78,7 +78,7 @@ let cachedClient: ReturnType<typeof createClient> | null = null
 function getClient() {
   if (cachedClient) return cachedClient
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
     return null
   }
@@ -112,9 +112,7 @@ export async function logAgentInvocation(entry: AgentInvocationLog): Promise<boo
       error_message: entry.errorMessage ? entry.errorMessage.slice(0, 1000) : null,
       metadata: entry.metadata ?? {},
     }
-    // Cast: `agent_invocations` is newly added in this migration and not yet
-    // in the generated Database type. Regenerate types in a follow-up to remove.
-    const { error } = await (client.from('agent_invocations') as any).insert(row)
+    const { error } = await client.from('agent_invocations').insert(row)
     if (error) {
       console.error('[agent-log] insert failed:', error.message)
       return false
