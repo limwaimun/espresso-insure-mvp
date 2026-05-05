@@ -105,6 +105,69 @@ const softwareApplicationJsonLd = {
   ],
 };
 
+const faqPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Espresso?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Espresso is an AI back-office platform for Independent Financial Advisers in Singapore. Our AI assistant Maya handles client intake, policy renewals, and claims support — 24/7, inside the WhatsApp groups IFAs already use with their clients.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do I need to download an app?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No. Maya works entirely inside WhatsApp. You and your clients use the WhatsApp you already have. The Espresso dashboard is a web app — no installation needed.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How long does setup take?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Most IFAs are set up in under 30 minutes — sign up, import your client list as a CSV, and create your first WhatsApp client group with Maya.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How much does Espresso cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Espresso starts at SGD 79 per month for the Solo plan (up to 50 clients). The Pro plan is SGD 149 per month with unlimited clients and full claims support. Every plan starts with a 14-day free trial — no credit card required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is Espresso available outside Singapore?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Espresso is currently focused on Singapore-licensed Independent Financial Advisers. Other Asian markets are on the roadmap.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How is my client data protected?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Client data is stored in Singapore-region infrastructure with row-level access controls so each adviser only sees their own clients. Every action is audit-logged. Espresso is built to be ready for MAS compliance review.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I pause or stop Maya at any time?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. Type "Maya pause" in any client WhatsApp group to stop her replying, or "Maya take over" to hand back. You stay in control of every client conversation.',
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -129,6 +192,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageJsonLd) }}
         />
         <main>{children}</main>
         <VersionBadge />
