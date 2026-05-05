@@ -49,3 +49,6 @@ next-env.d.ts
 # Environment files for testing
 .env.test
 .env.test.local
+
+# Supabase CLI local cache
+supabase/.temp/
