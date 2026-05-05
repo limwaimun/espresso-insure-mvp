@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -9,11 +10,21 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 // Never speaks to clients directly — returns estimates to Maya
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     // No DB access, but we still gate to prevent unauthenticated LLM-cost abuse.
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'sage',
+        userId: null,
+        source: 'session',
+        outcome: 'unauthorized',
+        statusCode: 401,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
@@ -84,6 +95,18 @@ Respond in this exact JSON format with no other text:
       }, { status: 422 })
     }
 
+    await logAgentInvocation({
+      agent: 'sage',
+      userId: auth.userId,
+      source: auth.source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: response.usage?.input_tokens ?? null,
+      outputTokens: response.usage?.output_tokens ?? null,
+    })
+
     return NextResponse.json({
       success: true,
       estimate,
@@ -91,6 +114,15 @@ Respond in this exact JSON format with no other text:
     })
   } catch (err) {
     console.error('[sage] error:', err)
+    await logAgentInvocation({
+      agent: 'sage',
+      userId: null,
+      source: null,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Sage failed to respond' }, { status: 500 })
   }
 }
