@@ -196,7 +196,14 @@ async function executeBrainTool(name: string, input: any): Promise<string> {
 // Auto-approve lane: low risk + observability-only categories.
 const AUTO_APPROVE_CATEGORIES = new Set(["copy", "observability", "security_observability"]);
 
-function buildSystemPrompt(visionText: string, workstreamsText: string, activeWorkstream: string): string {
+type ActiveDirective = { title: string; description: string | null; workstream: string; expires_at: string };
+
+function buildSystemPrompt(
+  visionText: string,
+  workstreamsText: string,
+  activeWorkstream: string,
+  directive: ActiveDirective | null,
+): string {
   return `You are the Brain agent for Espresso (espresso.insure), an AI back-office platform for Independent Financial Advisers (IFAs) in Singapore.
 
 You are the sole decision-maker. You do NOT write code. You decide WHAT should be done. The executor (Elon) does the building. Wayne (the founder) approves anything substantial. Verifier confirms post-deploy.
@@ -209,7 +216,15 @@ ${workstreamsText}
 
 # This tick's focus: ${activeWorkstream}
 Workstreams rotate evenly. This tick is ${activeWorkstream}'s turn. Propose work for this workstream only. If nothing is pressing for ${activeWorkstream} this tick, return [] — the next tick will rotate to the next workstream.
+${directive ? `
+# Active directive (set by Wayne)
+Title: ${directive.title}
+Workstream: ${directive.workstream}${directive.description ? `
+Notes: ${directive.description}` : ``}
+Expires: ${directive.expires_at}
 
+This is a soft steer. Prefer proposing work consistent with this directive across ticks, even when this tick's rotation workstream differs. If you propose off-directive work, briefly justify in the rationale (e.g. urgent error in system_state, security issue). Do NOT relax safety, MAS, or risk_level rules to satisfy a directive.
+` : ``}
 # Stack
 Next.js (Vercel), Supabase, Stripe, Resend, Anthropic.
 
@@ -312,6 +327,19 @@ export async function POST(req: NextRequest) {
     const workstreamsText = loadWorkstreams();
     const { workstream: activeWorkstream, tick_count } = await nextWorkstream(supabase);
 
+    // Read active directive (soft steer from Wayne). Best-effort: never block tick.
+    let activeDirective: ActiveDirective | null = null;
+    try {
+      const { data: directiveRow } = await supabase
+        .from("brain_directives")
+        .select("title, description, workstream, expires_at")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (directiveRow) activeDirective = directiveRow as ActiveDirective;
+    } catch {}
+
     const { data: stateRows } = await supabase
       .from("system_state")
       .select("captured_at, snapshot_type, source, data, notes, urgent")
@@ -365,7 +393,7 @@ export async function POST(req: NextRequest) {
           const final: any = await anthropic.messages.create({
             model: BRAIN_MODEL,
             max_tokens: 8192,
-            system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream) +
+            system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective) +
               "\n\n[Tool budget exhausted. Call propose_work NOW with whatever decision you can make.]",
             tools: BRAIN_TOOLS as any,
             tool_choice: { type: "tool", name: "propose_work" } as any,
@@ -390,7 +418,7 @@ export async function POST(req: NextRequest) {
         const response: any = await anthropic.messages.create({
           model: BRAIN_MODEL,
           max_tokens: 8192,
-          system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
+          system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective),
           tools: BRAIN_TOOLS as any,
           tool_choice: { type: "any" } as any,
           messages,
@@ -438,7 +466,7 @@ export async function POST(req: NextRequest) {
       const response = await anthropic.messages.create({
         model: BRAIN_MODEL,
         max_tokens: 4096,
-        system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream),
+        system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective),
         messages: [{ role: "user", content: userMessage }],
       });
       text = response.content
