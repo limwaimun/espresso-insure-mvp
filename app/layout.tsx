@@ -55,6 +55,56 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Espresso',
+  url: 'https://espresso.insure',
+  logo: 'https://espresso.insure/favicon.ico',
+  description: 'AI back-office platform for Independent Financial Advisers in Singapore.',
+  email: 'hello@espresso.insure',
+  areaServed: {
+    '@type': 'Country',
+    name: 'Singapore',
+  },
+};
+
+const softwareApplicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Espresso',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web, WhatsApp',
+  description: 'AI assistant Maya handles intake, renewals, and claims for Singapore IFAs — 24/7 inside WhatsApp.',
+  url: 'https://espresso.insure',
+  offers: [
+    {
+      '@type': 'Offer',
+      name: 'Solo',
+      price: '79',
+      priceCurrency: 'SGD',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: '79',
+        priceCurrency: 'SGD',
+        unitText: 'MONTH',
+      },
+    },
+    {
+      '@type': 'Offer',
+      name: 'Pro',
+      price: '149',
+      priceCurrency: 'SGD',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: '149',
+        priceCurrency: 'SGD',
+        unitText: 'MONTH',
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -72,6 +122,14 @@ export default function RootLayout({
         margin: 0,
         padding: 0,
       }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+        />
         <main>{children}</main>
         <VersionBadge />
       </body>
