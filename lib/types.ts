@@ -186,3 +186,23 @@ export interface Props {
   holdings: Holding[]
 }
 
+
+// ── Agent Invocation (maps to public.agent_invocations) ─────────────────────
+// Added alongside supabase/migrations/20260505_agent_invocations.sql
+
+export interface AgentInvocation {
+  id: string
+  created_at: string
+  agent: string
+  user_id: string | null
+  source: string | null
+  outcome: string
+  status_code: number | null
+  latency_ms: number | null
+  model: string | null
+  input_tokens: number | null
+  output_tokens: number | null
+  error_message: string | null
+  metadata: Record<string, unknown>
+}
+

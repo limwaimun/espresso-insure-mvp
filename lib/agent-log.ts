@@ -112,7 +112,7 @@ export async function logAgentInvocation(entry: AgentInvocationLog): Promise<boo
       error_message: entry.errorMessage ? entry.errorMessage.slice(0, 1000) : null,
       metadata: entry.metadata ?? {},
     }
-    const { error } = await client.from('agent_invocations').insert(row)
+    const { error } = await client.from('agent_invocations').insert(row as any)
     if (error) {
       console.error('[agent-log] insert failed:', error.message)
       return false
