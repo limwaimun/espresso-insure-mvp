@@ -105,6 +105,33 @@ const softwareApplicationJsonLd = {
   ],
 };
 
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Espresso',
+  alternateName: 'Espresso Insure',
+  url: 'https://espresso.insure',
+  inLanguage: 'en-SG',
+  publisher: {
+    '@type': 'Organization',
+    name: 'Espresso',
+    url: 'https://espresso.insure',
+  },
+};
+
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: 'https://espresso.insure/',
+    },
+  ],
+};
+
 const faqPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -192,6 +219,14 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
         <script
           type="application/ld+json"
