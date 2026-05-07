@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 type SupportedModel = { id: string; label: string; note?: string };
 type Current = { model: string; updated_at: string; updated_by: string | null };
@@ -13,6 +14,7 @@ export default function BrainModelPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const isMobile = useIsMobile(768);
 
   // Initial load
   useEffect(() => {
@@ -122,7 +124,7 @@ export default function BrainModelPanel() {
           {error}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: isMobile ? "stretch" : "center", gap: 10, flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
           <select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
@@ -135,7 +137,9 @@ export default function BrainModelPanel() {
               borderRadius: 6,
               background: "#FFFFFF",
               color: "#1A1410",
-              minWidth: 280,
+              minWidth: isMobile ? 0 : 280,
+              width: isMobile ? "100%" : "auto",
+              maxWidth: "100%",
             }}
           >
             {supported.map((m) => (
@@ -153,7 +157,7 @@ export default function BrainModelPanel() {
             style={{
               fontFamily: "DM Sans, sans-serif",
               fontSize: 13,
-              padding: "8px 18px",
+              padding: isMobile ? "12px 18px" : "8px 18px",
               borderRadius: 6,
               border: "none",
               cursor: !isDirty || saving ? "not-allowed" : "pointer",
@@ -161,6 +165,8 @@ export default function BrainModelPanel() {
               color: !isDirty || saving ? "#9B9088" : "#FFFFFF",
               fontWeight: 500,
               transition: "background 0.15s",
+              width: isMobile ? "100%" : "auto",
+              minHeight: 44,
             }}
           >
             {saving ? "Saving…" : "Save"}
@@ -184,7 +190,7 @@ export default function BrainModelPanel() {
                 fontFamily: "DM Mono, monospace",
                 fontSize: 11,
                 color: "#9B9088",
-                marginLeft: "auto",
+                marginLeft: isMobile ? 0 : "auto",
               }}
               title={current.updated_by ? `by ${current.updated_by}` : undefined}
             >
