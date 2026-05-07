@@ -115,12 +115,34 @@ export default function ClaimsPage() {
   const daysAgo = (d: string) => { const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000); return days === 0 ? 'Today' : `${days}d ago` }
 
   return (
-    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
+    <div style={{ padding: '16px 16px', background: '#F7F4F0', minHeight: '100vh' }} className="claims-page">
+      <style>{`
+        @media (min-width: 640px) { .claims-page { padding: 24px 28px !important; } }
+        .claims-kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        @media (min-width: 640px) { .claims-kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+        .claims-filter-bar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        @media (min-width: 640px) { .claims-filter-bar { flex-direction: row; align-items: center; } }
+        .claims-filter-search { width: 100%; box-sizing: border-box; }
+        @media (min-width: 640px) { .claims-filter-search { max-width: 320px; } }
+        .claims-filter-select { width: 100%; box-sizing: border-box; }
+        @media (min-width: 640px) { .claims-filter-select { width: auto; } }
+        .claims-table-header { display: none; }
+        @media (min-width: 768px) { .claims-table-header { display: grid; grid-template-columns: 180px 1fr 120px 100px 80px 200px; padding: 10px 20px; border-bottom: 0.5px solid #E8E2DA; background: #FAFAF8; } }
+        .claims-row { display: flex; flex-direction: column; padding: 14px 16px; border-bottom: 0.5px solid #F1EFE8; gap: 6px; }
+        @media (min-width: 768px) { .claims-row { display: grid; grid-template-columns: 180px 1fr 120px 100px 80px 200px; padding: 14px 20px; gap: 0; align-items: start; } }
+        .claims-row-client { font-family: DM Sans, sans-serif; font-size: 13px; font-weight: 500; color: #1A1410; }
+        .claims-row-desc { font-family: DM Sans, sans-serif; font-size: 13px; color: #1A1410; padding-right: 0; }
+        @media (min-width: 768px) { .claims-row-desc { padding-right: 16px; } }
+        .claims-row-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        @media (min-width: 768px) { .claims-row-meta { display: contents; } }
+        .claims-row-actions { display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; }
+        @media (min-width: 768px) { .claims-row-actions { flex-direction: column; gap: 4px; } }
+      `}</style>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 26, fontWeight: 500, color: '#1A1410', margin: 0 }}>Claims</h1>
-        <button onClick={() => setShowNew(true)} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500 }}>
+        <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 500, color: '#1A1410', margin: 0 }}>Claims</h1>
+        <button onClick={() => setShowNew(true)} style={{ background: '#BA7517', border: 'none', borderRadius: 8, padding: '10px 16px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#FFFFFF', fontWeight: 500, minHeight: 44, minWidth: 44 }}>
           + New claim
         </button>
         {showNew && ifaId && (
@@ -159,27 +181,27 @@ export default function ClaimsPage() {
       )}
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
+      <div className="claims-kpi-grid">
         {[
           { label: 'Total claims', value: totalClaims },
           { label: 'Open', value: openClaims, warn: openClaims > 0 },
           { label: 'Resolved', value: resolvedClaims, green: true },
           { label: 'High priority', value: highPriority, danger: highPriority > 0 },
         ].map(k => (
-          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '16px 18px' }}>
+          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '14px 16px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 28, fontWeight: 500, color: k.danger ? '#A32D2D' : k.green ? '#0F6E56' : k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 500, color: k.danger ? '#A32D2D' : k.green ? '#0F6E56' : k.warn ? '#854F0B' : '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+      <div className="claims-filter-bar">
+        <div style={{ position: 'relative', flex: 1 }} className="claims-filter-search">
           <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#B4B2A9', fontSize: 13, pointerEvents: 'none' }}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client or description…" style={{ width: '100%', height: 36, padding: '0 12px 0 34px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' as const }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client or description…" style={{ width: '100%', height: 40, padding: '0 12px 0 34px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' as const }} />
         </div>
-        <select value={filter} onChange={e => setFilter(e.target.value as FilterType)} style={{ height: 36, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none' }}>
+        <select value={filter} onChange={e => setFilter(e.target.value as FilterType)} className="claims-filter-select" style={{ height: 40, padding: '0 10px', border: '0.5px solid #E8E2DA', borderRadius: 7, fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', background: '#FFFFFF', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' as const }}>
           <option value="all">All status ({totalClaims})</option>
           <option value="open">Open ({openClaims})</option>
           <option value="resolved">Resolved ({resolvedClaims})</option>
@@ -189,7 +211,7 @@ export default function ClaimsPage() {
 
       {/* Table */}
       <div style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 200px', padding: '10px 20px', borderBottom: '0.5px solid #E8E2DA', background: '#FAFAF8' }}>
+        <div className="claims-table-header">
           {['Client', 'Description', 'Status', 'Priority', 'Filed', 'Action'].map(h => (
             <div key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
@@ -204,19 +226,21 @@ export default function ClaimsPage() {
           const sStyle = statusStyle(claim.status)
           const priorityS = PRIORITY_STYLE[claim.priority] || PRIORITY_STYLE.info
           return (
-            <div key={claim.id} style={{ display: 'grid', gridTemplateColumns: '180px 1fr 120px 100px 80px 200px', padding: '14px 20px', borderBottom: expandedClaim !== claim.id && i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none', alignItems: 'start' }}>
-              <div>
+            <div key={claim.id} className="claims-row" style={{ borderBottom: expandedClaim !== claim.id && i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none' }}>
+              <div className="claims-row-client">
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{client?.name || '—'}</div>
                 {client?.company && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57' }}>{client.company}</div>}
               </div>
-              <div style={{ paddingRight: 16 }}>
+              <div className="claims-row-desc">
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', marginBottom: 3 }}>{claim.title}</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }}>{claim.body}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#5F5A57', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{claim.body}</div>
               </div>
-              <div>{pill(sLabel, sStyle)}</div>
-              <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityS)}</div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{daysAgo(claim.created_at)}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div className="claims-row-meta">
+                <div>{pill(sLabel, sStyle)}</div>
+                <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityS)}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{daysAgo(claim.created_at)}</div>
+              </div>
+              <div className="claims-row-actions">
                 <Link href={`/dashboard/clients/${claim.client_id}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
                 <button onClick={() => openMayaModal(claim)} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57', textAlign: 'left' }}>
                   Ask Maya to follow up
