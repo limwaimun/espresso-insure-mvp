@@ -70,6 +70,20 @@ const BRAIN_TOOLS = [
     },
   },
   {
+    name: "get_table_schema",
+    description: "Get the column names of a Supabase public table. Use this BEFORE writing any .from('table').select('cols') query against a table you have not yet inspected this tick. Hallucinated column names break in production. Returns columns with their inferred types from a sample row. Empty tables return note=true and you must check migration files instead.",
+    input_schema: {
+      type: "object",
+      properties: {
+        table: {
+          type: "string",
+          description: "Name of the public table to inspect (e.g. 'work_orders', 'execution_log', 'brain_directives'). Must match /^[a-zA-Z_][a-zA-Z0-9_]*$/.",
+        },
+      },
+      required: ["table"],
+    },
+  },
+  {
     name: "propose_work",
     description: "Emit your final decision. Call this tool EXACTLY ONCE when you are done exploring the codebase. Do not call list_dir/read_file/grep_repo after calling this. Do not narrate before or after calling this. Choose decision_type: 'orders' to propose 1-3 work orders, 'question' to ask Wayne for clarification, or 'no_action' to skip this tick.",
     input_schema: {
@@ -180,6 +194,8 @@ async function executeBrainTool(name: string, input: any): Promise<string> {
     url = `${BRAIN_BASE_URL}/api/brain/repo/read?path=${encodeURIComponent(input?.path ?? "")}`;
   } else if (name === "grep_repo") {
     url = `${BRAIN_BASE_URL}/api/brain/repo/grep?pattern=${encodeURIComponent(input?.pattern ?? "")}&path=${encodeURIComponent(input?.path ?? "")}`;
+  } else if (name === "get_table_schema") {
+    url = `${BRAIN_BASE_URL}/api/brain/repo/schema?table=${encodeURIComponent(input?.table ?? "")}`;
   } else {
     return JSON.stringify({ ok: false, error: `unknown tool: ${name}` });
   }
@@ -290,6 +306,8 @@ NEVER use spec.steps (English instructions) when spec.operations would work. Ste
 copy | observability | security_observability | feature | security | bug | infra | data
 
 Auto-approval lane (no human gate): risk_level='low' AND category in ['copy','observability','security_observability'].
+
+Schema grounding (REQUIRED): if your proposal will write any code that queries a Supabase table — e.g. .from('table').select('cols') or anything reading/writing public tables — you MUST call the get_table_schema tool first to confirm the column names. Hallucinated column names broke production once already. There is no penalty for calling get_table_schema; the cost of skipping it is real.
 
 # Output format — choose ONE of these two top-level shapes
 Either an array of work orders:
