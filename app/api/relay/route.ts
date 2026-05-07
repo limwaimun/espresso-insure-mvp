@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { verifySession } from '@/lib/auth-middleware'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,12 +82,23 @@ Respond in JSON only:
 }
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+  let userId: string | undefined
   try {
     // ── Auth ──────────────────────────────────────────────────────────────
-    const { userId, error: authError } = await verifySession(request)
-    if (authError || !userId) {
+    const { userId: verifiedId, error: authError } = await verifySession(request)
+    if (authError || !verifiedId) {
+      await logAgentInvocation({
+        agent: 'relay',
+        userId: null,
+        source: 'session',
+        outcome: 'unauthorized',
+        statusCode: 401,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
     }
+    userId = verifiedId
 
     // ── Parse body ────────────────────────────────────────────────────────
     const { message, ifaId: _unused, clientId } = await request.json() as RelayRequest
@@ -94,6 +106,8 @@ export async function POST(request: NextRequest) {
     if (_unused && _unused !== userId) {
       console.warn(`[relay] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
     }
+    // cast for narrowing — verifySession guarantees userId is set after the auth check
+    const resolvedUserId = userId as string
 
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
@@ -249,6 +263,16 @@ export async function POST(request: NextRequest) {
 
     const agentData = await agentRes.json()
 
+    await logAgentInvocation({
+      agent: 'relay',
+      userId: resolvedUserId,
+      source: 'session',
+      outcome: agentRes.ok ? 'ok' : 'error',
+      statusCode: agentRes.status,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      metadata: { intent: route.intent, subAgent: route.agentUrl.split('/api/')[1], hasClientId: !!clientId },
+    })
     return NextResponse.json({
       intent: route.intent,
       summary: route.summary,
@@ -258,6 +282,15 @@ export async function POST(request: NextRequest) {
 
   } catch (err) {
     console.error('[relay] error:', err)
+    await logAgentInvocation({
+      agent: 'relay',
+      userId,
+      source: 'session',
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Relay failed' }, { status: 500 })
   }
 }

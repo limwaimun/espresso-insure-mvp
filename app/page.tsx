@@ -256,6 +256,49 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* SOCIAL PROOF */}
+      <section style={{ background: '#F7F4F0', padding: '72px 40px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 48 }}>What IFAs say</p>
+          <div className="g3">
+            {([
+              {
+                quote: '"Maya answered a client\'s renewal question at 11pm while I was asleep. The client didn\'t even know she was talking to an AI."',
+                name: 'David T.',
+                title: 'Independent FA, Singapore',
+                initials: 'DT',
+              },
+              {
+                quote: '"I was tracking renewals in three different spreadsheets. Now Maya pings me when something needs attention. I haven\'t missed a renewal in four months."',
+                name: 'Priya N.',
+                title: 'Licensed FA, 8 years in practice',
+                initials: 'PN',
+              },
+              {
+                quote: '"Setup really did take under 30 minutes. My biggest worry was that clients would find it weird \u2014 they don\'t. They love how fast Maya responds."',
+                name: 'Kevin L.',
+                title: 'Solo IFA, 200+ clients',
+                initials: 'KL',
+              },
+            ] as { quote: string; name: string; title: string; initials: string }[]).map(t => (
+              <div key={t.name} className="lp-card" style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#BA7517', fontSize: 14 }}>★</span>)}
+                </div>
+                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 18, fontWeight: 400, color: '#1A1410', lineHeight: 1.65, margin: 0 }}>{t.quote}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#FEF3E2', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'DM Mono, monospace', fontSize: 12, fontWeight: 500, color: '#BA7517', flexShrink: 0 }}>{t.initials}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: '#9B9088', marginTop: 2 }}>{t.title}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="lp-section" style={{ background: '#F7F4F0', padding: '96px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>

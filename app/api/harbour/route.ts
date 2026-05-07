@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
