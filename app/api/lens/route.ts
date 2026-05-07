@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -13,10 +14,20 @@ const supabase = createClient(
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'lens',
+        userId: null,
+        source: null,
+        outcome: 'unauthorized',
+        statusCode: auth.status,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     const userId = auth.userId
@@ -41,6 +52,15 @@ export async function POST(request: NextRequest) {
       if (cached) {
         const ageHours = (Date.now() - new Date(cached.generated_at).getTime()) / 3600000
         if (ageHours < CACHE_TTL_HOURS) {
+          await logAgentInvocation({
+            agent: 'lens',
+            userId,
+            source: auth.source,
+            outcome: 'ok',
+            statusCode: 200,
+            latencyMs: Date.now() - start,
+            metadata: { fromCache: true, reportType: reportType || 'portfolio' },
+          })
           return NextResponse.json({
             success: true,
             agent: 'lens',
@@ -201,6 +221,19 @@ ${JSON.stringify(metrics, null, 2)}`,
         }, { onConflict: 'ifa_id' })
     }
 
+    await logAgentInvocation({
+      agent: 'lens',
+      userId,
+      source: auth.source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: narrative ? undefined : null,
+      outputTokens: narrative ? undefined : null,
+      metadata: { fromCache: false, reportType: reportType || 'portfolio', hasQuery: !!query },
+    })
+
     return NextResponse.json({
       success: true,
       agent: 'lens',
@@ -213,6 +246,15 @@ ${JSON.stringify(metrics, null, 2)}`,
 
   } catch (err) {
     console.error('[lens] error:', err)
+    await logAgentInvocation({
+      agent: 'lens',
+      userId: null,
+      source: null,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Lens failed' }, { status: 500 })
   }
 }
