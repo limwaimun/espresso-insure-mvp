@@ -15,9 +15,14 @@ const supabase = createClient(
 // Body: { order_id: string, executor_id?: string }
 //
 // Returns:
-//   200 { ok: true, order: <full order body> } — claim succeeded, executor proceeds
+//   200 { ok: true, order_id, status, running_at } — claim succeeded, executor proceeds
 //   200 { ok: false, reason: "already_claimed_or_not_dispatched" } — someone else got it
 //   400 / 401 / 404 / 500 on errors
+//
+// Note: response is intentionally minimal. Returning the full order body caused
+// jq parse errors in the executor when the spec contained unescaped control
+// characters (B73 fix). The executor already has the order body from the inbox
+// file, so this endpoint just confirms the claim succeeded.
 //
 // Atomicity: the UPDATE is conditional on status='dispatched' and matches at most
 // one row. Two concurrent executors race; only one succeeds, the loser sees 0 rows.
@@ -98,5 +103,10 @@ export async function POST(req: NextRequest) {
     raw_output: executorId ? JSON.stringify({ executor_id: executorId }) : null,
   });
 
-  return NextResponse.json({ ok: true, order: claimed });
+  return NextResponse.json({
+    ok: true,
+    order_id: claimed.id,
+    status: claimed.status,
+    running_at: claimed.running_at,
+  });
 }
