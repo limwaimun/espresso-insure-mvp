@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -10,11 +11,21 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 // Never speaks to clients directly
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     // Prevents unauthenticated LLM-cost abuse (esp. PDF extraction is pricey).
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'scout',
+        userId: null,
+        source: null,
+        outcome: 'unauthorized',
+        statusCode: auth.status,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
@@ -91,6 +102,18 @@ Use null for any fields not found in the document.`,
         }, { status: 422 })
       }
 
+      await logAgentInvocation({
+        agent: 'scout',
+        userId: auth.userId,
+        source: auth.source,
+        outcome: 'ok',
+        statusCode: 200,
+        latencyMs: Date.now() - start,
+        model: 'claude-sonnet-4-6',
+        inputTokens: response.usage?.input_tokens ?? null,
+        outputTokens: response.usage?.output_tokens ?? null,
+        metadata: { mode: 'pdf_extraction', fileSizeBytes: file.size },
+      })
       return NextResponse.json({ success: true, product, mode: 'pdf_extraction' })
     }
 
@@ -151,9 +174,30 @@ Respond in this exact JSON format:
       }, { status: 422 })
     }
 
+    await logAgentInvocation({
+      agent: 'scout',
+      userId: auth.userId,
+      source: auth.source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: response.usage?.input_tokens ?? null,
+      outputTokens: response.usage?.output_tokens ?? null,
+      metadata: { mode: 'market_intelligence' },
+    })
     return NextResponse.json({ success: true, intelligence, mode: 'market_intelligence' })
   } catch (err) {
     console.error('[scout] error:', err)
+    await logAgentInvocation({
+      agent: 'scout',
+      userId: null,
+      source: null,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Scout failed to respond' }, { status: 500 })
   }
 }
