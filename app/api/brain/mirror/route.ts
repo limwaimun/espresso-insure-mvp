@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { probeSecurity } from "@/lib/brain/security";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
