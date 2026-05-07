@@ -39,13 +39,27 @@ export async function POST(req: NextRequest) {
 
   const { data: order, error } = await supabase
     .from("work_orders")
-    .select("id, status")
+    .select("id, status, post_completion_commit_sha")
     .eq("id", orderId)
     .single();
   if (error || !order) return NextResponse.json({ ok: false, error: "order not found" }, { status: 404 });
 
-  // Accept reports for any status — Elon may report late.
-  await supabase
+  // Idempotency: if already 'done', return ok-but-noop. Prevents duplicate
+  // execution_log rows when an executor reports completion twice (the bug
+  // we hit on order 5ae30089 yesterday — reported by 4 separate executions).
+  if (order.status === "done") {
+    return NextResponse.json({
+      ok: true,
+      noop: true,
+      reason: "already_done",
+      existing_commit_sha: order.post_completion_commit_sha,
+    });
+  }
+
+  // Conditional update: only flip if NOT already done. Atomic — two concurrent
+  // /complete calls can't both succeed. The .neq("status", "done") makes the
+  // UPDATE no-op if the order has already been completed.
+  const { data: updated } = await supabase
     .from("work_orders")
     .update({
       status: "done",
@@ -54,7 +68,16 @@ export async function POST(req: NextRequest) {
       post_completion_commit_sha: postSha,
       deploy_url: deployUrl,
     })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .neq("status", "done")
+    .select()
+    .maybeSingle();
+
+  if (!updated) {
+    // Race: another /complete call landed between our SELECT and UPDATE.
+    // Treat as success — the work IS done.
+    return NextResponse.json({ ok: true, noop: true, reason: "race_lost" });
+  }
 
   await supabase.from("execution_log").insert({
     work_order_id: orderId,
