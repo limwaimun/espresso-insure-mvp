@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+interface ExecData {
+  byAction: Record<string, { ok: number; fail: number }>
+  recentFailures: { action: string; error: string; created_at: string }[]
+  total: number
+  totalFail: number
+  failRate: number
+  windowHours: number
+}
+
 const AGENTS = [
   { name: 'Maya', route: '/api/maya-playground', status: 'live', role: 'Client relationship' },
   { name: 'Relay', route: '/api/relay', status: 'live', role: 'Orchestrator' },
@@ -19,6 +28,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0 })
   const [recentFAs, setRecentFAs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [execData, setExecData] = useState<ExecData | null>(null)
+  const [execLoading, setExecLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/admin/accounts')
@@ -29,6 +40,13 @@ export default function AdminPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/admin/executions')
+      .then(r => r.json())
+      .then(data => { setExecData(data); setExecLoading(false) })
+      .catch(() => setExecLoading(false))
   }, [])
 
   const panelStyle = {
@@ -59,6 +77,54 @@ export default function AdminPage() {
             <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: '#F5ECD7' }}>{k.value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Execution health */}
+      <div style={{ ...panelStyle, marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#F5ECD7', margin: '0 0 16px' }}>
+          Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444' }}>(last 24h)</span>
+        </h2>
+        {execLoading && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B5444' }}>Loading…</div>}
+        {!execLoading && execData && (
+          <>
+            {/* Fail rate banner if > 20% */}
+            {execData.failRate > 0.2 && (
+              <div style={{ background: 'rgba(208,96,96,0.12)', border: '1px solid rgba(208,96,96,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#D06060' }}>
+                  ⚠ Elevated failure rate: {Math.round(execData.failRate * 100)}% ({execData.totalFail}/{execData.total} executions)
+                </span>
+              </div>
+            )}
+            {/* Per-action summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
+              {Object.entries(execData.byAction).sort((a, b) => (b[1].ok + b[1].fail) - (a[1].ok + a[1].fail)).map(([action, counts]) => (
+                <div key={action} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{action.replace(/_/g, ' ')}</div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#F5ECD7' }}>
+                    <span style={{ color: '#5AB87A' }}>{counts.ok}</span>
+                    <span style={{ color: '#6B5444' }}> / </span>
+                    <span style={{ color: counts.fail > 0 ? '#D06060' : '#6B5444' }}>{counts.fail}</span>
+                  </div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B5444', marginTop: 2 }}>ok / fail</div>
+                </div>
+              ))}
+            </div>
+            {/* Recent failures */}
+            {execData.recentFailures.length > 0 && (
+              <div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Recent failures</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {execData.recentFailures.slice(0, 5).map((f, i) => (
+                    <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 6, padding: '8px 12px' }}>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#D06060', marginRight: 8 }}>{f.action}</span>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#997A60', wordBreak: 'break-all' }}>{f.error}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Agent status */}
