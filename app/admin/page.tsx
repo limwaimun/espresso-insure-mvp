@@ -85,10 +85,10 @@ export default function AdminPage() {
           Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444' }}>(last 24h)</span>
         </h2>
         {execLoading && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B5444' }}>Loading…</div>}
-        {!execLoading && execData && (
+        {!execLoading && execData && !(execData as any).error && (
           <>
             {/* Fail rate banner if > 20% */}
-            {execData.failRate > 0.2 && (
+            {typeof execData.failRate === 'number' && execData.failRate > 0.2 && (
               <div style={{ background: 'rgba(208,96,96,0.12)', border: '1px solid rgba(208,96,96,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
                 <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#D06060' }}>
                   ⚠ Elevated failure rate: {Math.round(execData.failRate * 100)}% ({execData.totalFail}/{execData.total} executions)
@@ -97,7 +97,7 @@ export default function AdminPage() {
             )}
             {/* Per-action summary */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
-              {Object.entries(execData.byAction).sort((a, b) => (b[1].ok + b[1].fail) - (a[1].ok + a[1].fail)).map(([action, counts]) => (
+              {Object.entries(execData.byAction || {}).sort((a, b) => (b[1].ok + b[1].fail) - (a[1].ok + a[1].fail)).map(([action, counts]) => (
                 <div key={action} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 8, padding: '10px 12px' }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{action.replace(/_/g, ' ')}</div>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#F5ECD7' }}>
@@ -110,11 +110,11 @@ export default function AdminPage() {
               ))}
             </div>
             {/* Recent failures */}
-            {execData.recentFailures.length > 0 && (
+            {(execData.recentFailures || []).length > 0 && (
               <div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Recent failures</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {execData.recentFailures.slice(0, 5).map((f, i) => (
+                  {(execData.recentFailures || []).slice(0, 5).map((f, i) => (
                     <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 6, padding: '8px 12px' }}>
                       <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#D06060', marginRight: 8 }}>{f.action}</span>
                       <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#997A60', wordBreak: 'break-all' }}>{f.error}</span>
@@ -124,6 +124,11 @@ export default function AdminPage() {
               </div>
             )}
           </>
+        )}
+        {!execLoading && execData && (execData as any).error && (
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#D06060' }}>
+            Failed to load execution metrics: {String((execData as any).error).slice(0, 200)}
+          </div>
         )}
       </div>
 

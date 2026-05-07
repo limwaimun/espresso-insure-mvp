@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   const { data: rows, error } = await serviceSupabase
     .from('execution_log')
-    .select('action, status, error, created_at')
+    .select('action, success, error_message, created_at')
     .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
     .limit(500)
@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
 
   for (const row of rows || []) {
     if (!byAction[row.action]) byAction[row.action] = { ok: 0, fail: 0 }
-    if (row.status === 'ok' || row.status === 'success') {
+    if (row.success === true) {
       byAction[row.action].ok++
     } else {
       byAction[row.action].fail++
-      if (recentFailures.length < 10 && row.error) {
+      if (recentFailures.length < 10 && row.error_message) {
         recentFailures.push({
           action: row.action,
-          error: String(row.error).slice(0, 180),
+          error: String(row.error_message).slice(0, 180),
           created_at: row.created_at,
         })
       }
