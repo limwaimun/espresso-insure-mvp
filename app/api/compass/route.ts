@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -44,10 +45,20 @@ const SG_INSURERS = [
 ]
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'compass',
+        userId: null,
+        source: null,
+        outcome: 'unauthorized',
+        statusCode: auth.status,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     const userId = auth.userId
@@ -226,6 +237,19 @@ Analysis: ${JSON.stringify(analysis)}`
     })
     const mayaSummary = mayaSummaryRes.content.find(b => b.type === 'text')?.text || ''
 
+    await logAgentInvocation({
+      agent: 'compass',
+      userId,
+      source: auth.source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: response.usage?.input_tokens ?? null,
+      outputTokens: response.usage?.output_tokens ?? null,
+      metadata: { mode: mode || 'comparison' },
+    })
+
     return NextResponse.json({
       success: true,
       agent: 'compass',
@@ -239,6 +263,15 @@ Analysis: ${JSON.stringify(analysis)}`
 
   } catch (err) {
     console.error('[compass] error:', err)
+    await logAgentInvocation({
+      agent: 'compass',
+      userId: null,
+      source: null,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Compass failed' }, { status: 500 })
   }
 }
