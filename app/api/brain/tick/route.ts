@@ -5,6 +5,7 @@ import { loadVision, loadWorkstreams } from "@/lib/brain/vision";
 import { dispatchOrderToElon, notifyWayneForApproval } from "@/lib/brain/elon";
 import { nextWorkstream } from "@/lib/brain/rotation";
 import { createBrainQuestion, recentAnsweredQuestions } from "@/lib/brain/questions";
+import { getCurrentBrainModel, DEFAULT_BRAIN_MODEL } from "@/lib/brain/model-settings";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -14,7 +15,8 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 );
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-const BRAIN_MODEL = "claude-opus-4-7";
+// Brain model removed as constant in B74 — now read dynamically via
+// getCurrentBrainModel() with 5s cache and a default-model fallback.
 const BRAIN_USE_TOOLS = process.env.BRAIN_USE_TOOLS === "true";
 const BRAIN_BASE_URL = process.env.BRAIN_BASE_URL ?? "https://espresso.insure";
 const MAX_TOOL_CALLS_PER_TICK = 10;
@@ -320,6 +322,9 @@ export async function POST(req: NextRequest) {
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // B74: read Brain model from brain_settings (cached 5s, falls back to default).
+  const brainModel = await getCurrentBrainModel();
   const startedAt = Date.now();
 
   try {
@@ -391,7 +396,7 @@ export async function POST(req: NextRequest) {
         if (toolCallCount >= MAX_TOOL_CALLS_PER_TICK) {
           // Force final response — strip tools so Claude must emit text.
           const final: any = await anthropic.messages.create({
-            model: BRAIN_MODEL,
+            model: brainModel,
             max_tokens: 8192,
             system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective) +
               "\n\n[Tool budget exhausted. Call propose_work NOW with whatever decision you can make.]",
@@ -416,7 +421,7 @@ export async function POST(req: NextRequest) {
         }
 
         const response: any = await anthropic.messages.create({
-          model: BRAIN_MODEL,
+          model: brainModel,
           max_tokens: 8192,
           system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective),
           tools: BRAIN_TOOLS as any,
@@ -464,7 +469,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Legacy single-call path (current production behavior).
       const response = await anthropic.messages.create({
-        model: BRAIN_MODEL,
+        model: brainModel,
         max_tokens: 4096,
         system: buildSystemPrompt(visionText, workstreamsText, activeWorkstream, activeDirective),
         messages: [{ role: "user", content: userMessage }],
@@ -574,7 +579,7 @@ export async function POST(req: NextRequest) {
           auto_approved: autoApprove,
           approved_by: autoApprove ? "auto" : null,
           approved_at: autoApprove ? new Date().toISOString() : null,
-          model_version: BRAIN_MODEL,
+          model_version: brainModel,
           raw_response: order,
           spec: order.spec ?? null,
         })

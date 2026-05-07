@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getAdminUser } from '@/lib/admin'
 import BrainOrdersList from './components/BrainOrdersList'
 import DirectivePanel from './components/DirectivePanel'
+import BrainModelPanel from './components/BrainModelPanel'
 import type { ActiveDirective } from './components/DirectivePanel'
 
 export const dynamic = 'force-dynamic'
@@ -75,6 +76,7 @@ export default async function BrainAdminPage() {
           </div>
         ) : (
           <>
+            <BrainModelPanel />
             <DirectivePanel active={active} />
             <BrainOrdersList orders={orders} />
           </>
