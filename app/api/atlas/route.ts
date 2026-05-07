@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -100,13 +101,25 @@ const CLAIM_SPECIFIC_FIELDS = {
 }
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+  let userId: string | undefined
+  let source: string | undefined
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'atlas',
+        userId: null,
+        source: null,
+        outcome: 'unauthorized',
+        statusCode: auth.status,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
-    const userId = auth.userId
+    userId = auth.userId
+    source = auth.source
 
     // ── Parse body ────────────────────────────────────────────────────────
     const { formId, clientId, ifaId: _unused, collectedFields } = await request.json()
@@ -232,6 +245,27 @@ Keep it under 60 words. Friendly and direct. Mention they can find it on the ${f
       faFormRequestScript = scriptRes.content.find(b => b.type === 'text')?.text ?? null
     }
 
+    // Tally tokens from both LLM calls (mayaScript + faFormRequestScript)
+    const totalInput = (mayaScript ? 0 : 0) // tokens not directly available from conditional calls; log metadata instead
+    await logAgentInvocation({
+      agent: 'atlas',
+      userId,
+      source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      metadata: {
+        formId,
+        clientId,
+        formType: form.form_type,
+        insurer: form.insurer,
+        formAvailable,
+        requiredMissingCount: requiredMissing.length,
+        generatedMayaScript: !!mayaScript,
+        generatedFARequestScript: !!faFormRequestScript,
+      },
+    })
     return NextResponse.json({
       success: true,
       form: {
@@ -274,6 +308,15 @@ Keep it under 60 words. Friendly and direct. Mention they can find it on the ${f
     })
   } catch (err) {
     console.error('[atlas] error:', err)
+    await logAgentInvocation({
+      agent: 'atlas',
+      userId,
+      source,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Atlas failed' }, { status: 500 })
   }
 }
