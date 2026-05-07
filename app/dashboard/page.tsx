@@ -162,7 +162,13 @@ export default async function DashboardHome() {
   )
 
   return (
-    <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
+    <div style={{ padding: '16px 16px', background: '#F7F4F0', minHeight: '100vh' }} className="dashboard-home">
+      <style>{`
+        @media (min-width: 640px) { .dashboard-home { padding: 24px 28px !important; } }
+        @media (min-width: 640px) { .dashboard-kpi-grid { grid-template-columns: repeat(4, 1fr) !important; } }
+        .dashboard-cols { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media (min-width: 900px) { .dashboard-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      `}</style>
 
       {/* Greeting */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -174,7 +180,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 22 }} className="dashboard-kpi-grid">
         {[
           { label: 'Clients', value: String(clientCount || 0), sub: 'total book', href: '/dashboard/clients', warn: false },
           { label: 'Annual premium', value: `$${totalPremium.toLocaleString()}`, sub: `${activePolicies.length} active policies`, href: '/dashboard/analytics', warn: false },
@@ -192,7 +198,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* Three columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14 }}>
+      <div className="dashboard-cols">
 
         {/* URGENT */}
         <div>
