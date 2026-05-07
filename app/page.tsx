@@ -296,7 +296,7 @@ export default function HomePage() {
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>What Espresso does</p>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>Everything you need.<br /><em style={{ color: '#BA7517' }}>Nothing you don't.</em></h2>
-          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Built for financial advisers who work alone but needs to perform like a full team.</p>
+          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Built for financial advisers who work alone but need to perform like a full team.</p>
           <div className="g3">
             {[
               { title: 'Client intake', body: 'Every new enquiry handled 24/7. Structured discovery, client brief on your dashboard — while you sleep.', svg: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="5.5" r="3" stroke="#BA7517" strokeWidth="1.3"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="#BA7517" strokeWidth="1.3" strokeLinecap="round"/></svg> },
