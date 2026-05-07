@@ -15,6 +15,10 @@
     {
       "path": "/api/brain/verify",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/brain/reconcile",
+      "schedule": "45 * * * *"
     }
   ]
 }

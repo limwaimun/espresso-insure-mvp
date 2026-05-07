@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import type { WorkOrder } from '../page'
+import RefireAction from './RefireAction'
 
 type Filter = 'all' | 'active' | 'done' | 'failed'
 
@@ -207,6 +208,9 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                     {o.verification_result?.verified === false && pill('verify failed', { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' })}
                     {o.reverted_at && pill('reverted', { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' })}
                   </div>
+                  {(o.status === 'failed' || o.status === 'blocked') && (
+                    <RefireAction orderId={o.id} orderTitle={o.title} />
+                  )}
                 </div>
               )}
             </div>

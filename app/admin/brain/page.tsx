@@ -4,7 +4,6 @@ import { getAdminUser } from '@/lib/admin'
 import BrainOrdersList from './components/BrainOrdersList'
 import DirectivePanel from './components/DirectivePanel'
 import BrainModelPanel from './components/BrainModelPanel'
-import ReconcilePanel from './components/ReconcilePanel'
 import type { ActiveDirective } from './components/DirectivePanel'
 
 export const dynamic = 'force-dynamic'
@@ -78,7 +77,6 @@ export default async function BrainAdminPage() {
         ) : (
           <>
             <BrainModelPanel />
-            <ReconcilePanel />
             <DirectivePanel active={active} />
             <BrainOrdersList orders={orders} />
           </>

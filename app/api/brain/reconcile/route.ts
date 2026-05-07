@@ -55,9 +55,7 @@ async function fetchBrainCommits(): Promise<GhCommit[]> {
   return res.json();
 }
 
-export async function POST(_req: NextRequest) {
-  const user = await getAdminUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+async function performReconcile(): Promise<NextResponse> {
 
   const { data: runningRaw, error: runErr } = await supabase
     .from("work_orders")
@@ -200,4 +198,18 @@ export async function POST(_req: NextRequest) {
       total_running_at_start: running.length,
     },
   });
+}
+
+export async function GET(req: NextRequest) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return performReconcile();
+}
+
+export async function POST(_req: NextRequest) {
+  const user = await getAdminUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  return performReconcile();
 }
