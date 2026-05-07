@@ -48,6 +48,17 @@ export async function GET(request: NextRequest) {
     countMap[row.ifa_id] = (countMap[row.ifa_id] || 0) + 1
   }
 
+  // Fetch last_sign_in_at from auth.users for each profile
+  const lastLoginMap: Record<string, string | null> = {}
+  try {
+    const { data: { users: authUsers } } = await serviceSupabase.auth.admin.listUsers({ perPage: 1000 })
+    for (const u of authUsers || []) {
+      lastLoginMap[u.id] = u.last_sign_in_at || null
+    }
+  } catch (_) {
+    // non-fatal — last login simply won't appear
+  }
+
   // Global stats for admin overview
   const [{ count: totalClients }, { count: totalPolicies }] = await Promise.all([
     serviceSupabase.from('clients').select('*', { count: 'exact', head: true }),
@@ -57,6 +68,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     profiles,
     clientCounts: countMap,
+    lastLoginMap,
     stats: {
       totalFAs: profiles?.length || 0,
       totalClients: totalClients || 0,

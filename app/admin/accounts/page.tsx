@@ -13,9 +13,24 @@ interface FAProfile {
   preferred_insurers: string[] | null
 }
 
+function relativeTime(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  return `${months}mo ago`
+}
+
 export default function AdminAccountsPage() {
   const [fas, setFas] = useState<FAProfile[]>([])
   const [clientCounts, setClientCounts] = useState<Record<string, number>>({})
+  const [lastLoginMap, setLastLoginMap] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,6 +39,7 @@ export default function AdminAccountsPage() {
       .then(data => {
         if (data.profiles) setFas(data.profiles)
         if (data.clientCounts) setClientCounts(data.clientCounts)
+        if (data.lastLoginMap) setLastLoginMap(data.lastLoginMap)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -53,7 +69,7 @@ export default function AdminAccountsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#120A06' }}>
-              {['Name', 'Company', 'Plan', 'Clients', 'WhatsApp', 'Trial ends', 'Joined'].map(h => (
+              {['Name', 'Company', 'Plan', 'Clients', 'WhatsApp', 'Trial ends', 'Joined', 'Last login'].map(h => (
                 <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#C8813A', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #2E1A0E' }}>
                   {h}
                 </th>
@@ -95,12 +111,15 @@ export default function AdminAccountsPage() {
                   <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
                     {new Date(fa.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
+                    {relativeTime(lastLoginMap[fa.id])}
+                  </td>
                 </tr>
               )
             })}
             {fas.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>
+                <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>
                   No accounts found
                 </td>
               </tr>
