@@ -46,31 +46,31 @@ export default function AdminAccountsPage() {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: 40, color: '#C9B99A', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
+    <div style={{ padding: 40, color: '#6B6460', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
       Loading accounts…
     </div>
   )
 
   const PLAN_COLORS: Record<string, string> = {
-    platinum: '#E5E4E2', gold: '#C8813A', pro: '#4A9EBF',
-    solo: '#C8813A', team: '#5AB87A', trial: '#C9B99A',
+    platinum: '#6B6460', gold: '#BA7517', pro: '#4A9EBF',
+    solo: '#BA7517', team: '#5AB87A', trial: '#9B9088',
   }
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1100 }}>
-      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#F5ECD7', margin: '0 0 8px' }}>
+      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', margin: '0 0 8px' }}>
         FA Accounts
       </h1>
-      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A', margin: '0 0 28px' }}>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', margin: '0 0 28px' }}>
         {fas.length} registered financial advisors
       </p>
 
-      <div style={{ background: '#1C0F0A', border: '1px solid #2E1A0E', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#120A06' }}>
+            <tr style={{ background: '#FBFAF7' }}>
               {['Name', 'Company', 'Plan', 'Clients', 'WhatsApp', 'Trial ends', 'Joined', 'Last login'].map(h => (
-                <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#C8813A', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #2E1A0E' }}>
+                <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid #E8E2DA' }}>
                   {h}
                 </th>
               ))}
@@ -82,36 +82,36 @@ export default function AdminAccountsPage() {
                 ? Math.max(0, Math.ceil((new Date(fa.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
                 : null
               return (
-                <tr key={fa.id} style={{ borderBottom: i < fas.length - 1 ? '1px solid #2E1A0E' : 'none' }}>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#F5ECD7', fontWeight: 500 }}>
+                <tr key={fa.id} style={{ borderBottom: i < fas.length - 1 ? '1px solid #F1EFE8' : 'none' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500 }}>
                     {fa.name || '—'}
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
                     {fa.company || '—'}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
                     <span style={{
                       fontFamily: 'DM Sans, sans-serif', fontSize: 10, textTransform: 'capitalize',
                       padding: '2px 10px', borderRadius: 100,
-                      background: 'rgba(200,129,58,0.1)', border: '1px solid #3D2215',
-                      color: PLAN_COLORS[fa.plan || 'trial'] || '#C9B99A',
+                      background: 'rgba(186,117,23,0.08)', border: '1px solid #E8E2DA',
+                      color: PLAN_COLORS[fa.plan || 'trial'] || '#9B9088',
                     }}>
                       {fa.plan || 'trial'}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#F5ECD7', textAlign: 'center' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#1A1410', textAlign: 'center' }}>
                     {clientCounts[fa.id] ?? '…'}
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#C9B99A' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460' }}>
                     {fa.phone || '—'}
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: trialDays !== null && trialDays <= 3 ? '#D06060' : '#C9B99A' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: trialDays !== null && trialDays <= 3 ? '#D06060' : '#6B6460' }}>
                     {trialDays !== null ? `${trialDays}d left` : '—'}
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#9B9088' }}>
                     {new Date(fa.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
-                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#9B9088' }}>
                     {relativeTime(lastLoginMap[fa.id])}
                   </td>
                 </tr>
@@ -119,7 +119,7 @@ export default function AdminAccountsPage() {
             })}
             {fas.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>
+                <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>
                   No accounts found
                 </td>
               </tr>
