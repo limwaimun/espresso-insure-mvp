@@ -57,6 +57,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({})
 
   const stats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
@@ -71,16 +72,17 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return orders.filter(o => {
-      if (filter === 'active' && !ACTIVE_STATUSES.has(o.status)) return false
-      if (filter === 'done' && !DONE_STATUSES.has(o.status)) return false
-      if (filter === 'failed' && !FAILED_STATUSES.has(o.status)) return false
+      const eff = statusOverrides[o.id] ?? o.status
+      if (filter === 'active' && !ACTIVE_STATUSES.has(eff)) return false
+      if (filter === 'done' && !DONE_STATUSES.has(eff)) return false
+      if (filter === 'failed' && !FAILED_STATUSES.has(eff)) return false
       if (q) {
         const hay = `${o.title} ${o.workstream ?? ''} ${o.category ?? ''}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
     })
-  }, [orders, filter, search])
+  }, [orders, filter, search, statusOverrides])
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -149,7 +151,8 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
 
         {filtered.map(o => {
           const isOpen = expanded === o.id
-          const statusS = STATUS_STYLE[o.status] ?? STATUS_STYLE.proposed
+          const effectiveStatus = statusOverrides[o.id] ?? o.status
+          const statusS = STATUS_STYLE[effectiveStatus] ?? STATUS_STYLE.proposed
           const riskS = RISK_STYLE[o.risk_level ?? 'low'] ?? RISK_STYLE.low
           return (
             <div key={o.id} style={{ borderBottom: '1px solid #F1EFE8' }}>
@@ -170,7 +173,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                 </div>
                 <div>{o.workstream ? pill(o.workstream, { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' }) : <span style={{ color: '#9B9088' }}>—</span>}</div>
                 <div>{o.risk_level ? pill(o.risk_level, riskS) : <span style={{ color: '#9B9088' }}>—</span>}</div>
-                <div>{pill(o.status, statusS)}</div>
+                <div>{pill(effectiveStatus, statusS)}</div>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
                   {relativeTime(o.created_at)}
                 </div>
@@ -208,8 +211,12 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                     {o.verification_result?.verified === false && pill('verify failed', { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' })}
                     {o.reverted_at && pill('reverted', { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' })}
                   </div>
-                  {(o.status === 'failed' || o.status === 'blocked') && (
-                    <RefireAction orderId={o.id} orderTitle={o.title} />
+                  {(effectiveStatus === 'failed' || effectiveStatus === 'blocked') && (
+                    <RefireAction
+                      orderId={o.id}
+                      orderTitle={o.title}
+                      onSuccess={(newStatus) => setStatusOverrides(prev => ({ ...prev, [o.id]: newStatus }))}
+                    />
                   )}
                 </div>
               )}
