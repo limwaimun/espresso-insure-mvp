@@ -11,7 +11,7 @@ type Result = {
   error?: string
 }
 
-export default function RefireAction({ orderId, orderTitle, onSuccess }: { orderId: string; orderTitle: string; onSuccess?: (newStatus: 'dispatched' | 'done') => void }) {
+export default function RefireAction({ orderId, orderTitle, onSuccess }: { orderId: string; orderTitle: string; onSuccess?: (newStatus: 'dispatched' | 'done', action: 'reconciled' | 'redispatched', sha?: string) => void }) {
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
 
@@ -29,8 +29,8 @@ export default function RefireAction({ orderId, orderTitle, onSuccess }: { order
         setResult({ ok: false, error: json?.error || `HTTP ${res.status}` })
       } else {
         setResult(json as Result)
-        if (json?.action === 'reconciled') onSuccess?.('done')
-        else if (json?.action === 'redispatched') onSuccess?.('dispatched')
+        if (json?.action === 'reconciled') onSuccess?.('done', 'reconciled', json?.commit_sha)
+        else if (json?.action === 'redispatched') onSuccess?.('dispatched', 'redispatched')
       }
     } catch (e: any) {
       setResult({ ok: false, error: e?.message || 'Network error' })

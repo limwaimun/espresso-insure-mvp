@@ -58,6 +58,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({})
+  const [refireResults, setRefireResults] = useState<Record<string, { action: 'reconciled' | 'redispatched'; sha?: string }>>({})
 
   const stats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
@@ -215,8 +216,21 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                     <RefireAction
                       orderId={o.id}
                       orderTitle={o.title}
-                      onSuccess={(newStatus) => setStatusOverrides(prev => ({ ...prev, [o.id]: newStatus }))}
+                      onSuccess={(newStatus, action, sha) => {
+                        setStatusOverrides(prev => ({ ...prev, [o.id]: newStatus }))
+                        setRefireResults(prev => ({ ...prev, [o.id]: { action, sha } }))
+                      }}
                     />
+                  )}
+                  {refireResults[o.id]?.action === 'reconciled' && (
+                    <div style={{ marginTop: 14, padding: '10px 12px', background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#0F6E56' }}>
+                      ✓ Already shipped as <span style={{ fontFamily: 'DM Mono, monospace' }}>{refireResults[o.id].sha}</span> — marked done. No Telegram sent (safety check).
+                    </div>
+                  )}
+                  {refireResults[o.id]?.action === 'redispatched' && (
+                    <div style={{ marginTop: 14, padding: '10px 12px', background: '#FAEEDA', border: '1px solid #FAC775', borderRadius: 6, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#854F0B' }}>
+                      ↻ Redispatched. Elon notified via Telegram.
+                    </div>
                   )}
                 </div>
               )}
