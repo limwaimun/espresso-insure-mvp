@@ -50,18 +50,18 @@ export default function AdminPage() {
   }, [])
 
   const panelStyle = {
-    background: '#1C0F0A',
-    border: '1px solid #2E1A0E',
+    background: '#FFFFFF',
+    border: '1px solid #E8E2DA',
     borderRadius: 12,
     padding: 24,
   }
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1100 }}>
-      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#F5ECD7', margin: '0 0 8px' }}>
+    <div style={{ padding: '32px 40px', maxWidth: 1100, background: '#F7F4F0', minHeight: '100vh' }}>
+      <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 400, color: '#1A1410', margin: '0 0 8px' }}>
         Admin Overview
       </h1>
-      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#C9B99A', margin: '0 0 28px' }}>
+      <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', margin: '0 0 28px' }}>
         espresso. system status
       </p>
 
@@ -72,24 +72,24 @@ export default function AdminPage() {
           { label: 'Total clients', value: loading ? '…' : stats.totalClients },
           { label: 'Total policies', value: loading ? '…' : stats.totalPolicies },
         ].map(k => (
-          <div key={k.label} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 10, padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: '#F5ECD7' }}>{k.value}</div>
+          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 10, padding: '20px 24px' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: '#1A1410' }}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* Execution health */}
       <div style={{ ...panelStyle, marginBottom: 24 }}>
-        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#F5ECD7', margin: '0 0 16px' }}>
-          Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444' }}>(last 24h)</span>
+        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+          Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
         </h2>
-        {execLoading && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B5444' }}>Loading…</div>}
+        {execLoading && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>Loading…</div>}
         {!execLoading && execData && !(execData as any).error && (
           <>
             {/* Fail rate banner if > 20% */}
             {typeof execData.failRate === 'number' && execData.failRate > 0.2 && (
-              <div style={{ background: 'rgba(208,96,96,0.12)', border: '1px solid rgba(208,96,96,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
+              <div style={{ background: 'rgba(208,96,96,0.08)', border: '1px solid rgba(208,96,96,0.25)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
                 <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#D06060' }}>
                   ⚠ Elevated failure rate: {Math.round(execData.failRate * 100)}% ({execData.totalFail}/{execData.total} executions)
                 </span>
@@ -98,26 +98,26 @@ export default function AdminPage() {
             {/* Per-action summary */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
               {Object.entries(execData.byAction || {}).sort((a, b) => (b[1].ok + b[1].fail) - (a[1].ok + a[1].fail)).map(([action, counts]) => (
-                <div key={action} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{action.replace(/_/g, ' ')}</div>
-                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#F5ECD7' }}>
-                    <span style={{ color: '#5AB87A' }}>{counts.ok}</span>
-                    <span style={{ color: '#6B5444' }}> / </span>
-                    <span style={{ color: counts.fail > 0 ? '#D06060' : '#6B5444' }}>{counts.fail}</span>
+                <div key={action} style={{ background: '#FBFAF7', border: '1px solid #E8E2DA', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{action.replace(/_/g, ' ')}</div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#1A1410' }}>
+                    <span style={{ color: '#3A7D5A' }}>{counts.ok}</span>
+                    <span style={{ color: '#9B9088' }}> / </span>
+                    <span style={{ color: counts.fail > 0 ? '#D06060' : '#9B9088' }}>{counts.fail}</span>
                   </div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B5444', marginTop: 2 }}>ok / fail</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', marginTop: 2 }}>ok / fail</div>
                 </div>
               ))}
             </div>
             {/* Recent failures */}
             {(execData.recentFailures || []).length > 0 && (
               <div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B5444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Recent failures</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Recent failures</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {(execData.recentFailures || []).slice(0, 5).map((f, i) => (
-                    <div key={i} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 6, padding: '8px 12px' }}>
+                    <div key={i} style={{ background: '#FBFAF7', border: '1px solid #E8E2DA', borderRadius: 6, padding: '8px 12px' }}>
                       <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#D06060', marginRight: 8 }}>{f.action}</span>
-                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#997A60', wordBreak: 'break-all' }}>{f.error}</span>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#6B6460', wordBreak: 'break-all' }}>{f.error}</span>
                     </div>
                   ))}
                 </div>
@@ -135,29 +135,29 @@ export default function AdminPage() {
       {/* Agent status */}
       <div style={{ ...panelStyle, marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#F5ECD7', margin: 0 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: 0 }}>
             Agent fleet
           </h2>
-          <Link href="/admin/agents" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', textDecoration: 'none' }}>
+          <Link href="/admin/agents" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>
             View all →
           </Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {AGENTS.map(agent => (
-            <div key={agent.name} style={{ background: '#120A06', border: '1px solid #2E1A0E', borderRadius: 8, padding: '12px 14px' }}>
+            <div key={agent.name} style={{ background: '#FBFAF7', border: '1px solid #E8E2DA', borderRadius: 8, padding: '12px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#F5ECD7', fontWeight: 500 }}>{agent.name}</span>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', fontWeight: 500 }}>{agent.name}</span>
                 <span style={{
                   fontSize: 9, padding: '2px 6px', borderRadius: 100,
                   fontFamily: 'DM Sans, sans-serif', textTransform: 'uppercase' as const,
-                  background: agent.status === 'live' ? 'rgba(90,184,122,0.15)' : 'rgba(200,129,58,0.15)',
-                  color: agent.status === 'live' ? '#5AB87A' : '#D4A030',
-                  border: `1px solid ${agent.status === 'live' ? '#2E5A3A' : '#3D2215'}`,
+                  background: agent.status === 'live' ? 'rgba(58,125,90,0.1)' : 'rgba(186,117,23,0.1)',
+                  color: agent.status === 'live' ? '#3A7D5A' : '#854F0B',
+                  border: `1px solid ${agent.status === 'live' ? 'rgba(58,125,90,0.25)' : 'rgba(133,79,11,0.25)'}`,
                 }}>
                   {agent.status === 'live' ? 'Live' : 'Pending'}
                 </span>
               </div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>{agent.role}</div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>{agent.role}</div>
             </div>
           ))}
         </div>
@@ -166,28 +166,28 @@ export default function AdminPage() {
       {/* Recent FA signups */}
       <div style={panelStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#F5ECD7', margin: 0 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: 0 }}>
             FA accounts
           </h2>
-          <Link href="/admin/accounts" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#C8813A', textDecoration: 'none' }}>
+          <Link href="/admin/accounts" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>
             View all →
           </Link>
         </div>
         {loading ? (
-          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#C9B99A' }}>Loading…</div>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>Loading…</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {recentFAs.map(fa => (
-              <div key={fa.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#120A06', borderRadius: 8, border: '1px solid #2E1A0E' }}>
+              <div key={fa.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#FBFAF7', borderRadius: 8, border: '1px solid #E8E2DA' }}>
                 <div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#F5ECD7', fontWeight: 500 }}>{fa.name || 'Unnamed'}</div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#C9B99A' }}>{fa.company || 'No company'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1A1410', fontWeight: 500 }}>{fa.name || 'Unnamed'}</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#6B6460' }}>{fa.company || 'No company'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, fontFamily: 'DM Sans, sans-serif', textTransform: 'capitalize' as const, background: 'rgba(200,129,58,0.1)', color: '#C8813A', border: '1px solid #3D2215' }}>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, fontFamily: 'DM Sans, sans-serif', textTransform: 'capitalize' as const, background: 'rgba(186,117,23,0.08)', color: '#854F0B', border: '1px solid rgba(186,117,23,0.2)' }}>
                     {fa.plan || 'trial'}
                   </span>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#C9B99A' }}>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
                     {new Date(fa.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
@@ -199,3 +199,4 @@ export default function AdminPage() {
     </div>
   )
 }
+
