@@ -37,11 +37,20 @@ export const metadata: Metadata = {
     title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
     description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
     locale: 'en_SG',
+    images: [
+      {
+        url: 'https://espresso.insure/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Espresso — Your AI Back-Office for Singapore IFAs',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
     description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+    images: ['https://espresso.insure/og-image.png'],
   },
   robots: {
     index: true,
