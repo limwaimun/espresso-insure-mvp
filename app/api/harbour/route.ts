@@ -16,10 +16,19 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 const SIX_MONTHS_AGO = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
   try {
     // ── Auth (accept session OR relay-internal) ───────────────────────────
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
+      await logAgentInvocation({
+        agent: 'harbour',
+        userId: null,
+        source: null,
+        outcome: 'unauthorized',
+        statusCode: auth.status,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     const userId = auth.userId
@@ -101,6 +110,19 @@ Return JSON: { "mayaScript": "", "reviewNotes": "", "urgency": "high|medium|low"
       let result = null
       try { result = JSON.parse(raw.replace(/```json|```/g, '').trim()) } catch { result = { mayaScript: raw } }
 
+      await logAgentInvocation({
+        agent: 'harbour',
+        userId,
+        source: auth.source,
+        outcome: 'ok',
+        statusCode: 200,
+        latencyMs: Date.now() - start,
+        model: 'claude-sonnet-4-6',
+        inputTokens: reviewRes.usage?.input_tokens ?? null,
+        outputTokens: reviewRes.usage?.output_tokens ?? null,
+        metadata: { mode: 'client_review', clientId },
+      })
+
       return NextResponse.json({
         success: true, agent: 'harbour', mode: 'client_review',
         holdings: clientHoldingsList,
@@ -129,6 +151,19 @@ ${overdueReview.slice(0, 3).map(h => `- ${(h.clients as any)?.name}: ${h.product
     })
     const narrative = narrativeRes.content.find(b => b.type === 'text')?.text || ''
 
+    await logAgentInvocation({
+      agent: 'harbour',
+      userId,
+      source: auth.source,
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: narrativeRes.usage?.input_tokens ?? null,
+      outputTokens: narrativeRes.usage?.output_tokens ?? null,
+      metadata: { mode: 'review_report', holdingsCount: allHoldings.length },
+    })
+
     return NextResponse.json({
       success: true,
       agent: 'harbour',
@@ -156,6 +191,15 @@ ${overdueReview.slice(0, 3).map(h => `- ${(h.clients as any)?.name}: ${h.product
 
   } catch (err) {
     console.error('[harbour] error:', err)
+    await logAgentInvocation({
+      agent: 'harbour',
+      userId: null,
+      source: null,
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Harbour failed' }, { status: 500 })
   }
 }
