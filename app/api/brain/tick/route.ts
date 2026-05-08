@@ -279,6 +279,12 @@ When you propose orders, the spec.operations field must contain LITERAL machine-
 
 You MUST verify every file path against the actual repo using list_dir or read_file BEFORE specifying it in an operation. Do not invent or guess paths. If you have not read or listed the path, do not write to it.
 
+CRITICAL — choosing between write_file and patch_file:
+- If the file does NOT exist yet (new file): use write_file with the complete content.
+- If the file ALREADY exists and your change is small (<50% of the file): use patch_file. Read the file with read_file, identify the smallest possible find/replace pairs, propose multiple patch_file operations if needed.
+- If the file ALREADY exists and you would need to rewrite the entire body: STOP. This is almost always a sign you should propose multiple smaller patch_file operations instead. The executor (Bolt) runs on a budget-constrained model that frequently fails to reproduce large file bodies accurately. Six attempts to wire logAgentInvocation into Harbour all failed for exactly this reason — Brain proposed write_file with the entire 6KB body and Bolt could not reproduce it. Always prefer multiple targeted patch_file ops over one write_file rewrite.
+- write_file on an existing file is acceptable ONLY when the file is genuinely small (<2KB) AND the change touches >50% of it.
+
 Operation types:
 - write_file: { type: "write_file", path: "<verified-path>", content: "<full literal file content>" }
 - patch_file: { type: "patch_file", path: "<verified-path>", find: "<exact existing string>", replace: "<exact new string>" }
