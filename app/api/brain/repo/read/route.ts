@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
+      cache: "no-store",
     });
     const body = await res.json();
 
