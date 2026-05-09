@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
@@ -9,7 +9,8 @@ import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 import { policyStatusPill, annualPremium } from '@/lib/policies'
-import { phaseLabel, stateLabel, phaseColor } from '@/lib/policy-lifecycle'
+import { phaseLabel, stateLabel, phaseColor, validTransitions, type LifecycleEvent } from '@/lib/policy-lifecycle'
+import { formatRelativeTime } from '@/lib/dates'
 import Modal from '@/components/Modal'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 
@@ -53,6 +54,64 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
   const currentPhase = (policy as Policy & { current_phase?: string }).current_phase || 'ongoing'
   const currentState = (policy as Policy & { policy_state?: string }).policy_state || 'active'
 
+  // Advance stage modal state
+  const [advanceOpen, setAdvanceOpen] = useState(false)
+  const [advanceText, setAdvanceText] = useState('')
+  const [selectedTransition, setSelectedTransition] = useState<{ to_phase: string; to_state: string; label: string } | null>(null)
+  const [advanceError, setAdvanceError] = useState<string | null>(null)
+
+  // Activity timeline state (lazy-loaded on first expand)
+  const [events, setEvents] = useState<LifecycleEvent[]>([])
+  const [eventsLoading, setEventsLoading] = useState(false)
+  const [eventsLoaded, setEventsLoaded] = useState(false)
+
+  // Lazy-load events on first expand
+  useEffect(() => {
+    if (!expanded || eventsLoaded) return
+    setEventsLoading(true)
+    fetch(`/api/policy-lifecycle/list?policyId=${policy.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.events) setEvents(data.events)
+        setEventsLoaded(true)
+      })
+      .catch(err => console.error('[PolicyRow] failed to load events:', err))
+      .finally(() => setEventsLoading(false))
+  }, [expanded, eventsLoaded, policy.id])
+
+  async function submitAdvanceStage() {
+    if (!selectedTransition) return
+    setSubmitting(true)
+    setAdvanceError(null)
+    try {
+      const res = await fetch('/api/policy-lifecycle/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stage_transition',
+          policyId: policy.id,
+          to_phase: selectedTransition.to_phase,
+          to_state: selectedTransition.to_state,
+          text: advanceText.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAdvanceError(data.error || 'Failed to advance stage')
+        setSubmitting(false)
+        return
+      }
+      setAdvanceOpen(false)
+      setAdvanceText('')
+      setSelectedTransition(null)
+      setEventsLoaded(false)  // force reload of events on next expand
+      router.refresh()
+    } catch (err) {
+      setAdvanceError('Network error')
+    }
+    setSubmitting(false)
+  }
+
   async function submitLogActivity() {
     if (!logActivityText.trim()) return
     setSubmitting(true)
@@ -75,6 +134,7 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
       }
       setLogActivityOpen(false)
       setLogActivityText('')
+      setEventsLoaded(false)  // force reload of events on next expand
       router.refresh()
     } catch (err) {
       setLogError('Network error')
@@ -136,7 +196,7 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
               { icon: <Bot size={12} color="#BA7517" />, label: 'Summarize with Maya', onClick: () => onAskMaya(policy, 'summarize'), accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft renewal reminder', onClick: () => onAskMaya(policy, 'renewal_reminder'), accent: true },
               { icon: <Activity size={12} color="#6B6460" />, label: 'Log activity', onClick: () => setLogActivityOpen(true), dividerBefore: true },
-              { icon: <ArrowUpRight size={12} color="#6B6460" />, label: 'Advance stage', onClick: () => alert('Advance stage modal coming in B82d-ui-2') },
+              { icon: <ArrowUpRight size={12} color="#6B6460" />, label: 'Advance stage', onClick: () => setAdvanceOpen(true) },
               ...(clientInfo ? [{
                 icon: <User size={12} color="#6B6460" />,
                 label: 'View client',
@@ -258,6 +318,51 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
                 />
               </div>
 
+              {/* ACTIVITY TIMELINE — lifecycle events for this policy (B82d) */}
+              <div style={{ marginTop: 24, paddingTop: 14, borderTop: '0.5px solid #F1EFE8', marginBottom: policy.notes ? 20 : 0 }}>
+                <div style={sectionHeaderStyle}>Activity</div>
+                {eventsLoading ? (
+                  <div style={{ fontSize: 12, color: '#9B9088' }}>Loading...</div>
+                ) : events.length === 0 ? (
+                  <div style={{ fontSize: 12, color: '#9B9088', fontStyle: 'italic' }}>
+                    No activity yet. Use 'Log activity' or 'Advance stage' from the menu to record an entry.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {events.map(ev => (
+                      <div key={ev.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <div style={{ fontSize: 11, color: '#9B9088', fontFamily: 'DM Mono, monospace', minWidth: 90, paddingTop: 2 }}>
+                          {formatRelativeTime(ev.created_at)}
+                        </div>
+                        <div style={{ flex: 1, fontSize: 13, color: '#1A1410', lineHeight: 1.5 }}>
+                          {ev.event_type === 'stage_transition' && (
+                            <div>
+                              <span style={{ color: '#6B6460' }}>Moved from </span>
+                              <span style={{ fontWeight: 500 }}>{phaseLabel(ev.from_phase || '')} / {stateLabel(ev.from_state || '')}</span>
+                              <span style={{ color: '#6B6460' }}> to </span>
+                              <span style={{ fontWeight: 500 }}>{phaseLabel(ev.to_phase || '')} / {stateLabel(ev.to_state || '')}</span>
+                              {ev.text && <div style={{ color: '#6B6460', marginTop: 2, fontStyle: 'italic' }}>"{ev.text}"</div>}
+                            </div>
+                          )}
+                          {ev.event_type === 'manual_note' && (
+                            <div>{ev.text}</div>
+                          )}
+                          {ev.event_type === 'agent_nudge' && (
+                            <div style={{ color: '#854F0B' }}>Agent nudge: {ev.text || '(no message)'}</div>
+                          )}
+                          {ev.event_type === 'maya_drafted' && (
+                            <div style={{ color: '#185FA5' }}>Maya drafted a message: {ev.text || '(see metadata)'}</div>
+                          )}
+                          {ev.event_type === 'maya_sent' && (
+                            <div style={{ color: '#0F6E56' }}>Maya sent: {ev.text || '(see metadata)'}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* NOTES — full-width if present */}
               {policy.notes && (
                 <div style={{ paddingTop: 14, borderTop: '0.5px solid #F1EFE8' }}>
@@ -306,6 +411,78 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
           </div>
         </Modal>
       )}
+
+      {/* B82d: Advance stage modal */}
+      {advanceOpen && (() => {
+        const transitions = validTransitions(currentPhase, currentState)
+        return (
+          <Modal title="Advance stage" onClose={() => { setAdvanceOpen(false); setAdvanceText(''); setSelectedTransition(null); setAdvanceError(null) }}>
+            <div style={{ padding: '24px 28px', minWidth: 480 }}>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', margin: '0 0 8px', lineHeight: 1.5 }}>
+                Current stage: <strong style={{ color: '#1A1410' }}>{phaseLabel(currentPhase)} · {stateLabel(currentState)}</strong>
+              </p>
+              {transitions.length === 0 ? (
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', padding: '14px 0', fontStyle: 'italic' }}>
+                  No transitions available from this stage.
+                </div>
+              ) : (
+                <>
+                  <label style={{ ...labelStyle, marginTop: 16 }}>Select next stage</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                    {transitions.map(t => {
+                      const isSelected = selectedTransition?.to_phase === t.to_phase && selectedTransition?.to_state === t.to_state
+                      return (
+                        <button
+                          key={`${t.to_phase}:${t.to_state}`}
+                          onClick={() => setSelectedTransition(t)}
+                          style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                            fontSize: 13,
+                            textAlign: 'left',
+                            padding: '10px 14px',
+                            border: isSelected ? '1px solid #BA7517' : '0.5px solid #E8E2DA',
+                            background: isSelected ? '#FBF7EE' : '#FFFFFF',
+                            color: '#1A1410',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {t.label} <span style={{ color: '#9B9088', fontSize: 11 }}>→ {phaseLabel(t.to_phase)} / {stateLabel(t.to_state)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <label style={{ ...labelStyle, marginTop: 18 }}>Note (optional)</label>
+                  <textarea
+                    value={advanceText}
+                    onChange={e => setAdvanceText(e.target.value)}
+                    placeholder="Why this transition?"
+                    rows={3}
+                    style={{ ...inputStyle, fontFamily: 'DM Sans, sans-serif', resize: 'vertical' }}
+                  />
+                  {advanceError && (
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#A32D2D', marginTop: 8 }}>
+                      {advanceError}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+                    <button onClick={() => { setAdvanceOpen(false); setAdvanceText(''); setSelectedTransition(null); setAdvanceError(null) }} style={btnOutline}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={submitAdvanceStage}
+                      disabled={!selectedTransition || submitting}
+                      style={{ ...btnPrimary, opacity: !selectedTransition || submitting ? 0.5 : 1, cursor: !selectedTransition || submitting ? 'not-allowed' : 'pointer' }}
+                    >
+                      <Save size={13} /> {submitting ? 'Saving...' : 'Advance stage'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </Modal>
+        )
+      })()}
     </>
   )
 }
