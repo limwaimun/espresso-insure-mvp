@@ -679,9 +679,18 @@ function MayaPlaygroundInner() {
           height: '100%',
           zIndex: isMobile ? 20 : 'auto',
         }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid #E8E2DA' }}>
-            <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: '#1A1410', margin: 0 }}>System Prompt</p>
-            <p style={{ fontSize: 11, color: '#6B6460', margin: '2px 0 0' }}>What Maya sees before your conversation</p>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #E8E2DA', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: '#1A1410', margin: 0 }}>System Prompt</p>
+              <p style={{ fontSize: 11, color: '#6B6460', margin: '2px 0 0' }}>What Maya sees before your conversation</p>
+            </div>
+            <button
+              onClick={() => setShowDebug(false)}
+              aria-label="Close debug panel"
+              style={{ background: 'transparent', border: 'none', padding: 6, cursor: 'pointer', color: '#6B6460', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
             {systemPrompt ? (
