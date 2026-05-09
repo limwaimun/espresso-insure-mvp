@@ -380,7 +380,7 @@ function MayaPlaygroundInner() {
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
           {clients.map(client => (
-            <button key={client.id} onClick={() => setSelectedClient(client)} style={{ width: '100%', background: selectedClient?.id === client.id ? '#9B9088' : 'transparent', border: `1px solid ${selectedClient?.id === client.id ? '#BA7517' : 'transparent'}`, borderRadius: 8, padding: '9px 11px', cursor: 'pointer', textAlign: 'left', marginBottom: 2, transition: 'all 0.12s ease' }}>
+            <button key={client.id} onClick={() => setSelectedClient(client)} style={{ width: '100%', background: selectedClient?.id === client.id ? 'rgba(186,117,23,0.08)' : 'transparent', border: `1px solid ${selectedClient?.id === client.id ? '#BA7517' : 'transparent'}`, borderRadius: 8, padding: '9px 11px', cursor: 'pointer', textAlign: 'left', marginBottom: 2, transition: 'all 0.12s ease' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                 <span style={{ fontSize: 13, color: '#1A1410', fontWeight: 500 }}>{client.name}</span>
                 <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 9, color: TIER_COLORS[client.tier], textTransform: 'uppercase', letterSpacing: '0.06em' }}>{client.tier}</span>
@@ -437,7 +437,7 @@ function MayaPlaygroundInner() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {!selectedClient ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#9B9088', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Bot size={28} color="#BA7517" />
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -450,14 +450,14 @@ function MayaPlaygroundInner() {
             {/* Chat header */}
             <div style={{ padding: '10px 18px', background: '#F7F4F0', borderBottom: '1px solid #E8E2DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#9B9088', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#BA7517', fontWeight: 600, flexShrink: 0 }}>{selectedClient.name.charAt(0)}</div>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#BA7517', fontWeight: 600, flexShrink: 0 }}>{selectedClient.name.charAt(0)}</div>
                 <div>
                   <p style={{ fontSize: 13, color: '#1A1410', margin: 0, fontWeight: 500 }}>{selectedClient.name}{selectedClient.company ? ` · ${selectedClient.company}` : ''}</p>
                   <p style={{ fontSize: 10, color: '#3A7D5A', margin: 0 }}>{ifaName} · Maya · {selectedClient.name}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setShowDebug(v => !v)} style={{ background: showDebug ? '#9B9088' : 'transparent', border: `1px solid ${showDebug ? '#BA7517' : '#E8E2DA'}`, borderRadius: 6, padding: '5px 11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: showDebug ? '#BA7517' : '#6B6460' }}>
+                <button onClick={() => setShowDebug(v => !v)} style={{ background: showDebug ? 'rgba(186,117,23,0.10)' : 'transparent', border: `1px solid ${showDebug ? '#BA7517' : '#E8E2DA'}`, borderRadius: 6, padding: '5px 11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: showDebug ? '#BA7517' : '#6B6460' }}>
                   {showDebug ? <EyeOff size={12} /> : <Eye size={12} />} Debug
                 </button>
                 <button onClick={resetConversation} style={{ background: 'transparent', border: '1px solid #E8E2DA', borderRadius: 6, padding: '5px 11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6B6460' }}>
@@ -488,7 +488,7 @@ function MayaPlaygroundInner() {
                   <p style={{ fontSize: 12, color: '#6B6460', marginBottom: 16 }}>Maya is ready — try one of these, or type your own</p>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 560, margin: '0 auto' }}>
                     {QUICK_PROMPTS.map(q => (
-                      <button key={q} onClick={() => sendMessage(q)} style={{ background: '#9B9088', border: '1px solid #E8E2DA', borderRadius: 16, padding: '6px 14px', cursor: 'pointer', fontSize: 12, color: '#6B6460' }}>{q}</button>
+                      <button key={q} onClick={() => sendMessage(q)} style={{ background: 'transparent', border: '1px solid #E8E2DA', borderRadius: 16, padding: '6px 14px', cursor: 'pointer', fontSize: 12, color: '#1A1410' }}>{q}</button>
                     ))}
                   </div>
                 </div>
@@ -497,12 +497,12 @@ function MayaPlaygroundInner() {
               {messages.map(msg => (
                 <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'client' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}>
                   {msg.role !== 'client' && (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: msg.role === 'maya' ? '#9B9088' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'maya' ? '#BA7517' : '#20A0A0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: msg.role === 'maya' ? '#BA7517' : '#20A0A0' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: msg.role === 'maya' ? 'rgba(186,117,23,0.10)' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'maya' ? '#BA7517' : '#20A0A0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: msg.role === 'maya' ? '#BA7517' : '#20A0A0' }}>
                       {msg.role === 'maya' ? 'M' : 'IFA'}
                     </div>
                   )}
                   <div style={{ maxWidth: '65%' }}>
-                    <div style={{ background: msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? '#9B9088' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? '#BA751744' : '#20A0A044'}`, borderRadius: msg.role === 'client' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', padding: '9px 13px' }}>
+                    <div style={{ background: msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? 'rgba(186,117,23,0.10)' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? '#BA751744' : '#20A0A044'}`, borderRadius: msg.role === 'client' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', padding: '9px 13px' }}>
                       {msg.role !== 'client' && (
                         <p style={{ fontSize: 10, fontWeight: 600, color: msg.role === 'maya' ? '#BA7517' : '#20A0A0', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                           {msg.role === 'maya' ? 'Maya' : ifaName}
@@ -542,7 +542,7 @@ function MayaPlaygroundInner() {
 
               {isLoading && (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#9B9088', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#BA7517' }}>M</div>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#BA7517' }}>M</div>
                   <div style={{ background: '#9B9088', border: '1px solid #BA751744', borderRadius: '4px 16px 16px 16px', padding: '11px 14px' }}>
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       {[0, 1, 2].map(i => <div key={i} className="maya-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#BA7517', animationDelay: `${i * 0.2}s` }} />)}
