@@ -26,8 +26,9 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { createClient } from '@/lib/supabase/client'
-import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image, Zap } from 'lucide-react'
+import { Send, Bot, Eye, EyeOff, RotateCcw, Paperclip, X, FileText, Image, Zap, ArrowLeft } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 
 interface Client {
@@ -102,6 +103,7 @@ function MayaPlaygroundInner() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [preferredInsurers, setPreferredInsurers] = useState<string[]>([])
   const [ifaId, setIfaId] = useState<string>('')
+  const isMobile = useIsMobile(768)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [conversationSummary, setConversationSummary] = useState<string | null>(null)
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -367,10 +369,25 @@ function MayaPlaygroundInner() {
     d.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: '#FFFFFF', overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', background: '#FFFFFF', overflow: 'hidden', fontFamily: 'DM Sans, sans-serif', position: 'relative' }}>
 
       {/* ── Left Panel ── */}
-      <div style={{ width: 272, flexShrink: 0, background: '#F7F4F0', borderRight: '1px solid #E8E2DA', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{
+        width: isMobile ? '100%' : 272,
+        flexShrink: 0,
+        background: '#F7F4F0',
+        borderRight: '1px solid #E8E2DA',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        position: isMobile ? 'absolute' : 'relative',
+        top: 0,
+        left: 0,
+        height: '100%',
+        zIndex: isMobile ? 10 : 'auto',
+        transform: isMobile && selectedClient ? 'translateX(-100%)' : 'translateX(0)',
+        transition: 'transform 250ms ease-out',
+      }}>
         <div style={{ padding: '18px 14px 12px', borderBottom: '1px solid #E8E2DA' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <Bot size={15} color="#BA7517" />
@@ -434,7 +451,16 @@ function MayaPlaygroundInner() {
       </div>
 
       {/* ── Main Chat Area ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        minWidth: 0,
+        width: isMobile ? '100%' : 'auto',
+        transform: isMobile && !selectedClient ? 'translateX(100%)' : 'translateX(0)',
+        transition: 'transform 250ms ease-out',
+      }}>
         {!selectedClient ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40 }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -450,6 +476,15 @@ function MayaPlaygroundInner() {
             {/* Chat header */}
             <div style={{ padding: '10px 18px', background: '#F7F4F0', borderBottom: '1px solid #E8E2DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {isMobile && (
+                  <button
+                    onClick={() => setSelectedClient(null)}
+                    aria-label="Back to client list"
+                    style={{ background: 'transparent', border: 'none', padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B6460' }}
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                )}
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#BA7517', fontWeight: 600, flexShrink: 0 }}>{selectedClient.name.charAt(0)}</div>
                 <div>
                   <p style={{ fontSize: 13, color: '#1A1410', margin: 0, fontWeight: 500 }}>{selectedClient.name}{selectedClient.company ? ` · ${selectedClient.company}` : ''}</p>
