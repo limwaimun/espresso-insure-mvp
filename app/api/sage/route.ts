@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const preferredContext = preferredInsurers && preferredInsurers.length > 0
-      ? `The IFA's preferred insurers are: ${preferredInsurers.join(', ')}. Mention these first where relevant.`
+      ? `The FA's preferred insurers are: ${preferredInsurers.join(', ')}. Mention these first where relevant.`
       : ''
 
     const prompt = `You are Sage, an internal actuary agent for Espresso, an insurance back-office platform in Singapore.

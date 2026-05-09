@@ -533,7 +533,7 @@ function MayaPlaygroundInner() {
                 <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'client' ? 'flex-end' : 'flex-start', gap: 8, alignItems: 'flex-end' }}>
                   {msg.role !== 'client' && (
                     <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: msg.role === 'maya' ? 'rgba(186,117,23,0.10)' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'maya' ? '#BA7517' : '#20A0A0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: msg.role === 'maya' ? '#BA7517' : '#20A0A0' }}>
-                      {msg.role === 'maya' ? 'M' : 'IFA'}
+                      {msg.role === 'maya' ? 'M' : 'FA'}
                     </div>
                   )}
                   <div style={{ maxWidth: '65%' }}>

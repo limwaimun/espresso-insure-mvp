@@ -190,18 +190,18 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Per-IFA token spend */}
+      {/* Per-FA token spend */}
       {invocData && invocData.tokensByUser && invocData.tokensByUser.length > 0 && (
         <div style={{ ...panelStyle, marginBottom: 24 }}>
           <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
-            Token spend by IFA <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
+            Token spend by FA <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
           </h2>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['IFA', 'Calls', 'Input tokens', 'Output tokens', 'Total tokens'].map(h => (
-                    <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', textAlign: h === 'IFA' ? 'left' : 'right', padding: '6px 10px', borderBottom: '1px solid #E8E2DA' }}>
+                  {['FA', 'Calls', 'Input tokens', 'Output tokens', 'Total tokens'].map(h => (
+                    <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', textAlign: h === 'FA' ? 'left' : 'right', padding: '6px 10px', borderBottom: '1px solid #E8E2DA' }}>
                       {h}
                     </th>
                   ))}

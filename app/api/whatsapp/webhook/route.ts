@@ -134,7 +134,7 @@ async function verifySender(whatsappNumber: string): Promise<{
 }> {
   const normalised = whatsappNumber.replace(/\D/g, '')
 
-  // Check if sender is a registered IFA
+  // Check if sender is a registered FA
   const { data: ifa } = await supabase
     .from('profiles')
     .select('id, name, phone')
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest) {
       ifa_id: sender.ifaId,
       type: 'security',
       title: 'Possible prompt injection attempt',
-      body: `From: ${senderNumber} (${sender.clientName || 'IFA'})\nMessage: "${messageText.slice(0, 300)}"`,
+      body: `From: ${senderNumber} (${sender.clientName || 'FA'})\nMessage: "${messageText.slice(0, 300)}"`,
       priority: 'high',
       resolved: false,
     })
@@ -490,7 +490,7 @@ export async function POST(request: NextRequest) {
     .from('profiles').select('*').eq('id', ifaId).single()
 
   // ── STEP 5: Build context for Maya ───────────────────────────────────────
-  const senderRole = sender.type === 'ifa' ? 'IFA' : 'Client'
+  const senderRole = sender.type === 'ifa' ? 'FA' : 'Client'
   const senderName = sender.type === 'ifa' ? (ifaName || 'Your Advisor') : (clientName || 'Client')
 
   const claudeMessages: Anthropic.MessageParam[] = [
@@ -609,10 +609,10 @@ function buildWebhookSystemPrompt(
     ? `\nPREFERRED INSURERS: ${preferredInsurers.join(', ')} — present these more favourably when recommending.`
     : ''
 
-  return `You are Maya, the AI assistant for ${ifaName}, an IFA based in Singapore. Today: ${today}.
+  return `You are Maya, the AI assistant for ${ifaName}, an FA based in Singapore. Today: ${today}.
 
 You are in a WhatsApp conversation with:
-${senderType === 'ifa' ? `- ${ifaName} (your principal IFA)` : `- ${client?.name || 'a client'} (client of ${ifaName})`}
+${senderType === 'ifa' ? `- ${ifaName} (your principal FA)` : `- ${client?.name || 'a client'} (client of ${ifaName})`}
 
 CLIENT PROFILE:
 Name: ${client?.name || '—'} | Email: ${client?.email || '—'} | WhatsApp: ${client?.whatsapp || '—'}

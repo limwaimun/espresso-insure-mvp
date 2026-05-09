@@ -164,10 +164,10 @@ ${openClaims.map(c => `  • ${c.title} — open for ${c.daysSinceUpdate} days`)
 IMPORTANT: If any claim has been open for 3+ days without an update, proactively ask ${ifaName} or the client for a status update on it. Keep it natural — "Just checking in on your [claim type] claim, any updates from the insurer?"`
     : ''
 
-  return `You are Maya, the AI assistant for ${ifaName}, an IFA based in Singapore.
+  return `You are Maya, the AI assistant for ${ifaName}, an FA based in Singapore.
 
 You are in a WhatsApp GROUP CHAT with:
-  1. ${ifaName} — the IFA
+  1. ${ifaName} — the FA
   2. ${client.name}${client.company ? ` from ${client.company}` : ''} — the client
   3. Yourself — Maya
 
@@ -343,7 +343,7 @@ async function generateAndSaveSummary(
     max_tokens: 500,
     messages: [{
       role: 'user',
-      content: `You are summarising a conversation between ${ifaName} (IFA), ${clientName} (client), and Maya (AI assistant) for an insurance platform.
+      content: `You are summarising a conversation between ${ifaName} (FA), ${clientName} (client), and Maya (AI assistant) for an insurance platform.
 
 Create a concise summary (max 200 words) covering:
 - Key topics discussed
@@ -574,7 +574,7 @@ export async function POST(request: NextRequest) {
     const tools: Anthropic.Tool[] = [
       {
         name: 'update_claim',
-        description: 'Update the status or priority of a claim for this client. Use when the IFA explicitly asks to change a claim\'s status or priority.',
+        description: 'Update the status or priority of a claim for this client. Use when the FA explicitly asks to change a claim\'s status or priority.',
         input_schema: {
           type: 'object' as const,
           properties: {

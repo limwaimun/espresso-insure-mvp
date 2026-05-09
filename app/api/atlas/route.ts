@@ -43,7 +43,7 @@ function buildKnownFields(client: any, policy: any, ifa: any) {
     'policy_type': policy?.type,
     'premium': policy?.premium,
 
-    // IFA / Agent
+    // FA / Agent
     'agent_name': ifa?.name,
     'financial_advisor': ifa?.name,
     'advisor_name': ifa?.name,
@@ -248,7 +248,7 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
         max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `You are Maya, a WhatsApp assistant for an IFA in Singapore.
+          content: `You are Maya, a WhatsApp assistant for an FA in Singapore.
 
 A client needs to submit a ${form.form_type} claim with ${form.insurer}, but we don't have their claim form in our library yet.
 
