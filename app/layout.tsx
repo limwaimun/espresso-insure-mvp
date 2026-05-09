@@ -24,9 +24,9 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://espresso.insure'),
   title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
-  description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+  description: 'Maya handles intake, renewals, and claims for Singapore FAs — 24/7, inside the WhatsApp groups you already use with clients.',
   applicationName: 'Espresso',
-  keywords: ['IFA', 'financial adviser', 'insurance', 'Singapore', 'WhatsApp', 'AI assistant', 'back-office', 'renewals', 'claims'],
+  keywords: ['FA', 'financial adviser', 'insurance', 'Singapore', 'WhatsApp', 'AI assistant', 'back-office', 'renewals', 'claims'],
   alternates: {
     canonical: '/',
   },
@@ -35,21 +35,21 @@ export const metadata: Metadata = {
     url: 'https://espresso.insure',
     siteName: 'Espresso',
     title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
-    description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+    description: 'Maya handles intake, renewals, and claims for Singapore FAs — 24/7, inside the WhatsApp groups you already use with clients.',
     locale: 'en_SG',
     images: [
       {
         url: 'https://espresso.insure/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Espresso — Your AI Back-Office for Singapore IFAs',
+        alt: 'Espresso — Your AI Back-Office for Singapore FAs',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
-    description: 'Maya handles intake, renewals, and claims for Singapore IFAs — 24/7, inside the WhatsApp groups you already use with clients.',
+    description: 'Maya handles intake, renewals, and claims for Singapore FAs — 24/7, inside the WhatsApp groups you already use with clients.',
     images: ['https://espresso.insure/og-image.png'],
   },
   robots: {
@@ -75,7 +75,7 @@ const organizationJsonLd = {
   name: 'Espresso',
   url: 'https://espresso.insure',
   logo: 'https://espresso.insure/favicon.ico',
-  description: 'AI back-office platform for Independent Financial Advisers in Singapore.',
+  description: 'AI back-office platform for Financial Advisers in Singapore.',
   email: 'hello@espresso.insure',
   areaServed: {
     '@type': 'Country',
@@ -89,7 +89,7 @@ const softwareApplicationJsonLd = {
   name: 'Espresso',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web, WhatsApp',
-  description: 'AI assistant Maya handles intake, renewals, and claims for Singapore IFAs — 24/7 inside WhatsApp.',
+  description: 'AI assistant Maya handles intake, renewals, and claims for Singapore FAs — 24/7 inside WhatsApp.',
   url: 'https://espresso.insure',
   offers: [
     {
@@ -155,7 +155,7 @@ const faqPageJsonLd = {
       name: 'What is Espresso?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Espresso is an AI back-office platform for Independent Financial Advisers in Singapore. Our AI assistant Maya handles client intake, policy renewals, and claims support — 24/7, inside the WhatsApp groups IFAs already use with their clients.',
+        text: 'Espresso is an AI back-office platform for Financial Advisers in Singapore. Our AI assistant Maya handles client intake, policy renewals, and claims support — 24/7, inside the WhatsApp groups FAs already use with their clients.',
       },
     },
     {
@@ -171,7 +171,7 @@ const faqPageJsonLd = {
       name: 'How long does setup take?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Most IFAs are set up in under 30 minutes — sign up, import your client list as a CSV, and create your first WhatsApp client group with Maya.',
+        text: 'Most FAs are set up in under 30 minutes — sign up, import your client list as a CSV, and create your first WhatsApp client group with Maya.',
       },
     },
     {
@@ -187,7 +187,7 @@ const faqPageJsonLd = {
       name: 'Is Espresso available outside Singapore?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Espresso is currently focused on Singapore-licensed Independent Financial Advisers. Other Asian markets are on the roadmap.',
+        text: 'Espresso is currently focused on Singapore-licensed Financial Advisers. Other Asian markets are on the roadmap.',
       },
     },
     {

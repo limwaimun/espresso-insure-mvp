@@ -269,7 +269,7 @@ export default function HomePage() {
       <section style={{ background: '#FFFFFF', padding: '80px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>Time saved per week</p>
-          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>IFAs using Espresso<br /><em style={{ color: '#BA7517' }}>save 8+ hours every week.</em></h2>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>FAs using Espresso<br /><em style={{ color: '#BA7517' }}>save 8+ hours every week.</em></h2>
           <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Here's where the time goes — and where it comes back.</p>
           <div className="g4" style={{ maxWidth: 920, margin: '0 auto 56px' }}>
             {[
@@ -306,7 +306,7 @@ export default function HomePage() {
       {/* SOCIAL PROOF */}
       <section style={{ background: '#F7F4F0', padding: '72px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 48 }}>What IFAs say</p>
+          <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 48 }}>What FAs say</p>
           <div className="g3">
             {([
               {
@@ -324,7 +324,7 @@ export default function HomePage() {
               {
                 quote: '"Setup really did take under 30 minutes. My biggest worry was that clients would find it weird \u2014 they don\'t. They love how fast Maya responds."',
                 name: 'Kevin L.',
-                title: 'Solo IFA, 200+ clients',
+                title: 'Solo FA, 200+ clients',
                 initials: 'KL',
               },
             ] as { quote: string; name: string; title: string; initials: string }[]).map(t => (
