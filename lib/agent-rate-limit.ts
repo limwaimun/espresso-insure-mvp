@@ -1,9 +1,20 @@
 // lib/agent-rate-limit.ts
 //
-// Lightweight per-IFA per-agent rate limiter.
+// Lightweight per-FA per-agent rate limiter.
 // Uses an in-process Map with sliding window (resets on cold start — good enough for Vercel
 // serverless where each function instance has its own memory, and the log table provides
 // the real audit trail).
+//
+// ⚠️  TECH DEBT (B84+): This is SOFT protection, not real rate limiting.
+//     Vercel runs serverless functions across many hot instances. Each instance
+//     has its own Map. With N hot instances, the effective limit becomes N×limit.
+//     Acceptable today (solo user, no public abuse vector) but BEFORE opening to
+//     real users, replace with shared state:
+//       - Postgres-backed table 'rate_limit_buckets' (cheap, already have Supabase), OR
+//       - Vercel KV (Redis-flavored, faster), OR
+//       - Upstash Redis (works across providers).
+//     This middleware will catch accidental client-side runaway loops on a single
+//     instance, but will NOT stop a determined attacker.
 //
 // Limits:
 //   - Default: 30 requests per agent per IFA per hour

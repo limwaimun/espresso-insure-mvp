@@ -30,6 +30,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
+    // ── Rate limit ────────────────────────────────────────────────────────
+    const rl = checkRateLimit(auth.userId, 'scout')
+    if (!rl.allowed) {
+      await logAgentInvocation({
+        agent: 'scout',
+        userId: auth.userId,
+        source: auth.source,
+        outcome: 'rate_limited',
+        statusCode: 429,
+        latencyMs: Date.now() - start,
+      })
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 })
+    }
+
     const contentType = request.headers.get('content-type') ?? ''
 
     // ── Mode 1: Process a product PDF ─────────────────────────────────────
