@@ -5,7 +5,7 @@
 // Two modes:
 //   - sendWhatsAppText(to, body): free-form text, only works inside the
 //     24-hour "customer service window" (i.e. the recipient messaged us first
-//     in the last 24 hours). Used by Maya when replying to a client or IFA.
+//     in the last 24 hours). Used by Maya when replying to a client or FA.
 //
 //   - sendWhatsAppTemplate(to, templateName, params): pre-approved Meta
 //     template. Required for cold-start outbound (e.g. Maya welcoming a new

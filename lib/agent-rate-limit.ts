@@ -17,7 +17,7 @@
 //     instance, but will NOT stop a determined attacker.
 //
 // Limits:
-//   - Default: 30 requests per agent per IFA per hour
+//   - Default: 30 requests per agent per FA per hour
 //   - Scout PDF extraction: 10 per hour (expensive)
 //   - Compass/Harbour: 20 per hour (multi-LLM-call agents)
 //

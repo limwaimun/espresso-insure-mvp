@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
 
   const totalsByAgent = Array.from(byAgent.values()).sort((a, b) => b.total - a.total)
 
-  // Per-IFA token spend aggregation
+  // Per-FA token spend aggregation
   const byUser = new Map<string, { user_id: string; input_tokens: number; output_tokens: number; total_calls: number }>()
   for (const row of rows || []) {
     const uid = row.user_id || 'anonymous'

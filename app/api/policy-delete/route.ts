@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing policyId' }, { status: 400 })
     }
 
-    // ── Verify the policy belongs to this IFA before deleting ─────────────
+    // ── Verify the policy belongs to this FA before deleting ──────────────
     // Note: document cleanup is handled by the policy_documents cascade
     // (Batch 5 multi-doc architecture). Legacy document_url column is dropped.
     const { data: policy, error: fetchError } = await supabase

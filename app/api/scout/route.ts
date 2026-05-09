@@ -7,7 +7,7 @@ import { checkRateLimit } from '@/lib/agent-rate-limit'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 // Scout — Espresso's internal product intelligence agent
-// Reads product PDFs forwarded by the IFA, extracts structured data
+// Reads product PDFs forwarded by the FA, extracts structured data
 // Also surfaces market insights and sentiment for Maya to use
 // Never speaks to clients directly
 
