@@ -256,6 +256,44 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* TIME SAVINGS */}
+      <section style={{ background: '#FFFFFF', padding: '80px 40px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>Time saved per week</p>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>IFAs using Espresso<br /><em style={{ color: '#BA7517' }}>save 8+ hours every week.</em></h2>
+          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>Here's where the time goes — and where it comes back.</p>
+          <div className="g4" style={{ maxWidth: 920, margin: '0 auto 56px' }}>
+            {[
+              { task: 'Client intake & follow-up', before: '3 hrs', after: '0 hrs', saving: '3 hrs back', color: '#0F6E56' },
+              { task: 'Chasing renewals', before: '2.5 hrs', after: '15 min', saving: '2+ hrs back', color: '#0F6E56' },
+              { task: 'Claims coordination', before: '2 hrs', after: '20 min', saving: '1.5 hrs back', color: '#0F6E56' },
+              { task: 'Document collection', before: '1 hr', after: '5 min', saving: '55 min back', color: '#0F6E56' },
+            ].map(row => (
+              <div key={row.task} className="lp-card" style={{ padding: '28px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410', lineHeight: 1.4 }}>{row.task}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: '#9B9088' }}>Without Espresso</span>
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#A32D2D', textDecoration: 'line-through' }}>{row.before}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: '#9B9088' }}>With Espresso</span>
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#0F6E56' }}>{row.after}</span>
+                  </div>
+                </div>
+                <div style={{ borderTop: '0.5px solid #E8E2DA', paddingTop: 12, fontSize: 13, fontWeight: 500, color: row.color }}>{row.saving}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ background: '#FEF3E2', border: '0.5px solid #FAC775', borderRadius: 12, padding: '24px 40px', textAlign: 'center' }}>
+              <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 42, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>8+ hrs</div>
+              <div style={{ fontSize: 13, color: '#5F5A57', marginTop: 6 }}>saved per week — time you get back with clients, or with family</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* SOCIAL PROOF */}
       <section style={{ background: '#F7F4F0', padding: '72px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
