@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       company: company?.trim() || null,
       phone: cleanPhone,
       plan: 'trial',
+      role: 'fa',
       trial_started_at: new Date().toISOString(),
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     }, { onConflict: 'id' })
