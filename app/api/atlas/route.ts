@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .select('*')
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (!client) {
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .select('*')
       .eq('client_id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     const relevantPolicy = policies?.find(p =>
       p.insurer?.toLowerCase().includes(form.insurer.toLowerCase()) ||
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
         .from('alerts')
         .select('id')
         .eq('client_id', clientId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .eq('resolved', false)
         .order('created_at', { ascending: false })
         .limit(1)

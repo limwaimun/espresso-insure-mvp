@@ -190,7 +190,7 @@ function MayaPlaygroundInner() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from('clients').select('*').eq('ifa_id', user.id).order('name')
+      const { data } = await supabase.from('clients').select('*').eq('fa_id', user.id).order('name')
       if (data) setClients(data)
     } catch (err) {
       console.error('[loadClients] error:', err)

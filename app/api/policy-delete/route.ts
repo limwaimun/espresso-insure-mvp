@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .select('id')
       .eq('id', policyId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (fetchError || !policy) {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .delete()
       .eq('id', policyId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 500 })

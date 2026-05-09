@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       .from('claims')
       .select('id, status, incident_date, filed_date, approved_at, denied_at, paid_at, closed_at')
       .eq('id', claimId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (readErr || !existing) {
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
       .from('claims')
       .update(patch)
       .eq('id', claimId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (error) {
       console.error('[claim-update] update error:', error.message)

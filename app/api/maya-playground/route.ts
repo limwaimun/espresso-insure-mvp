@@ -242,7 +242,7 @@ async function getOrCreateConversation(faId: string, clientId: string): Promise<
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')
-    .eq('ifa_id', faId)
+    .eq('fa_id', faId)
     .eq('client_id', clientId)
     .eq('status', 'playground')
     .single()
@@ -252,7 +252,7 @@ async function getOrCreateConversation(faId: string, clientId: string): Promise<
   const { data: created, error } = await supabase
     .from('conversations')
     .insert({
-      ifa_id: faId,
+      fa_id: faId,
       client_id: clientId,
       status: 'playground',
       last_message: '',
@@ -450,7 +450,7 @@ export async function GET(request: NextRequest) {
       .from('clients')
       .select('id')
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (!clientCheck) {
@@ -460,7 +460,7 @@ export async function GET(request: NextRequest) {
     const { data: conv } = await supabase
       .from('conversations')
       .select('id, summary')
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .eq('client_id', clientId)
       .eq('status', 'playground')
       .single()
@@ -536,7 +536,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .select('id')
       .eq('id', client.id)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (!clientCheck) {
@@ -633,7 +633,7 @@ export async function POST(request: NextRequest) {
           .from('alerts')
           .update(patch)
           .eq('id', input.claim_id)
-          .eq('ifa_id', userId)
+          .eq('fa_id', userId)
 
         if (error) {
           toolResult = `Error updating claim: ${error.message}`

@@ -49,7 +49,7 @@ export default function ClientsPage() {
     if (!user) return
     setFaId(user.id)
     const [{ data: clientData }, { data: profile }] = await Promise.all([
-      supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id), policies(premium, status)').eq('ifa_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id), policies(premium, status)').eq('fa_id', user.id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('plan').eq('id', user.id).single(),
     ])
     setClients((clientData || []) as any)

@@ -59,7 +59,7 @@ export type EventType =
 export interface LifecycleEvent {
   id: string
   policy_id: string
-  ifa_id: string
+  fa_id: string
   client_id: string
   event_type: EventType
   from_phase: Phase | null

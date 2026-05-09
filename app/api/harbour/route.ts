@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const { data: holdings } = await supabase
       .from('holdings')
       .select('*, clients(id, name, company)')
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     const allHoldings = holdings || []
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         .from('clients')
         .select('name, birthday')
         .eq('id', clientId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
 
       if (!client) {

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .update(updatePayload)
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

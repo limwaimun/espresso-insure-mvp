@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .select('id')
       .eq('id', policyId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (!policyCheck) {
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .update(patch)
       .eq('id', policyId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (error) {
       console.error('[policy-update] update error:', error.message)

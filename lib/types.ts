@@ -16,7 +16,7 @@
 export interface Policy {
   id: string
   client_id: string
-  ifa_id: string
+  fa_id: string
 
   // Denormalized carrier / product info
   insurer: string | null
@@ -55,7 +55,7 @@ export interface Policy {
 export interface Alert {
   id: string
   client_id: string | null
-  ifa_id: string
+  fa_id: string
 
   type: string
   title: string
@@ -75,7 +75,7 @@ export interface Alert {
 export interface Holding {
   id: string
   client_id: string
-  ifa_id: string
+  fa_id: string
 
   // Product identity
   product_type: string             // NOT NULL per DB

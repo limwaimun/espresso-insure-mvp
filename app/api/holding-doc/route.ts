@@ -30,7 +30,7 @@ async function assertHoldingOwnership(holdingId: string, userId: string) {
     .from('holdings')
     .select('id')
     .eq('id', holdingId)
-    .eq('ifa_id', userId)
+    .eq('fa_id', userId)
     .single()
   if (error || !data) return { ok: false as const, status: 404, error: 'Holding not found or unauthorized' }
   return { ok: true as const }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       .from('holding_documents')
       .insert({
         holding_id: holdingId,
-        ifa_id: userId,
+        fa_id: userId,
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
         .from('holding_documents')
         .select('file_path, file_name')
         .eq('id', docId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
       if (error || !doc) {
         return NextResponse.json({ error: 'Document not found or unauthorized' }, { status: 404 })
@@ -136,13 +136,13 @@ export async function GET(request: NextRequest) {
     if (!holdingId) return NextResponse.json({ error: 'Missing holdingId or docId' }, { status: 400 })
 
     // Single query that both filters and enforces ownership. No separate
-    // ownership pre-check — `.eq('ifa_id', userId)` + RLS make it impossible
+    // ownership pre-check — `.eq('fa_id', userId)` + RLS make it impossible
     // to see rows belonging to another FA. Saves a round-trip.
     const { data: rows, error } = await supabase
       .from('holding_documents')
       .select('id, file_name, file_size, mime_type, uploaded_at')
       .eq('holding_id', holdingId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .order('uploaded_at', { ascending: true })
 
     if (error) {
@@ -180,7 +180,7 @@ export async function DELETE(request: NextRequest) {
       .from('holding_documents')
       .select('id, file_path')
       .eq('id', docId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (fetchErr || !doc) return NextResponse.json({ error: 'Document not found or unauthorized' }, { status: 404 })
@@ -192,7 +192,7 @@ export async function DELETE(request: NextRequest) {
       .from('holding_documents')
       .delete()
       .eq('id', docId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (deleteErr) {
       console.error('[holding-doc DELETE] db error:', deleteErr)

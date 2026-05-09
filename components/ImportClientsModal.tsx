@@ -297,7 +297,7 @@ export default function ImportClientsModal({
       const { data: existing } = await supabase
         .from('clients')
         .select('id, name, email, whatsapp, policies(id, policy_number, insurer, type), holdings(id, product_name, provider)')
-        .eq('ifa_id', faId)
+        .eq('fa_id', faId)
 
       const existingClients: ExistingClient[] = (existing || []).map((c: any) => ({
         id: c.id, name: c.name, email: c.email, whatsapp: c.whatsapp,
@@ -369,7 +369,7 @@ export default function ImportClientsModal({
       if (isNew) {
         // Insert new client
         const { data: nc, error: clientErr } = await supabase.from('clients').insert({
-          ifa_id: faId, name: client.name, email: client.email,
+          fa_id: faId, name: client.name, email: client.email,
           whatsapp: client.phone, company: client.company,
           type: client.type || 'individual', tier: client.tier || 'silver',
           birthday: (client as any).dob || null,
@@ -397,7 +397,7 @@ export default function ImportClientsModal({
       for (const p of (policiesToAdd || [])) {
         console.log('[MODAL-INSERT]', client.name, p.insurer, 'raw policy:', JSON.stringify(p))
         const { error: pErr } = await supabase.from('policies').insert({
-          ifa_id: faId, client_id: clientId,
+          fa_id: faId, client_id: clientId,
           policy_number: p.policy_number,
           product_name: (p as any).product_name || null,
           insurer: p.insurer, type: p.type,
@@ -420,7 +420,7 @@ export default function ImportClientsModal({
         const sc = coerceEnum((h as any).sector,      SECTOR_ENUM)
 
         const { error: hErr } = await supabase.from('holdings').insert({
-          ifa_id: faId, client_id: clientId,
+          fa_id: faId, client_id: clientId,
           product_type: h.product_type || 'other', product_name: h.product_name,
           provider: h.provider, platform: h.platform,
           units_held: h.units_held, last_nav: h.last_nav,

@@ -14,16 +14,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     supabase.from('profiles').select('name, plan').eq('id', user.id).single(),
     supabase.from('policies')
       .select('id', { count: 'exact', head: true })
-      .eq('ifa_id', user.id)
+      .eq('fa_id', user.id)
       .gte('renewal_date', now.toISOString())
       .lte('renewal_date', ninetyDays),
     supabase.from('alerts')
       .select('id, priority')
-      .eq('ifa_id', user.id)
+      .eq('fa_id', user.id)
       .eq('resolved', false),
     supabase.from('claims')
       .select('id', { count: 'exact', head: true })
-      .eq('ifa_id', user.id)
+      .eq('fa_id', user.id)
       .in('status', ['open', 'in_progress']),
   ])
 

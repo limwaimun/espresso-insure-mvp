@@ -41,11 +41,11 @@ export async function GET(request: NextRequest) {
   // Single query for all client counts — no N+1
   const { data: clientCountRows } = await serviceSupabase
     .from('clients')
-    .select('ifa_id')
+    .select('fa_id')
 
   const countMap: Record<string, number> = {}
   for (const row of clientCountRows || []) {
-    countMap[row.ifa_id] = (countMap[row.ifa_id] || 0) + 1
+    countMap[row.fa_id] = (countMap[row.fa_id] || 0) + 1
   }
 
   // Fetch last_sign_in_at from auth.users for each profile

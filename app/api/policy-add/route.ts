@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .select('id')
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (clientError || !client) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       .from('policies')
       .insert({
         client_id: clientId,
-        ifa_id: userId,
+        fa_id: userId,
         policy_number: policy_number || null,
         insurer,
         type,

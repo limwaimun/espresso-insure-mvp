@@ -33,7 +33,7 @@ async function assertClaimOwnership(claimId: string, userId: string) {
     .from('claims')
     .select('id, type, client_id')
     .eq('id', claimId)
-    .eq('ifa_id', userId)
+    .eq('fa_id', userId)
     .single()
   if (error || !data) return { ok: false as const, status: 404, error: 'Claim not found or unauthorized' }
   if (data.type !== 'claim') return { ok: false as const, status: 400, error: 'Target is not a claim' }
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       .insert({
         claim_id: claimId,
         client_id: own.clientId,
-        ifa_id: userId,
+        fa_id: userId,
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         .from('claim_attachments')
         .select('storage_path, file_name')
         .eq('id', docId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
       if (error || !doc) {
         return NextResponse.json({ error: 'Document not found or unauthorized' }, { status: 404 })
@@ -162,13 +162,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Single query that both filters and enforces ownership. No separate
-    // ownership pre-check — `.eq('ifa_id', userId)` + RLS make it impossible
+    // ownership pre-check — `.eq('fa_id', userId)` + RLS make it impossible
     // to see rows belonging to another FA. Saves a round-trip.
     const { data: rows, error } = await supabase
       .from('claim_attachments')
       .select('id, file_name, file_size, file_type, source, description, uploaded_by, created_at')
       .eq('claim_id', claimId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -217,7 +217,7 @@ export async function DELETE(request: NextRequest) {
       .from('claim_attachments')
       .select('id, storage_path')
       .eq('id', docId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (fetchErr || !doc) {
@@ -237,7 +237,7 @@ export async function DELETE(request: NextRequest) {
       .from('claim_attachments')
       .delete()
       .eq('id', docId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (deleteErr) {
       console.error('[claim-doc DELETE] db error:', deleteErr)

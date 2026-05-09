@@ -94,7 +94,7 @@ export default function LibraryPage() {
     setFaId(user.id)
 
     // Load clients
-    const { data: clientData } = await supabase.from('clients').select('id, name, company').eq('ifa_id', user.id).order('name')
+    const { data: clientData } = await supabase.from('clients').select('id, name, company').eq('fa_id', user.id).order('name')
     if (clientData) setClients(clientData)
 
     // Try to load forms from DB (if harvester has run)

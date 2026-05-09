@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
 
     const { data: policy, error: policyErr } = await supabase
       .from('policies')
-      .select('id, ifa_id, client_id, current_phase, policy_state')
+      .select('id, fa_id, client_id, current_phase, policy_state')
       .eq('id', policyId)
       .single()
 
     if (policyErr || !policy) {
       return NextResponse.json({ error: 'Policy not found' }, { status: 404 })
     }
-    if (policy.ifa_id !== userId) {
+    if (policy.fa_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         .from('policy_lifecycle_events')
         .insert({
           policy_id: policy.id,
-          ifa_id: policy.ifa_id,
+          fa_id: policy.fa_id,
           client_id: policy.client_id,
           event_type: 'manual_note' as EventType,
           text: text.trim(),
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         .from('policy_lifecycle_events')
         .insert({
           policy_id: policy.id,
-          ifa_id: policy.ifa_id,
+          fa_id: policy.fa_id,
           client_id: policy.client_id,
           event_type: 'stage_transition' as EventType,
           from_phase: policy.current_phase as Phase,

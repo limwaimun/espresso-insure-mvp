@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .select('id')
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (clientError || !client) {
@@ -104,7 +104,7 @@ If premium is monthly multiply by 12. renewal_date must be a valid future date. 
       .from('policies')
       .insert({
         client_id: clientId,
-        ifa_id: userId,
+        fa_id: userId,
         insurer: extracted.insurer ?? 'Unknown',
         type: extracted.type ?? 'Unknown',
         premium: Number(extracted.premium) || 0,

@@ -2,7 +2,7 @@
 //
 // Sibling to ImportClientsModal (CSV batch import). Same DB write target
 // (clients table, direct supabase.from('clients').insert), same RLS-gated
-// authorization (ifa_id), but designed for the FA who wants to type one
+// authorization (fa_id), but designed for the FA who wants to type one
 // client in by hand instead of preparing a CSV.
 //
 // Visually mirrors HoldingForm: cream palette, shared <Modal> wrapper,
@@ -57,7 +57,7 @@ export default function AddClientModal({ faId, onClose, onAdded }: AddClientModa
       const { data, error: dbError } = await supabase
         .from('clients')
         .insert({
-          ifa_id: faId,
+          fa_id: faId,
           name: form.name.trim(),
           type: form.type,
           company: form.company.trim() || null,

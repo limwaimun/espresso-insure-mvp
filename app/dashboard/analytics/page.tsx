@@ -75,9 +75,9 @@ export default function AnalyticsPage() {
 
       // Fallback: build metrics directly from Supabase
       const [{ data: clients }, { data: policies }, { data: alerts }] = await Promise.all([
-        supabase.from('clients').select('id, name, company, tier').eq('ifa_id', user.id),
-        supabase.from('policies').select('id, premium, renewal_date, type, insurer, client_id, clients(name)').eq('ifa_id', user.id),
-        supabase.from('alerts').select('id, priority, resolved, created_at, title, clients(name)').eq('ifa_id', user.id).eq('resolved', false),
+        supabase.from('clients').select('id, name, company, tier').eq('fa_id', user.id),
+        supabase.from('policies').select('id, premium, renewal_date, type, insurer, client_id, clients(name)').eq('fa_id', user.id),
+        supabase.from('alerts').select('id, priority, resolved, created_at, title, clients(name)').eq('fa_id', user.id).eq('resolved', false),
       ])
 
       const now = new Date()

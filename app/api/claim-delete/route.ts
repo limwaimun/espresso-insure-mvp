@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       .from('claims')
       .delete()
       .eq('id', claimId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
 
     if (error) {
       console.error('[claim-delete] delete error:', error.message)

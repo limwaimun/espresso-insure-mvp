@@ -29,14 +29,14 @@ export async function GET(request: NextRequest) {
     // Confirm the policy belongs to this FA before returning events
     const { data: policy, error: policyErr } = await supabase
       .from('policies')
-      .select('id, ifa_id')
+      .select('id, fa_id')
       .eq('id', policyId)
       .single()
 
     if (policyErr || !policy) {
       return NextResponse.json({ error: 'Policy not found' }, { status: 404 })
     }
-    if (policy.ifa_id !== userId) {
+    if (policy.fa_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -87,7 +87,7 @@ async function checkRateLimit(phone: string, faId: string | null): Promise<{
       .eq('id', existing.id)
   } else {
     await supabase.from('webhook_rate_limits')
-      .insert({ phone, ifa_id: faId, message_count: 1, window_start: hourWindow.toISOString() })
+      .insert({ phone, fa_id: faId, message_count: 1, window_start: hourWindow.toISOString() })
   }
 
   // Per-FA daily cap
@@ -96,7 +96,7 @@ async function checkRateLimit(phone: string, faId: string | null): Promise<{
     const { data: spend } = await supabase
       .from('fa_daily_spend')
       .select('id, message_count')
-      .eq('ifa_id', faId)
+      .eq('fa_id', faId)
       .eq('date', today)
       .single()
 
@@ -109,7 +109,7 @@ async function checkRateLimit(phone: string, faId: string | null): Promise<{
         .eq('id', spend.id)
     } else {
       await supabase.from('fa_daily_spend')
-        .insert({ ifa_id: faId, date: today, message_count: 1 })
+        .insert({ fa_id: faId, date: today, message_count: 1 })
     }
   }
 
@@ -148,7 +148,7 @@ async function verifySender(whatsappNumber: string): Promise<{
   // Check if sender is a known client
   const { data: client } = await supabase
     .from('clients')
-    .select('id, name, ifa_id, profiles(name, phone)')
+    .select('id, name, fa_id, profiles(name, phone)')
     .or(`whatsapp.eq.${normalised},whatsapp.eq.+${normalised}`)
     .single()
 
@@ -156,7 +156,7 @@ async function verifySender(whatsappNumber: string): Promise<{
     const faProfile = client.profiles as any
     return {
       type: 'client',
-      faId: client.ifa_id,
+      faId: client.fa_id,
       clientId: client.id,
       faName: faProfile?.name || null,
       clientName: client.name,
@@ -172,7 +172,7 @@ async function verifySender(whatsappNumber: string): Promise<{
     body: `Message received from unregistered number: ${whatsappNumber}. Not responded to.`,
     priority: 'medium',
     resolved: false,
-    // No ifa_id — this is a system-level alert
+    // No fa_id — this is a system-level alert
   })
   if (unknownAlertError) console.warn('[webhook] unknown-sender alert insert failed:', unknownAlertError.message)
 
@@ -190,7 +190,7 @@ async function notifyFA(
 ) {
   // 1. Create dashboard alert
   const { error: notifyAlertError } = await supabase.from('alerts').insert({
-    ifa_id: faId,
+    fa_id: faId,
     type: 'client_message',
     title: `${clientName} messaged Maya`,
     body: `Client said: "${messageSummary.slice(0, 200)}"\n\nMaya replied: "${mayaReply.slice(0, 200)}"`,
@@ -309,7 +309,7 @@ export async function POST(request: NextRequest) {
     if (rateCheck.reason === 'fa_daily_cap') {
       // Log alert for FA — Maya is paused for the day
       await supabase.from('alerts').insert({
-        ifa_id: sender.faId,
+        fa_id: sender.faId,
         type: 'system',
         title: 'Maya daily message limit reached',
         body: 'Maya has reached today\'s message limit and is paused until midnight. Upgrade your plan for a higher limit.',
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
   if (isInjection) {
     // Log security event but don't reveal we detected it
     const { error: injectionAlertError } = await supabase.from('alerts').insert({
-      ifa_id: sender.faId,
+      fa_id: sender.faId,
       type: 'security',
       title: 'Possible prompt injection attempt',
       body: `From: ${senderNumber} (${sender.clientName || 'FA'})\nMessage: "${messageText.slice(0, 300)}"`,
@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
   const { data: existingConv } = await supabase
     .from('conversations')
     .select('id')
-    .eq('ifa_id', faId)
+    .eq('fa_id', faId)
     .eq('client_id', clientId || '')
     .eq('status', 'active')
     .single()
@@ -361,7 +361,7 @@ export async function POST(request: NextRequest) {
     const { data: newConv } = await supabase
       .from('conversations')
       .insert({
-        ifa_id: faId,
+        fa_id: faId,
         client_id: clientId,
         status: 'active',
         last_message: messageText.slice(0, 200),
@@ -437,7 +437,7 @@ export async function POST(request: NextRequest) {
             await serviceSupabase.from('claim_attachments').insert({
               claim_id: recentClaim?.id || null,
               client_id: clientId,
-              ifa_id: faId,
+              fa_id: faId,
               file_name: fileName,
               file_type: mimeType,
               file_size: fileBuffer.byteLength,
@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
 
             // 6. Notify FA via Supabase alert
             const { error: mediaAlertError } = await supabase.from('alerts').insert({
-              ifa_id: faId,
+              fa_id: faId,
               client_id: clientId,
               type: 'client_message',
               title: `Document received from ${clientName || senderNumber}`,

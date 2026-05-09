@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       .from('clients')
       .select('id')
       .eq('id', clientId)
-      .eq('ifa_id', userId)
+      .eq('fa_id', userId)
       .single()
 
     if (!clientCheck) {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         .select('id')
         .eq('id', policy_id)
         .eq('client_id', clientId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
       if (!policyCheck) {
         return NextResponse.json({ error: 'Policy not found or does not belong to this client' }, { status: 400 })
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const { data: claim, error } = await supabase
       .from('claims')
       .insert({
-        ifa_id: userId,
+        fa_id: userId,
         client_id: clientId,
         policy_id: policy_id || null,
         title: title.trim(),

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       const { data: cached } = await supabase
         .from('lens_cache')
         .select('narrative, metrics, generated_at')
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
 
       if (cached) {
@@ -97,9 +97,9 @@ export async function POST(request: NextRequest) {
       { data: alerts },
       { data: ifa },
     ] = await Promise.all([
-      supabase.from('clients').select('*').eq('ifa_id', userId),
-      supabase.from('policies').select('*').eq('ifa_id', userId),
-      supabase.from('alerts').select('*').eq('ifa_id', userId),
+      supabase.from('clients').select('*').eq('fa_id', userId),
+      supabase.from('policies').select('*').eq('fa_id', userId),
+      supabase.from('alerts').select('*').eq('fa_id', userId),
       supabase.from('profiles').select('*').eq('id', userId).single(),
     ])
 
@@ -229,11 +229,11 @@ ${JSON.stringify(metrics, null, 2)}`,
       await supabase
         .from('lens_cache')
         .upsert({
-          ifa_id: userId,
+          fa_id: userId,
           narrative,
           metrics,
           generated_at: now.toISOString(),
-        }, { onConflict: 'ifa_id' })
+        }, { onConflict: 'fa_id' })
     }
 
     await logAgentInvocation({

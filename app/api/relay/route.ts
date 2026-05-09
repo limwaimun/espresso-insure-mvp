@@ -136,8 +136,8 @@ export async function POST(request: NextRequest) {
     let policies = null
     if (clientId) {
       const [{ data: c }, { data: p }] = await Promise.all([
-        supabase.from('clients').select('*').eq('id', clientId).eq('ifa_id', userId).single(),
-        supabase.from('policies').select('*').eq('client_id', clientId).eq('ifa_id', userId),
+        supabase.from('clients').select('*').eq('id', clientId).eq('fa_id', userId).single(),
+        supabase.from('policies').select('*').eq('client_id', clientId).eq('fa_id', userId),
       ])
       client = c
       policies = p

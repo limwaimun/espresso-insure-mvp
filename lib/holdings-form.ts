@@ -144,7 +144,7 @@ export function holdingToFormValues(h: Holding): HoldingFormValues {
 // so this refactor is a pure no-op on DB writes.
 export type HoldingPayload = {
   client_id: string
-  ifa_id: string
+  fa_id: string
   product_type: string
   product_name: string
   provider: string
@@ -176,7 +176,7 @@ export function formToPayload(
     : null
   return {
     client_id: clientId,
-    ifa_id: faId,
+    fa_id: faId,
     product_type: form.product_type,
     product_name: form.product_name,
     provider: form.provider,

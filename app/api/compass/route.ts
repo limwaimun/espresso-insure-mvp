@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         .from('clients')
         .select('*')
         .eq('id', clientId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
         .single()
 
       if (!c) {
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         .from('policies')
         .select('*')
         .eq('client_id', clientId)
-        .eq('ifa_id', userId)
+        .eq('fa_id', userId)
       policyData = p || []
     }
 
