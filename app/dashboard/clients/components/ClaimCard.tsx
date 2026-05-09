@@ -23,11 +23,12 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { formatDate } from '@/lib/dates'
-import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User } from 'lucide-react'
 import type { Alert } from '@/lib/types'
 import {
   statusColor,
@@ -47,13 +48,20 @@ const TRUNCATE_TITLE = 60  // body shows in expanded view; collapsed row only sh
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, cardRefreshKey }: {
+export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, cardRefreshKey, clientInfo }: {
   claim: Alert
   ifaId: string
   onEdit: (claim: Alert) => void
   onAskMaya: (c: Alert, action: 'status_update' | 'message_insurer' | 'message_client') => void
   onDelete: (id: string) => void
   cardRefreshKey: number
+  /**
+   * When provided, ClaimCard renders an additional Client column at the start
+   * of the collapsed row and adds a "View client →" item to the kebab menu.
+   * Used by the multi-client claims-list page; omitted on the per-client
+   * detail page (where the client context is already known).
+   */
+  clientInfo?: { name: string; company: string | null; id: string }
 }) {
   const c = claim as Claim
 
@@ -147,8 +155,16 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
 
   return (
     <>
-      {/* Collapsed row — 6 cells: Title, Type, Status, Priority, Date, ⋮ */}
+      {/* Collapsed row — 6 cells (or 7 with clientInfo): [Client], Title, Type, Status, Priority, Date, ⋮ */}
       <tr onClick={() => setExpanded(e => !e)} style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '0.5px solid #F1EFE8' }}>
+        {clientInfo && (
+          <td style={{ padding: '12px 10px' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{clientInfo.name}</div>
+            {clientInfo.company && (
+              <div style={{ fontSize: 11, color: '#6B6460' }}>{clientInfo.company}</div>
+            )}
+          </td>
+        )}
         <td style={{ padding: '12px 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {expanded ? <ChevronDown size={12} color="#9B9088" /> : <ChevronRight size={12} color="#9B9088" />}
@@ -206,7 +222,13 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft status update', onClick: () => onAskMaya(claim, 'status_update'), accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to insurer', onClick: () => onAskMaya(claim, 'message_insurer'), accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft message to client', onClick: () => onAskMaya(claim, 'message_client'), accent: true },
-              { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit claim', onClick: () => onEdit(claim), dividerBefore: true },
+              ...(clientInfo ? [{
+                icon: <User size={12} color="#6B6460" />,
+                label: 'View client',
+                onClick: () => router.push(`/dashboard/clients/${clientInfo.id}`),
+                dividerBefore: true,
+              }] : []),
+              { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit claim', onClick: () => onEdit(claim), dividerBefore: !clientInfo },
               { icon: <Trash2 size={12} />, label: 'Delete claim', onClick: () => onDelete(c.id), danger: true, dividerBefore: true },
             ]}
           />
@@ -216,7 +238,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
       {/* Expanded row — sections + body + docs */}
       {expanded && (
         <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
-          <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+          <td colSpan={clientInfo ? 7 : 6} style={{ padding: '20px 24px 22px 34px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
               {/* Body (description) — first since it's the most-referenced text */}
