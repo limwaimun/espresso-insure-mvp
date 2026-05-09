@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { sendWhatsAppText } from '@/lib/whatsapp'
+import { logAgentInvocation } from '@/lib/agent-log'
 
 // ── Abuse protection constants ────────────────────────────────────────────
 const RATE_LIMIT_PER_HOUR = 20        // max messages per sender per hour
@@ -519,6 +520,10 @@ export async function POST(request: NextRequest) {
   )
 
   let mayaReply = ''
+  const mayaStart = Date.now()
+  let mayaTokensIn = 0
+  let mayaTokensOut = 0
+  let mayaError: string | null = null
   try {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -527,9 +532,26 @@ export async function POST(request: NextRequest) {
       messages: claudeMessages,
     })
     mayaReply = response.content.find(b => b.type === 'text')?.text || ''
+    mayaTokensIn = response.usage?.input_tokens ?? 0
+    mayaTokensOut = response.usage?.output_tokens ?? 0
   } catch (err) {
-    console.error('[webhook] Claude error:', safeErrMsg(err))
+    mayaError = safeErrMsg(err)
+    console.error('[webhook] Claude error:', mayaError)
     mayaReply = "Sorry, I'm having a brief issue. Please try again in a moment, or reach out to your advisor directly."
+  } finally {
+    await logAgentInvocation({
+      agent: 'whatsapp',
+      userId: ifaId,
+      source: 'webhook',
+      outcome: mayaError ? 'error' : 'ok',
+      statusCode: mayaError ? 500 : 200,
+      latencyMs: Date.now() - mayaStart,
+      model: 'claude-sonnet-4-6',
+      inputTokens: mayaTokensIn,
+      outputTokens: mayaTokensOut,
+      errorMessage: mayaError,
+      metadata: { sender_type: sender.type },
+    })
   }
 
   // ── STEP 7: Save messages ────────────────────────────────────────────────
