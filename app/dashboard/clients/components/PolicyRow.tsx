@@ -7,6 +7,7 @@ import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
 import type { Policy } from '@/lib/types'
+import { policyStatusPill, annualPremium } from '@/lib/policies'
 
 export type { Policy }  // re-export: kept so ClientDetailPage's `import { Policy } from './PolicyRow'` keeps working during the unification transition.
 
@@ -28,18 +29,7 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
 
-  function renderStatus() {
-    if (policy.status === 'lapsed') return { cls: 'pill-red', text: 'Lapsed' }
-    if (policy.status === 'cancelled') return { cls: 'pill-neutral', text: 'Cancelled' }
-    if (policy.status === 'pending') return { cls: 'pill-amber', text: 'Pending' }
-    if (!policy.renewal_date) return { cls: 'pill-green', text: 'Active' }
-    const days = Math.ceil((new Date(policy.renewal_date).getTime() - Date.now()) / 86400000)
-    if (days < 0) return { cls: 'pill-amber', text: 'Overdue renewal' }
-    if (days <= 30) return { cls: 'pill-red', text: `Due in ${days}d` }
-    if (days <= 90) return { cls: 'pill-amber', text: `${days}d to renewal` }
-    return { cls: 'pill-green', text: `Renews in ${days}d` }
-  }
-  const { cls, text } = renderStatus()
+  const { cls, text } = policyStatusPill(policy)
 
   return (
     <>
@@ -97,11 +87,7 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
           muted grey uppercase. */}
       {expanded && (() => {
         // Derive money + lifecycle data
-        const FREQ_MULT: Record<string, number> = {
-          'monthly': 12, 'quarterly': 4, 'half-yearly': 2, 'annual': 1, 'single': 1,
-        }
-        const freq = (policy.premium_frequency || 'annual').toLowerCase()
-        const annualTotal = (Number(policy.premium) || 0) * (FREQ_MULT[freq] ?? 1)
+        const annualTotal = annualPremium(policy)
 
         const daysLeft = policy.renewal_date
           ? Math.ceil((new Date(policy.renewal_date).getTime() - Date.now()) / 86400000)
