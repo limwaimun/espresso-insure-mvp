@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
-import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 import { policyStatusPill, annualPremium } from '@/lib/policies'
 
@@ -16,7 +17,7 @@ export type { Policy }  // re-export: kept so ClientDetailPage's `import { Polic
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey }: {
+export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey, clientInfo }: {
   policy: Policy
   ifaId: string
   onEdit: (p: Policy) => void
@@ -24,7 +25,15 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
   confirmingDelete: boolean
   setConfirming: (id: string | null) => void
   cardRefreshKey: number
+  /**
+   * When provided, PolicyRow renders an additional Client column at the start
+   * of the collapsed row and adds a "View client →" item to the kebab menu.
+   * Used by the multi-client renewals page; omitted on the per-client detail
+   * page (where the client context is already known). Mirrors ClaimCard B80b1.
+   */
+  clientInfo?: { name: string; company: string | null; id: string }
 }) {
+  const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
@@ -33,8 +42,16 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
 
   return (
     <>
-      {/* Main row — 6 columns: Product (+ policy#), Insurer (+ type), Premium (+ SA), Renewal, Status, ⋮ */}
+      {/* Main row — 6 columns (or 7 with clientInfo): [Client], Product (+ policy#), Insurer (+ type), Premium (+ SA), Renewal, Status, ⋮ */}
       <tr onClick={() => setExpanded(e => !e)} style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '0.5px solid #F1EFE8' }}>
+        {clientInfo && (
+          <td style={{ padding: '12px 10px' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{clientInfo.name}</div>
+            {clientInfo.company && (
+              <div style={{ fontSize: 11, color: '#6B6460' }}>{clientInfo.company}</div>
+            )}
+          </td>
+        )}
         <td style={{ padding: '12px 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {expanded ? <ChevronDown size={12} color="#9B9088" /> : <ChevronRight size={12} color="#9B9088" />}
@@ -74,7 +91,13 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
             items={[
               { icon: <Bot size={12} color="#BA7517" />, label: 'Summarize with Maya', onClick: () => onAskMaya(policy, 'summarize'), accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft renewal reminder', onClick: () => onAskMaya(policy, 'renewal_reminder'), accent: true },
-              { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit policy', onClick: () => onEdit(policy), dividerBefore: true },
+              ...(clientInfo ? [{
+                icon: <User size={12} color="#6B6460" />,
+                label: 'View client',
+                onClick: () => router.push(`/dashboard/clients/${clientInfo.id}`),
+                dividerBefore: true,
+              }] : []),
+              { icon: <Pencil size={12} color="#6B6460" />, label: 'Edit policy', onClick: () => onEdit(policy), dividerBefore: !clientInfo },
               { icon: <Trash2 size={12} />, label: 'Delete policy', onClick: () => setConfirming(policy.id), danger: true, dividerBefore: true },
             ]}
           />
@@ -116,7 +139,7 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
 
         return (
           <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
-            <td colSpan={6} style={{ padding: '20px 24px 22px 34px' }}>
+            <td colSpan={clientInfo ? 7 : 6} style={{ padding: '20px 24px 22px 34px' }}>
 
               {/* COVERAGE — what's being insured. Insurer omitted since
                   it's already prominent in the collapsed row. Policy #
