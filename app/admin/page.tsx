@@ -12,6 +12,17 @@ interface ExecData {
   windowHours: number
 }
 
+interface TokensByUser {
+  user_id: string
+  input_tokens: number
+  output_tokens: number
+  total_calls: number
+}
+
+interface AgentInvocationsData {
+  tokensByUser: TokensByUser[]
+}
+
 const AGENTS = [
   { name: 'Maya', route: '/api/maya-playground', status: 'live', role: 'Client relationship' },
   { name: 'Relay', route: '/api/relay', status: 'live', role: 'Orchestrator' },
@@ -30,6 +41,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [execData, setExecData] = useState<ExecData | null>(null)
   const [execLoading, setExecLoading] = useState(true)
+  const [invocData, setInvocData] = useState<AgentInvocationsData | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/accounts')
@@ -47,6 +59,13 @@ export default function AdminPage() {
       .then(r => r.json())
       .then(data => { setExecData(data); setExecLoading(false) })
       .catch(() => setExecLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/admin/agent-invocations')
+      .then(r => r.json())
+      .then(data => setInvocData(data))
+      .catch(() => {})
   }, [])
 
   const panelStyle = {
@@ -170,6 +189,47 @@ export default function AdminPage() {
           ))}
         </div>
       </div>
+
+      {/* Per-IFA token spend */}
+      {invocData && invocData.tokensByUser && invocData.tokensByUser.length > 0 && (
+        <div style={{ ...panelStyle, marginBottom: 24 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+            Token spend by IFA <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
+          </h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['IFA', 'Calls', 'Input tokens', 'Output tokens', 'Total tokens'].map(h => (
+                    <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', textAlign: h === 'IFA' ? 'left' : 'right', padding: '6px 10px', borderBottom: '1px solid #E8E2DA' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {invocData.tokensByUser.map((u, i) => {
+                  const total = u.input_tokens + u.output_tokens
+                  const isHigh = total > 50000
+                  return (
+                    <tr key={u.user_id}>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#1A1410', padding: '7px 10px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        {u.user_id === 'anonymous' ? <em style={{ color: '#9B9088' }}>anonymous</em> : u.user_id.slice(0, 8) + '…'}
+                      </td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{u.total_calls}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{u.input_tokens.toLocaleString()}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{u.output_tokens.toLocaleString()}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: isHigh ? '#D06060' : '#1A1410', fontWeight: isHigh ? 600 : 400, padding: '7px 10px', textAlign: 'right' }}>
+                        {total.toLocaleString()}{isHigh ? ' ⚠' : ''}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Recent FA signups */}
       <div style={panelStyle}>

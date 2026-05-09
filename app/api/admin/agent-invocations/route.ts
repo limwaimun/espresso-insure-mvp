@@ -136,9 +136,24 @@ export async function GET(request: NextRequest) {
 
   const totalsByAgent = Array.from(byAgent.values()).sort((a, b) => b.total - a.total)
 
+  // Per-IFA token spend aggregation
+  const byUser = new Map<string, { user_id: string; input_tokens: number; output_tokens: number; total_calls: number }>()
+  for (const row of rows || []) {
+    const uid = row.user_id || 'anonymous'
+    if (!byUser.has(uid)) byUser.set(uid, { user_id: uid, input_tokens: 0, output_tokens: 0, total_calls: 0 })
+    const u = byUser.get(uid)!
+    u.input_tokens += row.input_tokens || 0
+    u.output_tokens += row.output_tokens || 0
+    u.total_calls++
+  }
+  const tokensByUser = Array.from(byUser.values())
+    .sort((a, b) => (b.input_tokens + b.output_tokens) - (a.input_tokens + a.output_tokens))
+    .slice(0, 10)
+
   return NextResponse.json({
     totalsByAgent,
     recentErrors: recentErrors.slice(0, 20),
+    tokensByUser,
     windowHours,
   })
 }
