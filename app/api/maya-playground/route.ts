@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
+import { logAgentInvocation } from '@/lib/agent-log'
 import type { Policy } from '@/lib/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
@@ -490,12 +491,23 @@ export async function GET(request: NextRequest) {
 // ── POST — send message ────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+  let resolvedUserId: string | undefined
   try {
     // ── Auth ─────────────────────────────────────────────────────────────
     const { userId, error: authError } = await verifySession(request)
     if (authError || !userId) {
+      await logAgentInvocation({
+        agent: 'maya-playground',
+        userId: null,
+        source: 'session',
+        outcome: 'unauthorized',
+        statusCode: 401,
+        latencyMs: Date.now() - start,
+      })
       return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
     }
+    resolvedUserId = userId
 
     const {
       client, policies, ifaName, messages,
@@ -675,6 +687,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await logAgentInvocation({
+      agent: 'maya-playground',
+      userId: resolvedUserId,
+      source: 'session',
+      outcome: 'ok',
+      statusCode: 200,
+      latencyMs: Date.now() - start,
+      model: 'claude-sonnet-4-6',
+      inputTokens: response.usage?.input_tokens,
+      outputTokens: response.usage?.output_tokens,
+      metadata: {
+        clientId: client?.id,
+        speakingAs,
+        claimsUpdated: toolResults.length > 0,
+        toolCallCount: toolResults.length,
+      },
+    })
     return NextResponse.json({
       response: responseText,
       systemPrompt,
@@ -686,6 +715,15 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error('[maya-playground] error:', err)
+    await logAgentInvocation({
+      agent: 'maya-playground',
+      userId: resolvedUserId,
+      source: 'session',
+      outcome: 'error',
+      statusCode: 500,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    })
     return NextResponse.json({ error: 'Maya failed to respond. Check server logs.' }, { status: 500 })
   }
 }
