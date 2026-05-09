@@ -53,6 +53,8 @@ const ACTIVE_STATUSES = new Set(['proposed', 'dispatched'])
 const DONE_STATUSES = new Set(['done', 'verified'])
 const FAILED_STATUSES = new Set(['failed', 'blocked', 'reverted', 'rejected'])
 
+const ALL_WORKSTREAMS = ['agents', 'fa_app', 'marketing', 'admin_dashboard', 'meta']
+
 export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
@@ -68,6 +70,19 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
       done: recent.filter(o => DONE_STATUSES.has(o.status)).length,
       failed: recent.filter(o => FAILED_STATUSES.has(o.status)).length,
     }
+  }, [orders])
+
+  const workstreamStats = useMemo(() => {
+    const oneWeekAgo = Date.now() - 7 * 86400 * 1000
+    const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
+    const ws = new Set(recent.map(o => o.workstream ?? 'unknown'))
+    ALL_WORKSTREAMS.forEach(w => ws.add(w))
+    return Array.from(ws).sort().map(w => ({
+      name: w,
+      total: recent.filter(o => (o.workstream ?? 'unknown') === w).length,
+      done: recent.filter(o => (o.workstream ?? 'unknown') === w && DONE_STATUSES.has(o.status)).length,
+      failed: recent.filter(o => (o.workstream ?? 'unknown') === w && FAILED_STATUSES.has(o.status)).length,
+    })).filter(w => w.total > 0)
   }, [orders])
 
   const filtered = useMemo(() => {
@@ -87,10 +102,47 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
         <StatCard label="Last 7 days" value={stats.total} />
         <StatCard label="Done" value={stats.done} accent="#0F6E56" />
         <StatCard label="Failed / blocked" value={stats.failed} accent={stats.failed > 0 ? '#A32D2D' : undefined} />
+      </div>
+
+      {/* Workstream breakdown */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px', marginBottom: 24 }}>
+        <div style={{ fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>
+          Last 7d by workstream
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {workstreamStats.map(ws => {
+            const failRate = ws.total > 0 ? ws.failed / ws.total : 0
+            const hasFailures = ws.failed > 0
+            return (
+              <div
+                key={ws.name}
+                onClick={() => { setFilter('all'); setSearch(ws.name) }}
+                style={{
+                  background: hasFailures ? '#FCEBEB' : '#F7F4F0',
+                  border: `1px solid ${hasFailures ? '#F7C1C1' : '#E8E2DA'}`,
+                  borderRadius: 8, padding: '10px 14px', cursor: 'pointer', minWidth: 120,
+                }}
+              >
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', fontWeight: 500, marginBottom: 4 }}>
+                  {ws.name}
+                </div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                  {ws.done}/{ws.total} done
+                  {ws.failed > 0 && (
+                    <span style={{ color: '#A32D2D', marginLeft: 6 }}>· {ws.failed} failed</span>
+                  )}
+                </div>
+                <div style={{ marginTop: 6, height: 3, borderRadius: 2, background: '#E8E2DA', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 2, width: `${ws.total > 0 ? (ws.done / ws.total) * 100 : 0}%`, background: hasFailures ? '#D06060' : '#3A7D5A' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
