@@ -29,57 +29,19 @@ import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { formatDate } from '@/lib/dates'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2 } from 'lucide-react'
 import type { Alert } from '@/lib/types'
+import {
+  statusColor,
+  fmtMoney,
+  daysBetween,
+  netPayout as netPayoutFn,
+  freshLabelsForStatus,
+  type Claim,
+} from '@/lib/claims'
 
 // Re-exports: keep ClientDetailPage's existing import paths working.
 export type { Alert } from '@/lib/types'
 
-// Local extension type for new schema fields — until lib/types.ts gets
-// a proper Claim interface.
-type ClaimRow = Alert & {
-  claim_type?: string
-  policy_id?: string | null
-  estimated_amount?: string | number | null
-  approved_amount?: string | number | null
-  deductible_amount?: string | number | null
-  incident_date?: string | null
-  filed_date?: string | null
-  insurer_claim_ref?: string | null
-  insurer_handler_name?: string | null
-  insurer_handler_contact?: string | null
-  denial_reason?: string | null
-  approved_at?: string | null
-  denied_at?: string | null
-  paid_at?: string | null
-  closed_at?: string | null
-}
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
-  approved: 'Approved',
-  denied: 'Denied',
-  paid: 'Paid',
-}
-
-function statusColor(status: string): { bg: string; text: string } {
-  if (status === 'paid' || status === 'approved') return { bg: '#E5F0EB', text: '#0F6E56' }
-  if (status === 'denied') return { bg: '#F8E0E0', text: '#A32D2D' }
-  if (status === 'in_progress') return { bg: '#E0EAF5', text: '#4A9EBF' }
-  return { bg: '#FBF7EE', text: '#854F0B' }  // open
-}
-
-function fmtMoney(v: string | number | null | undefined): string {
-  if (v == null || v === '') return '—'
-  const n = typeof v === 'string' ? parseFloat(v) : v
-  if (isNaN(n)) return '—'
-  return `SGD ${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-}
-
-function daysBetween(later: string | Date, earlier: string | Date): number {
-  const a = new Date(later).getTime()
-  const b = new Date(earlier).getTime()
-  return Math.floor((a - b) / 86400000)
-}
 
 const TRUNCATE_TITLE = 60  // body shows in expanded view; collapsed row only shows title
 
@@ -93,7 +55,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   onDelete: (id: string) => void
   cardRefreshKey: number
 }) {
-  const c = claim as ClaimRow
+  const c = claim as Claim
 
   const router = useRouter()
 
@@ -149,34 +111,13 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
   }
 
   // Derived values for the expanded sections
-  const netPayout = (() => {
-    const a = c.approved_amount
-    const d = c.deductible_amount
-    if (a == null || a === '') return null
-    const aN = typeof a === 'string' ? parseFloat(a) : a
-    if (isNaN(aN)) return null
-    const dN = d == null || d === '' ? 0 : (typeof d === 'string' ? parseFloat(d) : d)
-    return aN - (isNaN(dN) ? 0 : dN)
-  })()
+  const netPayoutValue = netPayoutFn(c)
 
   const daysOpen = c.filed_date ? daysBetween(new Date(), c.filed_date) : null
   // Days to resolve = closed_at - filed_date (terminal: denied OR paid).
   const daysToResolve = (c.filed_date && c.closed_at) ? daysBetween(c.closed_at, c.filed_date) : null
 
-  // B65: timestamps are tagged stale or fresh based on current status,
-  // so the render can de-emphasize stale ones. A timestamp is fresh if
-  // it reflects the row's current state (approved=approved_at fresh;
-  // paid=approved_at+paid_at+closed_at fresh; denied=denied_at+closed_at
-  // fresh). Anything else means the row passed through that state but
-  // has since transitioned out — keep visible for audit, just dim.
-  const FRESH_BY_STATUS: Record<string, Set<string>> = {
-    'open':        new Set(),
-    'in_progress': new Set(),
-    'approved':    new Set(['Approved']),
-    'denied':      new Set(['Denied', 'Closed']),
-    'paid':        new Set(['Approved', 'Paid', 'Closed']),
-  }
-  const freshLabels = FRESH_BY_STATUS[status] ?? new Set<string>()
+  const freshLabels = freshLabelsForStatus(status)
 
   const timestampRows = [
     { label: 'Approved', value: c.approved_at },
@@ -307,7 +248,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
                   <KV label="Estimated" value={fmtMoney(c.estimated_amount)} />
                   <KV label="Approved" value={fmtMoney(c.approved_amount)} />
                   <KV label="Deductible" value={fmtMoney(c.deductible_amount)} />
-                  <KV label="Net payout" value={netPayout != null ? fmtMoney(netPayout) : '—'} />
+                  <KV label="Net payout" value={netPayoutValue != null ? fmtMoney(netPayoutValue) : '—'} />
                 </div>
               </div>
 

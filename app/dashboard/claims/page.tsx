@@ -5,6 +5,15 @@ import Link from 'next/link'
 import DocList from '@/components/DocList'
 import NewClaimModal from './components/NewClaimModal'
 import { createClient } from '@/lib/supabase/client'
+import {
+  statusLabel as statusLabelFn,
+  statusColor,
+  priorityColor,
+  priorityLabel,
+  daysAgo as daysAgoFn,
+  isOpen,
+  isResolved,
+} from '@/lib/claims'
 
 type FilterType = 'all' | 'open' | 'resolved' | 'high'
 
@@ -20,39 +29,9 @@ interface Claim {
   clients: { name: string; company: string | null; whatsapp: string | null } | null
 }
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  urgent:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
-  approved: { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
-  paid:     { bg: '#E1F5EE', color: '#0F6E56', border: '#9FE1CB' },
-  denied:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
-  open:     { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
-  in_progress: { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
-}
-const PRIORITY_STYLE = {
-  high:   { bg: '#FCEBEB', color: '#A32D2D', border: '#F7C1C1' },
-  medium: { bg: '#FAEEDA', color: '#854F0B', border: '#FAC775' },
-  info:   { bg: '#E6F1FB', color: '#185FA5', border: '#B5D4F4' },
-}
-
-function statusLabel(s: string): string {
-  switch (s) {
-    case 'open': return 'Open'
-    case 'in_progress': return 'In progress'
-    case 'approved': return 'Approved'
-    case 'paid': return 'Paid'
-    case 'denied': return 'Denied'
-    default: return s
-  }
-}
-
-function statusStyle(s: string) {
-  if (s === 'approved' || s === 'paid') return STATUS_STYLE.approved
-  if (s === 'denied') return STATUS_STYLE.denied
-  return STATUS_STYLE.open
-}
-
-const pill = (label: string, s: { bg: string; color: string; border: string }) => (
-  <span style={{ background: s.bg, color: s.color, border: `0.5px solid ${s.border}`, fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 100, whiteSpace: 'nowrap' }}>
+// Pill renderer using shared color helpers from lib/claims.ts
+const pill = (label: string, color: { bg: string; text: string }) => (
+  <span style={{ background: color.bg, color: color.text, fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 100, whiteSpace: 'nowrap' }}>
     {label}
   </span>
 )
@@ -115,21 +94,21 @@ export default function ClaimsPage() {
   }
 
   const totalClaims = claims.length
-  const openClaims = claims.filter(c => c.status === 'open' || c.status === 'in_progress').length
-  const resolvedClaims = claims.filter(c => c.status === 'approved' || c.status === 'paid' || c.status === 'denied').length
-  const highPriority = claims.filter(c => c.priority === 'high' && (c.status === 'open' || c.status === 'in_progress')).length
+  const openClaims = claims.filter(isOpen).length
+  const resolvedClaims = claims.filter(isResolved).length
+  const highPriority = claims.filter(c => c.priority === 'high' && isOpen(c)).length
 
   const filtered = claims.filter(c => {
     const client = c.clients as any
     const q = search.toLowerCase()
     if (q && !c.title?.toLowerCase().includes(q) && !client?.name?.toLowerCase().includes(q)) return false
-    if (filter === 'open') return c.status === 'open' || c.status === 'in_progress'
-    if (filter === 'resolved') return c.status === 'approved' || c.status === 'paid' || c.status === 'denied'
-    if (filter === 'high') return c.priority === 'high' && (c.status === 'open' || c.status === 'in_progress')
+    if (filter === 'open') return isOpen(c)
+    if (filter === 'resolved') return isResolved(c)
+    if (filter === 'high') return c.priority === 'high' && isOpen(c)
     return true
   })
 
-  const daysAgo = (d: string) => { const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000); return days === 0 ? 'Today' : `${days}d ago` }
+
 
   return (
     <div style={{ padding: '16px 16px', background: '#F7F4F0', minHeight: '100vh' }} className="claims-page">
@@ -239,9 +218,9 @@ export default function ClaimsPage() {
           <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57' }}>No claims found</div>
         ) : filtered.map((claim, i) => {
           const client = claim.clients as any
-          const sLabel = statusLabel(claim.status)
-          const sStyle = statusStyle(claim.status)
-          const priorityS = PRIORITY_STYLE[claim.priority] || PRIORITY_STYLE.info
+          const sLabel = statusLabelFn(claim.status)
+          const sStyle = statusColor(claim.status)
+          const priorityS = priorityColor(claim.priority)
           return (
             <div key={claim.id} className="claims-row" style={{ borderBottom: expandedClaim !== claim.id && i < filtered.length - 1 ? '0.5px solid #F1EFE8' : 'none' }}>
               <div className="claims-row-client">
@@ -254,8 +233,8 @@ export default function ClaimsPage() {
               </div>
               <div className="claims-row-meta">
                 <div>{pill(sLabel, sStyle)}</div>
-                <div>{pill(claim.priority.charAt(0).toUpperCase() + claim.priority.slice(1), priorityS)}</div>
-                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{daysAgo(claim.created_at)}</div>
+                <div>{pill(priorityLabel(claim.priority), priorityS)}</div>
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#5F5A57' }}>{daysAgoFn(claim.created_at)}</div>
               </div>
               <div className="claims-row-actions">
                 <Link href={`/dashboard/clients/${claim.client_id}`} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textDecoration: 'none' }}>View client →</Link>
