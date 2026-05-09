@@ -6,9 +6,12 @@ import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
-import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 import { policyStatusPill, annualPremium } from '@/lib/policies'
+import { phaseLabel, stateLabel, phaseColor } from '@/lib/policy-lifecycle'
+import Modal from '@/components/Modal'
+import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 
 export type { Policy }  // re-export: kept so ClientDetailPage's `import { Policy } from './PolicyRow'` keeps working during the unification transition.
 
@@ -37,6 +40,47 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
   const [expanded, setExpanded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLButtonElement>(null)
+
+  // B82d: lifecycle UI state
+  const [logActivityOpen, setLogActivityOpen] = useState(false)
+  const [logActivityText, setLogActivityText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [logError, setLogError] = useState<string | null>(null)
+
+  // Pull current phase/state from the policy row (cast since the Policy
+  // type in lib/types may not yet declare these — they exist on the DB
+  // post-B82a but the type was last updated pre-migration).
+  const currentPhase = (policy as Policy & { current_phase?: string }).current_phase || 'ongoing'
+  const currentState = (policy as Policy & { policy_state?: string }).policy_state || 'active'
+
+  async function submitLogActivity() {
+    if (!logActivityText.trim()) return
+    setSubmitting(true)
+    setLogError(null)
+    try {
+      const res = await fetch('/api/policy-lifecycle/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'manual_note',
+          policyId: policy.id,
+          text: logActivityText.trim(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setLogError(data.error || 'Failed to log activity')
+        setSubmitting(false)
+        return
+      }
+      setLogActivityOpen(false)
+      setLogActivityText('')
+      router.refresh()
+    } catch (err) {
+      setLogError('Network error')
+    }
+    setSubmitting(false)
+  }
 
   const { cls, text } = policyStatusPill(policy)
 
@@ -91,6 +135,8 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
             items={[
               { icon: <Bot size={12} color="#BA7517" />, label: 'Summarize with Maya', onClick: () => onAskMaya(policy, 'summarize'), accent: true },
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft renewal reminder', onClick: () => onAskMaya(policy, 'renewal_reminder'), accent: true },
+              { icon: <Activity size={12} color="#6B6460" />, label: 'Log activity', onClick: () => setLogActivityOpen(true), dividerBefore: true },
+              { icon: <ArrowUpRight size={12} color="#6B6460" />, label: 'Advance stage', onClick: () => alert('Advance stage modal coming in B82d-ui-2') },
               ...(clientInfo ? [{
                 icon: <User size={12} color="#6B6460" />,
                 label: 'View client',
@@ -137,9 +183,29 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
           gap: '16px 24px',
         }
 
+        const phaseColors = phaseColor(currentPhase)
+
         return (
           <tr style={{ borderBottom: '0.5px solid #F1EFE8', background: '#FBFAF7' }}>
             <td colSpan={clientInfo ? 7 : 6} style={{ padding: '20px 24px 22px 34px' }}>
+
+              {/* STAGE INDICATOR — phase + state pill at top of expanded view (B82d) */}
+              <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 10, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500 }}>
+                  Stage
+                </span>
+                <span style={{
+                  background: phaseColors.bg,
+                  color: phaseColors.text,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  padding: '3px 10px',
+                  borderRadius: 100,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {phaseLabel(currentPhase)} · {stateLabel(currentState)}
+                </span>
+              </div>
 
               {/* COVERAGE — what's being insured. Insurer omitted since
                   it's already prominent in the collapsed row. Policy #
@@ -202,6 +268,44 @@ export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirming
             </td>
           </tr>
         )
-      })()}    </>
+      })()}
+
+      {/* B82d: Log activity modal */}
+      {logActivityOpen && (
+        <Modal title="Log activity" onClose={() => { setLogActivityOpen(false); setLogActivityText(''); setLogError(null) }}>
+          <div style={{ padding: '24px 28px', minWidth: 480 }}>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Record a note against this policy. Examples: "Called Cindy, said Friday is better", "Sent quote for renewal", "Client requested deductible options".
+            </p>
+            <label style={labelStyle}>Note</label>
+            <textarea
+              value={logActivityText}
+              onChange={e => setLogActivityText(e.target.value)}
+              placeholder="What happened?"
+              rows={5}
+              style={{ ...inputStyle, fontFamily: 'DM Sans, sans-serif', resize: 'vertical' }}
+              autoFocus
+            />
+            {logError && (
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#A32D2D', marginTop: 8 }}>
+                {logError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+              <button onClick={() => { setLogActivityOpen(false); setLogActivityText(''); setLogError(null) }} style={btnOutline}>
+                Cancel
+              </button>
+              <button
+                onClick={submitLogActivity}
+                disabled={!logActivityText.trim() || submitting}
+                style={{ ...btnPrimary, opacity: !logActivityText.trim() || submitting ? 0.5 : 1, cursor: !logActivityText.trim() || submitting ? 'not-allowed' : 'pointer' }}
+              >
+                <Save size={13} /> {submitting ? 'Saving...' : 'Save activity'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   )
 }
