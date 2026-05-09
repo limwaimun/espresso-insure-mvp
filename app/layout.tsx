@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, DM_Sans, DM_Mono } from 'next/font/google';
 import VersionBadge from '@/components/VersionBadge';
 import './globals.css';
@@ -62,6 +62,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 const organizationJsonLd = {

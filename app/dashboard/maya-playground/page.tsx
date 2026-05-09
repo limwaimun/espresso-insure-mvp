@@ -665,7 +665,20 @@ function MayaPlaygroundInner() {
 
       {/* ── Right Debug Panel ── */}
       {showDebug && selectedClient && (
-        <div style={{ width: 320, flexShrink: 0, background: '#F7F4F0', borderLeft: '1px solid #E8E2DA', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{
+          width: isMobile ? '100%' : 320,
+          flexShrink: 0,
+          background: '#F7F4F0',
+          borderLeft: '1px solid #E8E2DA',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: isMobile ? 'absolute' : 'relative',
+          top: 0,
+          right: 0,
+          height: '100%',
+          zIndex: isMobile ? 20 : 'auto',
+        }}>
           <div style={{ padding: '14px 16px', borderBottom: '1px solid #E8E2DA' }}>
             <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: '#1A1410', margin: 0 }}>System Prompt</p>
             <p style={{ fontSize: 11, color: '#6B6460', margin: '2px 0 0' }}>What Maya sees before your conversation</p>
