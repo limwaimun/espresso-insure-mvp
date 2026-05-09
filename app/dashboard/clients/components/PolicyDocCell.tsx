@@ -5,7 +5,7 @@ import { Paperclip, Download, Loader, Check, X } from 'lucide-react'
 
 interface PolicyDocCellProps {
   policyId: string
-  ifaId: string
+  faId: string
   existingFileName?: string | null
   existingFileUrl?: string | null
 }
@@ -14,7 +14,7 @@ type State = 'idle' | 'uploading' | 'success' | 'error'
 
 export default function PolicyDocCell({
   policyId,
-  ifaId,
+  faId,
   existingFileName,
   existingFileUrl,
 }: PolicyDocCellProps) {
@@ -35,7 +35,7 @@ export default function PolicyDocCell({
     const formData = new FormData()
     formData.append('file', file)
     formData.append('policyId', policyId)
-    formData.append('ifaId', ifaId)
+    formData.append('faId', faId)
 
     try {
       const res = await fetch('/api/policy-doc', { method: 'POST', body: formData })

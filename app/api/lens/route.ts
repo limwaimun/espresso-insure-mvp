@@ -48,10 +48,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { ifaId: _unused, reportType, query, forceRefresh } = await request.json()
+    const { faId: _unused, reportType, query, forceRefresh } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[lens] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+      console.warn(`[lens] ignored mismatched faId: body=${_unused} verified=${userId}`)
     }
 
     const CACHE_TTL_HOURS = 6

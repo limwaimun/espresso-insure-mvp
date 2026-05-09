@@ -59,7 +59,7 @@ type ClaimRow = Alert & {
 
 interface EditClaimModalProps {
   claim: Alert
-  ifaId: string
+  faId: string
   cardRefreshKey: number
   onClose: () => void
   onSaved: () => void
@@ -92,7 +92,7 @@ function numToStr(v: string | number | null | undefined): string {
   return String(v)
 }
 
-export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, onSaved }: EditClaimModalProps) {
+export default function EditClaimModal({ claim, faId, cardRefreshKey, onClose, onSaved }: EditClaimModalProps) {
   const c = claim as ClaimRow
 
   const [form, setForm] = useState({
@@ -152,7 +152,7 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
 
   async function handleSave() {
     if (!form.title.trim()) { setError('Title is required'); return }
-    if (!ifaId)             { setError('Session error — please refresh'); return }
+    if (!faId)             { setError('Session error — please refresh'); return }
     // B64c-2c: validate full claim date sequence (8 pairwise rules) via
     // shared helper. Mirrors the save payload's status-conditional *_at
     // sending so we don't false-positive on form's 'today' defaults for
@@ -174,7 +174,7 @@ export default function EditClaimModal({ claim, ifaId, cardRefreshKey, onClose, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           claimId: claim.id,
-          ifaId,
+          faId,
           title: form.title,
           claim_type: form.type,
           priority: form.priority,

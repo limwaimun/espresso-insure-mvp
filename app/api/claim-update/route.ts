@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const body_raw = await request.json()
     const {
       claimId,
-      ifaId: _unused,
+      faId: _unused,
       // Existing fields
       status,
       priority,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     } = body_raw
 
     if (_unused && _unused !== userId) {
-      console.warn(`[claim-update] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+      console.warn(`[claim-update] ignored mismatched faId from body: body=${_unused} session=${userId}`)
     }
 
     if (!claimId) {

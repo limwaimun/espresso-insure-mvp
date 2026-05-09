@@ -8,7 +8,7 @@
 //
 // Both paths must succeed before the agent does any work. On success, the
 // caller receives the authenticated `userId` that should be used for all
-// downstream DB queries — never trust `ifaId` in the request body.
+// downstream DB queries — never trust `faId` in the request body.
 //
 // Setup:
 //   - RELAY_INTERNAL_KEY env var must be set (64-char random hex, not reused

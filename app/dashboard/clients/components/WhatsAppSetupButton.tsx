@@ -6,14 +6,14 @@ import { MessageCircle, Copy, Check } from 'lucide-react'
 interface WhatsAppSetupButtonProps {
   clientName: string
   clientWhatsApp?: string | null
-  ifaName: string
+  faName: string
   connectionStatus: 'connected' | 'pending' | 'not_connected'
 }
 
 export default function WhatsAppSetupButton({
   clientName,
   clientWhatsApp,
-  ifaName,
+  faName,
   connectionStatus,
 }: WhatsAppSetupButtonProps) {
   const [copied, setCopied] = useState(false)

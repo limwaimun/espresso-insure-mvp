@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const holdingId = formData.get('holdingId') as string
-    const bodyIfaId = formData.get('ifaId') as string | null
+    const bodyFaId = formData.get('faId') as string | null
 
-    if (bodyIfaId && bodyIfaId !== userId) {
-      console.warn(`[holding-doc POST] ignored mismatched ifaId: body=${bodyIfaId} session=${userId}`)
+    if (bodyFaId && bodyFaId !== userId) {
+      console.warn(`[holding-doc POST] ignored mismatched faId: body=${bodyFaId} session=${userId}`)
     }
 
     if (!file || !holdingId) return NextResponse.json({ error: 'Missing file or holdingId' }, { status: 400 })

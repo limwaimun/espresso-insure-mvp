@@ -14,7 +14,7 @@ interface ClientLite {
 }
 
 interface NewClaimModalProps {
-  ifaId: string
+  faId: string
   onClose: () => void
   onCreated: () => void
 }
@@ -25,10 +25,10 @@ interface NewClaimModalProps {
  * Step 1: pick a client.
  * Step 2: load that client's policies, render AddClaimModal.
  *
- * AddClaimModal requires { clientId, ifaId, policies, onClose, onCreated }
+ * AddClaimModal requires { clientId, faId, policies, onClose, onCreated }
  * and we satisfy all five.
  */
-export default function NewClaimModal({ ifaId, onClose, onCreated }: NewClaimModalProps) {
+export default function NewClaimModal({ faId, onClose, onCreated }: NewClaimModalProps) {
   // Wrap the zero-arg onCreated so AddClaimModal's (activityText: string) => void is satisfied.
   const handleCreated = (_activityText: string) => onCreated()
   const supabase = createClient()
@@ -72,7 +72,7 @@ export default function NewClaimModal({ ifaId, onClose, onCreated }: NewClaimMod
     return (
       <AddClaimModal
         clientId={selectedClientId}
-        ifaId={ifaId}
+        faId={faId}
         policies={policies}
         onClose={onClose}
         onCreated={handleCreated}

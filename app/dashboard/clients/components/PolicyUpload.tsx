@@ -15,13 +15,13 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
   const [state, setState] = useState<UploadState>('idle')
   const [message, setMessage] = useState('')
   const [dragOver, setDragOver] = useState(false)
-  const [ifaId, setIfaId] = useState<string>('')
+  const [faId, setFaId] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setIfaId(user.id)
+      if (user) setFaId(user.id)
     })
   }, [])
 
@@ -38,7 +38,7 @@ export default function PolicyUpload({ clientId, onPolicyAdded }: PolicyUploadPr
     const formData = new FormData()
     formData.append('file', file)
     formData.append('clientId', clientId)
-    formData.append('ifaId', ifaId)
+    formData.append('faId', faId)
 
     try {
       const res = await fetch('/api/policy-upload', {

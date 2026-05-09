@@ -27,7 +27,7 @@ type Intent =
 
 interface RelayRequest {
   message: string          // Natural language request
-  ifaId?: string           // Accepted for backward-compat but ignored (use session)
+  faId?: string           // Accepted for backward-compat but ignored (use session)
   clientId?: string        // Optional context
   context?: Record<string, unknown>  // Any additional context
 }
@@ -116,10 +116,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { message, ifaId: _unused, clientId } = await request.json() as RelayRequest
+    const { message, faId: _unused, clientId } = await request.json() as RelayRequest
 
     if (_unused && _unused !== userId) {
-      console.warn(`[relay] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+      console.warn(`[relay] ignored mismatched faId from body: body=${_unused} session=${userId}`)
     }
     // cast for narrowing — verifySession guarantees userId is set after the auth check
     const resolvedUserId = userId as string

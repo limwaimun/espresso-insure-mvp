@@ -40,7 +40,7 @@ export default async function ClientProfilePage({ params }: PageProps) {
     supabase.from('profiles').select('name').eq('id', user?.id ?? '').single(),
   ])
 
-  const ifaName = profileResult.data?.name ?? 'Your Advisor'
+  const faName = profileResult.data?.name ?? 'Your Advisor'
 
   if (!client) {
     return (
@@ -179,8 +179,8 @@ export default async function ClientProfilePage({ params }: PageProps) {
       timeline={timeline}
       connectionStatus={connectionStatus}
       calculatedTier={calculatedTier}
-      ifaId={user?.id ?? ''}
-      ifaName={ifaName}
+      faId={user?.id ?? ''}
+      faName={faName}
     />
   );
 }

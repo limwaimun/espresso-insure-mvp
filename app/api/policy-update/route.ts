@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       policyId,
-      ifaId: _unused,
+      faId: _unused,
       insurer,
       product_name,
       policy_number,
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (_unused && _unused !== userId) {
-      console.warn(`[policy-update] ignored mismatched ifaId: body=${_unused} session=${userId}`)
+      console.warn(`[policy-update] ignored mismatched faId: body=${_unused} session=${userId}`)
     }
 
     if (!policyId) {

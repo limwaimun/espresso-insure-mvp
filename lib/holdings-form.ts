@@ -169,14 +169,14 @@ export type HoldingPayload = {
 export function formToPayload(
   form: HoldingFormValues,
   clientId: string,
-  ifaId: string,
+  faId: string,
 ): HoldingPayload {
   const autoValue = form.units_held && form.last_nav
     ? Number(form.units_held) * Number(form.last_nav)
     : null
   return {
     client_id: clientId,
-    ifa_id: ifaId,
+    ifa_id: faId,
     product_type: form.product_type,
     product_name: form.product_name,
     provider: form.provider,

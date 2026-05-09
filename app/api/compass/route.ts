@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { ifaId: _unused, clientId, query, mode, coverageType, insurer } = body
+    const { faId: _unused, clientId, query, mode, coverageType, insurer } = body
 
     if (_unused && _unused !== userId) {
-      console.warn(`[compass] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+      console.warn(`[compass] ignored mismatched faId: body=${_unused} verified=${userId}`)
     }
 
     // ── Load data, scoped to verified userId ──────────────────────────────
@@ -114,13 +114,13 @@ export async function POST(request: NextRequest) {
       policyData = p || []
     }
 
-    const { data: ifaProfile } = await supabase
+    const { data: faProfile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
 
-    const preferredInsurers: string[] = ifaProfile?.preferred_insurers || []
+    const preferredInsurers: string[] = faProfile?.preferred_insurers || []
 
     // ── Build context ──────────────────────────────────────────────────────
     const currentCoverage = policyData.map((p: any) => p.type)

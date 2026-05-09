@@ -44,15 +44,15 @@ const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Motor'
 
 export default function ClientDetailPage({
   client, policies, conversations, claims, metrics, birthdayDisplay,
-  coverageAnalysis, timeline, connectionStatus, calculatedTier, ifaId, ifaName, holdings,
+  coverageAnalysis, timeline, connectionStatus, calculatedTier, faId, faName, holdings,
 }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
-  const [resolvedIfaId, setResolvedIfaId] = useState(ifaId)
+  const [resolvedFaId, setResolvedFaId] = useState(faId)
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.id) setResolvedIfaId(data.user.id)
+      if (data?.user?.id) setResolvedFaId(data.user.id)
     })
   }, [])
 
@@ -95,14 +95,14 @@ export default function ClientDetailPage({
   const [compassLoading, setCompassLoading] = useState(false)
 
   useEffect(() => {
-    if (!compassGap || !resolvedIfaId) return
+    if (!compassGap || !resolvedFaId) return
     setCompassResult(null)
     setCompassLoading(true)
     fetch('/api/compass', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ifaId: resolvedIfaId,
+        faId: resolvedFaId,
         clientId: client.id,
         client,
         policies,
@@ -125,7 +125,7 @@ export default function ClientDetailPage({
     try {
       await fetch('/api/policy-delete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policyId, ifaId: resolvedIfaId }),
+        body: JSON.stringify({ policyId, faId: resolvedFaId }),
       })
       setConfirmDeleteId(null); router.refresh()
     } catch { console.error('Delete failed') }
@@ -137,7 +137,7 @@ export default function ClientDetailPage({
     try {
       await fetch('/api/claim-delete', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimId, ifaId: resolvedIfaId }),
+        body: JSON.stringify({ claimId, faId: resolvedFaId }),
       })
       setConfirmDeleteClaimId(null); router.refresh()
     } catch { console.error('Delete claim failed') }
@@ -383,7 +383,7 @@ export default function ClientDetailPage({
                     <PolicyRow
                       key={policy.id}
                       policy={policy}
-                      ifaId={resolvedIfaId}
+                      faId={resolvedFaId}
                       onEdit={(p) => { setEditingPolicy(p); setShowAddPolicy(true) }}
                       onAskMaya={handlePolicyAskMaya}
                       confirmingDelete={confirmDeleteId === policy.id}
@@ -543,7 +543,7 @@ export default function ClientDetailPage({
                   <ClaimCard
                     key={claim.id}
                     claim={claim}
-                    ifaId={resolvedIfaId}
+                    faId={resolvedFaId}
                     onEdit={(c) => setEditingClaim(c)}
                     onAskMaya={handleClaimAskMaya}
                     onDelete={(id) => setConfirmDeleteClaimId(id)}
@@ -559,7 +559,7 @@ export default function ClientDetailPage({
       </div>
 
       {/* == SECTION 7: HOLDINGS (now below Claims — distinct product line) == */}
-      <HoldingsSection clientId={client.id} ifaId={resolvedIfaId} />
+      <HoldingsSection clientId={client.id} faId={resolvedFaId} />
 
       {/* == SECTION 8: ACTIVITY == */}
       <div className="panel">
@@ -633,7 +633,7 @@ export default function ClientDetailPage({
       {showEdit && (
         <EditClientModal
           client={client}
-          ifaId={resolvedIfaId}
+          faId={resolvedFaId}
           onClose={() => setShowEdit(false)}
           onSaved={() => { setShowEdit(false); router.refresh() }}
         />
@@ -645,7 +645,7 @@ export default function ClientDetailPage({
           mode={editingPolicy ? 'edit' : 'add'}
           initialPolicy={editingPolicy ?? undefined}
           clientId={client.id}
-          ifaId={resolvedIfaId}
+          faId={resolvedFaId}
           onClose={() => { setShowAddPolicy(false); setEditingPolicy(null); bumpCardRefresh() }}
           onSaved={(activityText) => {
             setShowAddPolicy(false)
@@ -667,7 +667,7 @@ export default function ClientDetailPage({
       {showAddClaim && (
         <AddClaimModal
           clientId={client.id}
-          ifaId={resolvedIfaId}
+          faId={resolvedFaId}
           policies={policies}
           onClose={() => setShowAddClaim(false)}
           onCreated={(activityText) => {
@@ -686,7 +686,7 @@ export default function ClientDetailPage({
       {editingClaim && (
         <EditClaimModal
           claim={editingClaim}
-          ifaId={resolvedIfaId}
+          faId={resolvedFaId}
           cardRefreshKey={cardRefreshKey}
           onClose={() => { setEditingClaim(null); bumpCardRefresh() }}
           onSaved={() => { setEditingClaim(null); bumpCardRefresh(); router.refresh() }}

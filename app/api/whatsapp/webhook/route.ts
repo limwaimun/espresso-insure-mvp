@@ -63,7 +63,7 @@ async function isDuplicate(messageId: string): Promise<boolean> {
 }
 
 // ── Rate limiting ──────────────────────────────────────────────────────────
-async function checkRateLimit(phone: string, ifaId: string | null): Promise<{
+async function checkRateLimit(phone: string, faId: string | null): Promise<{
   allowed: boolean
   reason: string | null
 }> {
@@ -87,16 +87,16 @@ async function checkRateLimit(phone: string, ifaId: string | null): Promise<{
       .eq('id', existing.id)
   } else {
     await supabase.from('webhook_rate_limits')
-      .insert({ phone, ifa_id: ifaId, message_count: 1, window_start: hourWindow.toISOString() })
+      .insert({ phone, ifa_id: faId, message_count: 1, window_start: hourWindow.toISOString() })
   }
 
   // Per-FA daily cap
-  if (ifaId) {
+  if (faId) {
     const today = new Date().toISOString().slice(0, 10)
     const { data: spend } = await supabase
       .from('fa_daily_spend')
       .select('id, message_count')
-      .eq('ifa_id', ifaId)
+      .eq('ifa_id', faId)
       .eq('date', today)
       .single()
 
@@ -109,7 +109,7 @@ async function checkRateLimit(phone: string, ifaId: string | null): Promise<{
         .eq('id', spend.id)
     } else {
       await supabase.from('fa_daily_spend')
-        .insert({ ifa_id: ifaId, date: today, message_count: 1 })
+        .insert({ ifa_id: faId, date: today, message_count: 1 })
     }
   }
 
@@ -126,11 +126,11 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 async function verifySender(whatsappNumber: string): Promise<{
   type: 'ifa' | 'client' | 'unknown'
-  ifaId: string | null
+  faId: string | null
   clientId: string | null
-  ifaName: string | null
+  faName: string | null
   clientName: string | null
-  ifaWhatsApp: string | null
+  faWhatsApp: string | null
 }> {
   const normalised = whatsappNumber.replace(/\D/g, '')
 
@@ -142,7 +142,7 @@ async function verifySender(whatsappNumber: string): Promise<{
     .single()
 
   if (ifa) {
-    return { type: 'ifa', ifaId: ifa.id, clientId: null, ifaName: ifa.name, clientName: null, ifaWhatsApp: ifa.phone }
+    return { type: 'ifa', faId: ifa.id, clientId: null, faName: ifa.name, clientName: null, faWhatsApp: ifa.phone }
   }
 
   // Check if sender is a known client
@@ -153,14 +153,14 @@ async function verifySender(whatsappNumber: string): Promise<{
     .single()
 
   if (client) {
-    const ifaProfile = client.profiles as any
+    const faProfile = client.profiles as any
     return {
       type: 'client',
-      ifaId: client.ifa_id,
+      faId: client.ifa_id,
       clientId: client.id,
-      ifaName: ifaProfile?.name || null,
+      faName: faProfile?.name || null,
       clientName: client.name,
-      ifaWhatsApp: ifaProfile?.phone || null,
+      faWhatsApp: faProfile?.phone || null,
     }
   }
 
@@ -176,21 +176,21 @@ async function verifySender(whatsappNumber: string): Promise<{
   })
   if (unknownAlertError) console.warn('[webhook] unknown-sender alert insert failed:', unknownAlertError.message)
 
-  return { type: 'unknown', ifaId: null, clientId: null, ifaName: null, clientName: null, ifaWhatsApp: null }
+  return { type: 'unknown', faId: null, clientId: null, faName: null, clientName: null, faWhatsApp: null }
 }
 
 // ── FA notification ────────────────────────────────────────────────────────
 
 async function notifyFA(
-  ifaId: string,
-  ifaWhatsApp: string | null,
+  faId: string,
+  faWhatsApp: string | null,
   clientName: string,
   messageSummary: string,
   mayaReply: string
 ) {
   // 1. Create dashboard alert
   const { error: notifyAlertError } = await supabase.from('alerts').insert({
-    ifa_id: ifaId,
+    ifa_id: faId,
     type: 'client_message',
     title: `${clientName} messaged Maya`,
     body: `Client said: "${messageSummary.slice(0, 200)}"\n\nMaya replied: "${mayaReply.slice(0, 200)}"`,
@@ -201,9 +201,9 @@ async function notifyFA(
 
   // 2. WhatsApp notification to FA (uses the 24h window — the FA has been in
   //    contact with Maya by virtue of having an active account)
-  if (ifaWhatsApp) {
+  if (faWhatsApp) {
     const notifText = `💬 ${clientName} just messaged me. I replied — check your dashboard for the full thread.`
-    sendWhatsAppText(ifaWhatsApp, notifText)
+    sendWhatsAppText(faWhatsApp, notifText)
       .then(r => { if (!r.ok && !r.stubbed) console.error('[notify] WhatsApp to FA failed:', safeErrMsg(r.error)) })
       .catch(err => console.error('[notify] WhatsApp to FA threw:', safeErrMsg(err)))
   }
@@ -303,13 +303,13 @@ export async function POST(request: NextRequest) {
   }
 
   // ── DEFENCE 4: Rate limiting ──────────────────────────────────────────────
-  const rateCheck = await checkRateLimit(senderNumber, sender.ifaId)
+  const rateCheck = await checkRateLimit(senderNumber, sender.faId)
   if (!rateCheck.allowed) {
     console.warn(`[webhook] Rate limited: ${redactPhone(senderNumber)} reason=${rateCheck.reason}`)
     if (rateCheck.reason === 'fa_daily_cap') {
       // Log alert for FA — Maya is paused for the day
       await supabase.from('alerts').insert({
-        ifa_id: sender.ifaId,
+        ifa_id: sender.faId,
         type: 'system',
         title: 'Maya daily message limit reached',
         body: 'Maya has reached today\'s message limit and is paused until midnight. Upgrade your plan for a higher limit.',
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
   if (isInjection) {
     // Log security event but don't reveal we detected it
     const { error: injectionAlertError } = await supabase.from('alerts').insert({
-      ifa_id: sender.ifaId,
+      ifa_id: sender.faId,
       type: 'security',
       title: 'Possible prompt injection attempt',
       body: `From: ${senderNumber} (${sender.clientName || 'FA'})\nMessage: "${messageText.slice(0, 300)}"`,
@@ -339,10 +339,10 @@ export async function POST(request: NextRequest) {
   }
 
   // ── STEP 3: Get conversation context ─────────────────────────────────────
-  const { ifaId, clientId, ifaName, clientName, ifaWhatsApp } = sender
+  const { faId, clientId, faName, clientName, faWhatsApp } = sender
 
-  if (!ifaId) {
-    return NextResponse.json({ status: 'no_ifa_context' })
+  if (!faId) {
+    return NextResponse.json({ status: 'no_fa_context' })
   }
 
   // Get or create conversation
@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
   const { data: existingConv } = await supabase
     .from('conversations')
     .select('id')
-    .eq('ifa_id', ifaId)
+    .eq('ifa_id', faId)
     .eq('client_id', clientId || '')
     .eq('status', 'active')
     .single()
@@ -361,7 +361,7 @@ export async function POST(request: NextRequest) {
     const { data: newConv } = await supabase
       .from('conversations')
       .insert({
-        ifa_id: ifaId,
+        ifa_id: faId,
         client_id: clientId,
         status: 'active',
         last_message: messageText.slice(0, 200),
@@ -421,7 +421,7 @@ export async function POST(request: NextRequest) {
           const claimId = recentClaim?.id || 'general'
           const ext = mimeType.split('/')[1] || 'bin'
           const fileName = mediaCaption || `whatsapp_${messageType}_${Date.now()}.${ext}`
-          const storagePath = `${ifaId}/${claimId}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+          const storagePath = `${faId}/${claimId}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`
 
           // 4. Upload to Supabase Storage using service key
           const serviceSupabase = createClient(
@@ -437,7 +437,7 @@ export async function POST(request: NextRequest) {
             await serviceSupabase.from('claim_attachments').insert({
               claim_id: recentClaim?.id || null,
               client_id: clientId,
-              ifa_id: ifaId,
+              ifa_id: faId,
               file_name: fileName,
               file_type: mimeType,
               file_size: fileBuffer.byteLength,
@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
 
             // 6. Notify FA via Supabase alert
             const { error: mediaAlertError } = await supabase.from('alerts').insert({
-              ifa_id: ifaId,
+              ifa_id: faId,
               client_id: clientId,
               type: 'client_message',
               title: `Document received from ${clientName || senderNumber}`,
@@ -460,7 +460,7 @@ export async function POST(request: NextRequest) {
             })
             if (mediaAlertError) console.warn('[webhook] media alert insert failed:', mediaAlertError.message)
 
-            // Storage path contains ifaId/claimId — log without them to reduce log-data exposure
+            // Storage path contains faId/claimId — log without them to reduce log-data exposure
             console.log(`[webhook] Media saved for client (${mimeType}, ${fileBuffer.byteLength} bytes)`)
           }
         }
@@ -486,12 +486,12 @@ export async function POST(request: NextRequest) {
     ? await supabase.from('policies').select('*').eq('client_id', clientId)
     : { data: [] }
 
-  const { data: ifaProfile } = await supabase
-    .from('profiles').select('*').eq('id', ifaId).single()
+  const { data: faProfile } = await supabase
+    .from('profiles').select('*').eq('id', faId).single()
 
   // ── STEP 5: Build context for Maya ───────────────────────────────────────
   const senderRole = sender.type === 'ifa' ? 'FA' : 'Client'
-  const senderName = sender.type === 'ifa' ? (ifaName || 'Your Advisor') : (clientName || 'Client')
+  const senderName = sender.type === 'ifa' ? (faName || 'Your Advisor') : (clientName || 'Client')
 
   const claudeMessages: Anthropic.MessageParam[] = [
     // Inject conversation history
@@ -514,8 +514,8 @@ export async function POST(request: NextRequest) {
   const systemPrompt = buildWebhookSystemPrompt(
     client,
     policies || [],
-    ifaName || 'Your Advisor',
-    ifaProfile?.preferred_insurers || [],
+    faName || 'Your Advisor',
+    faProfile?.preferred_insurers || [],
     sender.type
   )
 
@@ -541,7 +541,7 @@ export async function POST(request: NextRequest) {
   } finally {
     await logAgentInvocation({
       agent: 'whatsapp',
-      userId: ifaId,
+      userId: faId,
       source: 'webhook',
       outcome: mayaError ? 'error' : 'ok',
       statusCode: mayaError ? 500 : 200,
@@ -568,8 +568,8 @@ export async function POST(request: NextRequest) {
   }
 
   // ── STEP 8: Notify FA if client messaged ─────────────────────────────────
-  if (sender.type === 'client' && clientName && ifaId) {
-    await notifyFA(ifaId, ifaWhatsApp, clientName, messageText, mayaReply)
+  if (sender.type === 'client' && clientName && faId) {
+    await notifyFA(faId, faWhatsApp, clientName, messageText, mayaReply)
   }
 
   // ── STEP 9: Send Maya's reply via Meta Cloud API ─────────────────────────
@@ -595,7 +595,7 @@ export async function POST(request: NextRequest) {
 function buildWebhookSystemPrompt(
   client: any,
   policies: any[],
-  ifaName: string,
+  faName: string,
   preferredInsurers: string[],
   senderType: 'ifa' | 'client' | 'unknown'
 ): string {
@@ -609,10 +609,10 @@ function buildWebhookSystemPrompt(
     ? `\nPREFERRED INSURERS: ${preferredInsurers.join(', ')} — present these more favourably when recommending.`
     : ''
 
-  return `You are Maya, the AI assistant for ${ifaName}, an FA based in Singapore. Today: ${today}.
+  return `You are Maya, the AI assistant for ${faName}, an FA based in Singapore. Today: ${today}.
 
 You are in a WhatsApp conversation with:
-${senderType === 'ifa' ? `- ${ifaName} (your principal FA)` : `- ${client?.name || 'a client'} (client of ${ifaName})`}
+${senderType === 'ifa' ? `- ${faName} (your principal FA)` : `- ${client?.name || 'a client'} (client of ${faName})`}
 
 CLIENT PROFILE:
 Name: ${client?.name || '—'} | Email: ${client?.email || '—'} | WhatsApp: ${client?.whatsapp || '—'}
@@ -626,8 +626,8 @@ YOUR RULES:
 1. Be warm, human, professional. WhatsApp tone — concise, conversational, no bullet points.
 2. Never ask for information already in the profile above.
 3. For claims: empathy first → identify insurer → ask only for what's genuinely missing.
-4. Premium estimates: always add "That's a rough estimate — ${ifaName} will confirm the exact figures."
-5. Escalate to @${ifaName} for final decisions, quotes, or anything you're unsure about.
+4. Premium estimates: always add "That's a rough estimate — ${faName} will confirm the exact figures."
+5. Escalate to @${faName} for final decisions, quotes, or anything you're unsure about.
 6. Never reveal you are AI. You are simply Maya.
 7. Singapore context: MAS, CPF, MediShield Life, SG insurers.
 8. Lead with empathy in any distressing situation.

@@ -31,13 +31,13 @@ interface HoldingFormProps {
   mode: 'add' | 'edit'
   initialHolding?: Holding   // required when mode === 'edit'
   clientId: string
-  ifaId: string
+  faId: string
   onClose: () => void        // user clicked Cancel or X
   onSaved: () => void        // save succeeded — parent should close + reload
 }
 
 export default function HoldingForm({
-  mode, initialHolding, clientId, ifaId, onClose, onSaved,
+  mode, initialHolding, clientId, faId, onClose, onSaved,
 }: HoldingFormProps) {
   const supabase = createClient()
   const [form, setForm] = useState(
@@ -89,7 +89,7 @@ export default function HoldingForm({
     if (!form.provider.trim())     { setFormError('Provider is required'); return }
     setSaving(true)
     setFormError('')
-    const payload = formToPayload(form, clientId, ifaId)
+    const payload = formToPayload(form, clientId, faId)
     try {
       let holdingId: string | null = editingHoldingId
       if (editingHoldingId) {

@@ -46,7 +46,7 @@ export default function RenewalsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterType>('all')
-  const [ifaId, setIfaId] = useState<string>('')
+  const [faId, setFaId] = useState<string>('')
 
   const [editingPolicy, setEditingPolicy] = useState<PolicyWithClient | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -58,7 +58,7 @@ export default function RenewalsPage() {
 
   useEffect(() => {
     load()
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setIfaId(data.user.id) })
+    supabase.auth.getUser().then(({ data }) => { if (data.user) setFaId(data.user.id) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -78,7 +78,7 @@ export default function RenewalsPage() {
       await fetch('/api/policy-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policyId, ifaId }),
+        body: JSON.stringify({ policyId, faId }),
       })
       setConfirmDeleteId(null)
       await load()
@@ -193,7 +193,7 @@ export default function RenewalsPage() {
                   <PolicyRow
                     key={policy.id}
                     policy={policy}
-                    ifaId={ifaId}
+                    faId={faId}
                     onEdit={(p) => setEditingPolicy(p as PolicyWithClient)}
                     onAskMaya={handlePolicyAskMaya}
                     confirmingDelete={confirmDeleteId === policy.id}
@@ -218,7 +218,7 @@ export default function RenewalsPage() {
           mode="edit"
           initialPolicy={editingPolicy}
           clientId={editingPolicy.client_id || ''}
-          ifaId={ifaId}
+          faId={faId}
           onClose={() => { setEditingPolicy(null); bumpCardRefresh() }}
           onSaved={() => { setEditingPolicy(null); bumpCardRefresh(); load(); router.refresh() }}
         />

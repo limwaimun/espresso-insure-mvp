@@ -48,9 +48,9 @@ const TRUNCATE_TITLE = 60  // body shows in expanded view; collapsed row only sh
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, cardRefreshKey, clientInfo }: {
+export default function ClaimCard({ claim, faId, onEdit, onAskMaya, onDelete, cardRefreshKey, clientInfo }: {
   claim: Alert
-  ifaId: string
+  faId: string
   onEdit: (claim: Alert) => void
   onAskMaya: (c: Alert, action: 'status_update' | 'message_insurer' | 'message_client') => void
   onDelete: (id: string) => void
@@ -96,7 +96,7 @@ export default function ClaimCard({ claim, ifaId, onEdit, onAskMaya, onDelete, c
       const res = await fetch('/api/claim-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimId: c.id, ifaId, ...patch }),
+        body: JSON.stringify({ claimId: c.id, faId, ...patch }),
       })
       if (res.ok) {
         // Re-fetch parent so EditClaimModal opens with current values

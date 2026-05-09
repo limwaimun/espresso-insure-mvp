@@ -38,7 +38,7 @@ export default function ClientsPage() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [connectionFilter, setConnectionFilter] = useState('all')
   const [plan, setPlan] = useState('trial')
-  const [ifaId, setIfaId] = useState('')
+  const [faId, setFaId] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
@@ -47,7 +47,7 @@ export default function ClientsPage() {
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    setIfaId(user.id)
+    setFaId(user.id)
     const [{ data: clientData }, { data: profile }] = await Promise.all([
       supabase.from('clients').select('id, name, company, type, tier, email, whatsapp, created_at, conversations(id), policies(premium, status)').eq('ifa_id', user.id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('plan').eq('id', user.id).single(),
@@ -84,9 +84,9 @@ export default function ClientsPage() {
     <div style={{ padding: '24px 28px', background: '#F7F4F0', minHeight: '100vh' }}>
 
       {/* Import modal */}
-      {showImport && ifaId && (
+      {showImport && faId && (
         <ImportClientsModal
-          ifaId={ifaId}
+          faId={faId}
           plan={plan}
           currentCount={clients.length}
           clientLimit={CLIENT_LIMIT}
@@ -96,9 +96,9 @@ export default function ClientsPage() {
       )}
 
       {/* Add client modal */}
-      {showAdd && ifaId && (
+      {showAdd && faId && (
         <AddClientModal
-          ifaId={ifaId}
+          faId={faId}
           onClose={() => setShowAdd(false)}
           onAdded={(newId) => {
             setShowAdd(false)

@@ -181,8 +181,8 @@ export interface Props {
   nok_relationship?: string | null
   nok_phone?: string | null
   calculatedTier: string
-  ifaId: string
-  ifaName: string
+  faId: string
+  faName: string
   holdings: Holding[]
 }
 

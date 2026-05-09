@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const policyId = formData.get('policyId') as string
-    const bodyIfaId = formData.get('ifaId') as string | null
+    const bodyFaId = formData.get('faId') as string | null
 
-    if (bodyIfaId && bodyIfaId !== userId) {
-      console.warn(`[policy-doc POST] ignored mismatched ifaId: body=${bodyIfaId} session=${userId}`)
+    if (bodyFaId && bodyFaId !== userId) {
+      console.warn(`[policy-doc POST] ignored mismatched faId: body=${bodyFaId} session=${userId}`)
     }
 
     if (!file || !policyId) return NextResponse.json({ error: 'Missing file or policyId' }, { status: 400 })

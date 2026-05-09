@@ -40,12 +40,12 @@ interface ClientLike {
 
 interface EditClientModalProps {
   client: ClientLike
-  ifaId: string
+  faId: string
   onClose: () => void
   onSaved: () => void
 }
 
-export default function EditClientModal({ client, ifaId, onClose, onSaved }: EditClientModalProps) {
+export default function EditClientModal({ client, faId, onClose, onSaved }: EditClientModalProps) {
   const [form, setForm] = useState({
     name: client.name ?? '',
     type: client.type ?? 'individual',
@@ -72,7 +72,7 @@ export default function EditClientModal({ client, ifaId, onClose, onSaved }: Edi
       const res = await fetch('/api/client-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: client.id, ifaId, ...form }),
+        body: JSON.stringify({ clientId: client.id, faId, ...form }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))

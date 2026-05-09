@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { clientId, ifaId: _unused, name, type, company, whatsapp, email, birthday, address } = await request.json()
+    const { clientId, faId: _unused, name, type, company, whatsapp, email, birthday, address } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[client-update] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+      console.warn(`[client-update] ignored mismatched faId from body: body=${_unused} session=${userId}`)
     }
 
     if (!clientId || !name?.trim()) {

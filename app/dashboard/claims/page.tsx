@@ -35,7 +35,7 @@ export default function ClaimsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
-  const [ifaId, setIfaId] = useState<string>('')
+  const [faId, setFaId] = useState<string>('')
 
   const [showNew, setShowNew] = useState(false)
   const [editingClaim, setEditingClaim] = useState<Alert | null>(null)
@@ -48,7 +48,7 @@ export default function ClaimsPage() {
 
   useEffect(() => {
     load()
-    supabase.auth.getUser().then(({ data }) => { if (data.user) setIfaId(data.user.id) })
+    supabase.auth.getUser().then(({ data }) => { if (data.user) setFaId(data.user.id) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -70,7 +70,7 @@ export default function ClaimsPage() {
       await fetch('/api/claim-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimId, ifaId }),
+        body: JSON.stringify({ claimId, faId }),
       })
       setConfirmDeleteClaimId(null)
       await load()
@@ -179,7 +179,7 @@ export default function ClaimsPage() {
                   <ClaimCard
                     key={claim.id}
                     claim={claim as Alert}
-                    ifaId={ifaId}
+                    faId={faId}
                     onEdit={(c) => setEditingClaim(c)}
                     onAskMaya={handleClaimAskMaya}
                     onDelete={(id) => setConfirmDeleteClaimId(id)}
@@ -198,9 +198,9 @@ export default function ClaimsPage() {
       </div>
 
       {/* Modals */}
-      {showNew && ifaId && (
+      {showNew && faId && (
         <NewClaimModal
-          ifaId={ifaId}
+          faId={faId}
           onClose={() => setShowNew(false)}
           onCreated={() => { setShowNew(false); load() }}
         />
@@ -209,7 +209,7 @@ export default function ClaimsPage() {
       {editingClaim && (
         <EditClaimModal
           claim={editingClaim}
-          ifaId={ifaId}
+          faId={faId}
           cardRefreshKey={cardRefreshKey}
           onClose={() => { setEditingClaim(null); bumpCardRefresh() }}
           onSaved={() => { setEditingClaim(null); bumpCardRefresh(); load() }}

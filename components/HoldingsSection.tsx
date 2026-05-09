@@ -39,7 +39,7 @@ const thCell = (widthPct: number, rightAlign = false): React.CSSProperties => ({
 
 // ── Main section ───────────────────────────────────────────────────────────
 
-export default function HoldingsSection({ clientId, ifaId }: { clientId: string; ifaId: string }) {
+export default function HoldingsSection({ clientId, faId }: { clientId: string; faId: string }) {
   const supabase = createClient()
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [loading, setLoading] = useState(true)
@@ -125,7 +125,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
       const res = await fetch('/api/harbour', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ifaId, clientId, mode: 'client_review' }),
+        body: JSON.stringify({ faId, clientId, mode: 'client_review' }),
       })
       const data = await res.json()
       setHarbourScript(data.review?.mayaScript || null)
@@ -256,7 +256,7 @@ export default function HoldingsSection({ clientId, ifaId }: { clientId: string;
           mode={formMode}
           initialHolding={editingHolding ?? undefined}
           clientId={clientId}
-          ifaId={ifaId}
+          faId={faId}
           onClose={closeForm}
           onSaved={onFormSaved}
         />

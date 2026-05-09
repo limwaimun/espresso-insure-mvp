@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<LensMetrics | null>(null)
   const [narrative, setNarrative] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [ifaId, setIfaId] = useState('')
+  const [faId, setFaId] = useState('')
   const [fromCache, setFromCache] = useState(false)
   const [cacheAge, setCacheAge] = useState<number | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -51,14 +51,14 @@ export default function AnalyticsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
-      setIfaId(user.id)
+      setFaId(user.id)
 
       // Try Lens agent first
       try {
         const res = await fetch('/api/lens', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ifaId: user.id, reportType: 'portfolio' }),
+          body: JSON.stringify({ faId: user.id, reportType: 'portfolio' }),
         })
         if (res.ok) {
           const data = await res.json()
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
       const res = await fetch('/api/lens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ifaId, reportType: 'portfolio', forceRefresh: true }),
+        body: JSON.stringify({ faId, reportType: 'portfolio', forceRefresh: true }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
                   generated {cacheAge < 1 ? 'recently' : `${Math.round(cacheAge)}h ago`}
                 </span>
               )}
-              {ifaId && (
+              {faId && (
                 <button onClick={refreshLens} disabled={refreshing} style={{ background: 'transparent', border: 'none', cursor: refreshing ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: refreshing ? '#B4B2A9' : '#BA7517', padding: 0, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
                   {refreshing ? 'Refreshing…' : '↻ Refresh'}
                 </button>
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
                   generated {cacheAge < 1 ? 'recently' : `${Math.round(cacheAge)}h ago`}
                 </span>
               )}
-              {ifaId && (
+              {faId && (
                 <button onClick={refreshLens} disabled={refreshing} style={{ background: 'transparent', border: 'none', cursor: refreshing ? 'not-allowed' : 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: refreshing ? '#B4B2A9' : '#BA7517', padding: 0, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
                   {refreshing ? 'Refreshing…' : '↻ Refresh'}
                 </button>

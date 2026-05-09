@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
     }
 
-    const { claimId, ifaId: _unused } = await request.json()
+    const { claimId, faId: _unused } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[claim-delete] ignored mismatched ifaId: body=${_unused} session=${userId}`)
+      console.warn(`[claim-delete] ignored mismatched faId: body=${_unused} session=${userId}`)
     }
 
     if (!claimId) {

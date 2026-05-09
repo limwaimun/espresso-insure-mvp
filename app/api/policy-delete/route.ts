@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { policyId, ifaId: _unused } = await request.json()
+    const { policyId, faId: _unused } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[policy-delete] ignored mismatched ifaId from body: body=${_unused} session=${userId}`)
+      console.warn(`[policy-delete] ignored mismatched faId from body: body=${_unused} session=${userId}`)
     }
 
     if (!policyId) {

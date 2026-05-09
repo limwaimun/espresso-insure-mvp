@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const {
       clientId,
-      ifaId: _unused,
+      faId: _unused,
       title,
       body,
       priority = 'medium',
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[claim-create] ignored mismatched ifaId: body=${_unused} session=${userId}`)
+      console.warn(`[claim-create] ignored mismatched faId: body=${_unused} session=${userId}`)
     }
 
     if (!clientId || !title?.trim()) {

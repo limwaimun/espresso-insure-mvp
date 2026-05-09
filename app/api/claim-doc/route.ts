@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const claimId = formData.get('claimId') as string
-    const bodyIfaId = formData.get('ifaId') as string | null
+    const bodyFaId = formData.get('faId') as string | null
     const description = (formData.get('description') as string | null) || null
 
-    if (bodyIfaId && bodyIfaId !== userId) {
-      console.warn(`[claim-doc POST] ignored mismatched ifaId from form: body=${bodyIfaId} session=${userId}`)
+    if (bodyFaId && bodyFaId !== userId) {
+      console.warn(`[claim-doc POST] ignored mismatched faId from form: body=${bodyFaId} session=${userId}`)
     }
 
     if (!file || !claimId) {

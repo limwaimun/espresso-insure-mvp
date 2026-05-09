@@ -21,9 +21,9 @@ export type { Policy }  // re-export: kept so ClientDetailPage's `import { Polic
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function PolicyRow({ policy, ifaId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey, clientInfo }: {
+export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey, clientInfo }: {
   policy: Policy
-  ifaId: string
+  faId: string
   onEdit: (p: Policy) => void
   onAskMaya: (p: Policy, action: 'summarize' | 'renewal_reminder') => void
   confirmingDelete: boolean

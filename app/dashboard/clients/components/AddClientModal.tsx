@@ -22,7 +22,7 @@ import Modal from '@/components/Modal'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 
 interface AddClientModalProps {
-  ifaId: string
+  faId: string
   onClose: () => void
   onAdded: (newClientId: string) => void
 }
@@ -37,7 +37,7 @@ const DEFAULT_FORM = {
   address: '',
 }
 
-export default function AddClientModal({ ifaId, onClose, onAdded }: AddClientModalProps) {
+export default function AddClientModal({ faId, onClose, onAdded }: AddClientModalProps) {
   const supabase = createClient()
   const [form, setForm] = useState(DEFAULT_FORM)
   const [saving, setSaving] = useState(false)
@@ -57,7 +57,7 @@ export default function AddClientModal({ ifaId, onClose, onAdded }: AddClientMod
       const { data, error: dbError } = await supabase
         .from('clients')
         .insert({
-          ifa_id: ifaId,
+          ifa_id: faId,
           name: form.name.trim(),
           type: form.type,
           company: form.company.trim() || null,

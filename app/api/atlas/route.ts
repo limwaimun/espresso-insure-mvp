@@ -137,10 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { formId, clientId, ifaId: _unused, collectedFields } = await request.json()
+    const { formId, clientId, faId: _unused, collectedFields } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[atlas] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+      console.warn(`[atlas] ignored mismatched faId: body=${_unused} verified=${userId}`)
     }
 
     if (!formId || !clientId) {

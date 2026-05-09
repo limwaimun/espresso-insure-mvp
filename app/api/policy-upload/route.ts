@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const clientId = formData.get('clientId') as string
-    const bodyIfaId = formData.get('ifaId') as string | null
+    const bodyFaId = formData.get('faId') as string | null
 
-    if (bodyIfaId && bodyIfaId !== userId) {
-      console.warn(`[policy-upload] ignored mismatched ifaId from form: body=${bodyIfaId} session=${userId}`)
+    if (bodyFaId && bodyFaId !== userId) {
+      console.warn(`[policy-upload] ignored mismatched faId from form: body=${bodyFaId} session=${userId}`)
     }
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })

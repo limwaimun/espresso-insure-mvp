@@ -28,7 +28,7 @@ const CLAIM_TYPES = ['Health', 'Life', 'Critical Illness', 'Disability', 'Person
 
 interface AddClaimModalProps {
   clientId: string
-  ifaId: string
+  faId: string
   policies: Policy[]
   onClose: () => void
   /**
@@ -53,7 +53,7 @@ const DEFAULT_FORM = {
   insurer_handler_contact: '',
 }
 
-export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCreated }: AddClaimModalProps) {
+export default function AddClaimModal({ clientId, faId, policies, onClose, onCreated }: AddClaimModalProps) {
   const [form, setForm] = useState(DEFAULT_FORM)
   const [files, setFiles] = useState<File[]>([])
   const [saving, setSaving] = useState(false)
@@ -70,7 +70,7 @@ export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCr
   async function handleSave() {
     if (!form.title.trim()) { setError('Title is required'); return }
     if (!form.policy_id)    { setError('Please select a policy'); return }
-    if (!ifaId)             { setError('Session error — please refresh'); return }
+    if (!faId)             { setError('Session error — please refresh'); return }
     if (form.incident_date && form.filed_date && form.incident_date > form.filed_date) {
       setError('Incident date cannot be later than filed date')
       return
@@ -83,7 +83,7 @@ export default function AddClaimModal({ clientId, ifaId, policies, onClose, onCr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId,
-          ifaId,
+          faId,
           title: form.title,
           claim_type: form.type,
           priority: form.priority,

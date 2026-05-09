@@ -99,10 +99,10 @@ function MayaPlaygroundInner() {
   const [isLoading, setIsLoading] = useState(false)
   const [showDebug, setShowDebug] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState('')
-  const [ifaName, setIfaName] = useState('Your Advisor')
+  const [faName, setFaName] = useState('Your Advisor')
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [preferredInsurers, setPreferredInsurers] = useState<string[]>([])
-  const [ifaId, setIfaId] = useState<string>('')
+  const [faId, setFaId] = useState<string>('')
   const isMobile = useIsMobile(768)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [conversationSummary, setConversationSummary] = useState<string | null>(null)
@@ -114,7 +114,7 @@ function MayaPlaygroundInner() {
 
   useEffect(() => {
     loadClients()
-    loadIfaProfile()
+    loadFaProfile()
   }, [])
 
   // Auto-select client from URL param once clients are loaded
@@ -133,23 +133,23 @@ function MayaPlaygroundInner() {
     if (selectedClient) {
       loadPolicies(selectedClient.id)
       loadClaims(selectedClient.id)
-      if (ifaId) {
+      if (faId) {
         loadConversationHistory(selectedClient.id)
       }
       setAttachments([])
       inputRef.current?.focus()
     }
-  }, [selectedClient, ifaId])
+  }, [selectedClient, faId])
 
   async function loadConversationHistory(clientId: string) {
-    if (!ifaId) return
+    if (!faId) return
     setHistoryLoading(true)
     setMessages([])
     setSystemPrompt('')
     setConversationId(null)
     setConversationSummary(null)
     try {
-      const res = await fetch(`/api/maya-playground?ifaId=${ifaId}&clientId=${clientId}`)
+      const res = await fetch(`/api/maya-playground?faId=${faId}&clientId=${clientId}`)
       const data = await res.json()
       if (data.conversationId) {
         setConversationId(data.conversationId)
@@ -171,18 +171,18 @@ function MayaPlaygroundInner() {
     }
   }
 
-  async function loadIfaProfile() {
+  async function loadFaProfile() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      setIfaId(user.id)
+      setFaId(user.id)
       const { data } = await supabase.from('profiles').select('name, company, preferred_insurers').eq('id', user.id).single()
-      if (data?.name) setIfaName(data.name)
+      if (data?.name) setFaName(data.name)
       if (data?.preferred_insurers && Array.isArray(data.preferred_insurers)) {
         setPreferredInsurers(data.preferred_insurers)
       }
     } catch (err) {
-      console.error('[loadIfaProfile] error:', err)
+      console.error('[loadFaProfile] error:', err)
     }
   }
 
@@ -304,9 +304,9 @@ function MayaPlaygroundInner() {
           client: selectedClient,
           policies,
           claims,
-          ifaName,
+          faName,
           preferredInsurers,
-          ifaId,
+          faId,
           messages: [...messages, userMessage].map(m => ({
             role: m.role,
             content: m.content,
@@ -488,7 +488,7 @@ function MayaPlaygroundInner() {
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(186,117,23,0.10)', border: '1px solid #BA7517', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#BA7517', fontWeight: 600, flexShrink: 0 }}>{selectedClient.name.charAt(0)}</div>
                 <div>
                   <p style={{ fontSize: 13, color: '#1A1410', margin: 0, fontWeight: 500 }}>{selectedClient.name}{selectedClient.company ? ` · ${selectedClient.company}` : ''}</p>
-                  <p style={{ fontSize: 10, color: '#3A7D5A', margin: 0 }}>{ifaName} · Maya · {selectedClient.name}</p>
+                  <p style={{ fontSize: 10, color: '#3A7D5A', margin: 0 }}>{faName} · Maya · {selectedClient.name}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -540,7 +540,7 @@ function MayaPlaygroundInner() {
                     <div style={{ background: msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? 'rgba(186,117,23,0.10)' : 'rgba(32,160,160,0.08)', border: `1px solid ${msg.role === 'client' ? 'rgba(58,125,90,0.10)' : msg.role === 'maya' ? '#BA751744' : '#20A0A044'}`, borderRadius: msg.role === 'client' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', padding: '9px 13px' }}>
                       {msg.role !== 'client' && (
                         <p style={{ fontSize: 10, fontWeight: 600, color: msg.role === 'maya' ? '#BA7517' : '#20A0A0', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          {msg.role === 'maya' ? 'Maya' : ifaName}
+                          {msg.role === 'maya' ? 'Maya' : faName}
                         </p>
                       )}
                       {/* Attachments in message */}
@@ -597,7 +597,7 @@ function MayaPlaygroundInner() {
                 <div style={{ display: 'flex', background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, overflow: 'hidden' }}>
                   {(['client', 'ifa'] as const).map(role => (
                     <button key={role} onClick={() => setSpeakingAs(role)} style={{ padding: '4px 14px', background: speakingAs === role ? (role === 'client' ? 'rgba(58,125,90,0.10)' : 'rgba(32,160,160,0.08)') : 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, color: speakingAs === role ? (role === 'client' ? '#3A7D5A' : '#20A0A0') : '#6B6460', fontWeight: speakingAs === role ? 600 : 400, transition: 'all 0.12s ease' }}>
-                      {role === 'client' ? selectedClient.name : ifaName}
+                      {role === 'client' ? selectedClient.name : faName}
                     </button>
                   ))}
                 </div>
@@ -649,7 +649,7 @@ function MayaPlaygroundInner() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-                  placeholder={`Message as ${speakingAs === 'client' ? selectedClient.name : ifaName}…`}
+                  placeholder={`Message as ${speakingAs === 'client' ? selectedClient.name : faName}…`}
                   style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 10, padding: '10px 15px', fontSize: 13, color: '#1A1410', outline: 'none', fontFamily: 'DM Sans, sans-serif' }}
                 />
 

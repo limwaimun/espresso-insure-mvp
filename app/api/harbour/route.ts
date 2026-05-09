@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { ifaId: _unused, mode = 'review_report', clientId } = await request.json()
+    const { faId: _unused, mode = 'review_report', clientId } = await request.json()
 
     if (_unused && _unused !== userId) {
-      console.warn(`[harbour] ignored mismatched ifaId: body=${_unused} verified=${userId}`)
+      console.warn(`[harbour] ignored mismatched faId: body=${_unused} verified=${userId}`)
     }
 
     // ── Fetch all holdings for this FA (scoped to verified userId) ────────

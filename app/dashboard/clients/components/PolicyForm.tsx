@@ -46,7 +46,7 @@ interface PolicyFormProps {
   mode: 'add' | 'edit'
   initialPolicy?: Policy
   clientId: string
-  ifaId: string
+  faId: string
   onClose: () => void
   /**
    * Called after a successful save. For add mode, includes the human-readable
@@ -73,7 +73,7 @@ function policyToFormValues(policy: Policy) {
 }
 
 export default function PolicyForm({
-  mode, initialPolicy, clientId, ifaId, onClose, onSaved,
+  mode, initialPolicy, clientId, faId, onClose, onSaved,
 }: PolicyFormProps) {
   const [form, setForm] = useState(
     mode === 'edit' && initialPolicy
@@ -96,7 +96,7 @@ export default function PolicyForm({
       setError('Insurer, type and premium are required')
       return
     }
-    if (!ifaId) {
+    if (!faId) {
       setError('Session error — please refresh the page')
       return
     }
@@ -107,14 +107,14 @@ export default function PolicyForm({
       const payload = isEdit
         ? {
             policyId: editingPolicyId,
-            ifaId,
+            faId,
             ...form,
             premium: parseFloat(form.premium),
             sum_assured: form.sum_assured ? parseFloat(form.sum_assured) : null,
           }
         : {
             clientId,
-            ifaId,
+            faId,
             ...form,
             premium: parseFloat(form.premium),
             sum_assured: form.sum_assured ? parseFloat(form.sum_assured) : null,
@@ -142,7 +142,7 @@ export default function PolicyForm({
           const fd = new FormData()
           fd.append('file', file)
           fd.append('policyId', targetPolicyId)
-          fd.append('ifaId', ifaId)
+          fd.append('faId', faId)
           const r = await fetch('/api/policy-doc', { method: 'POST', body: fd })
           if (!r.ok) {
             const d = await r.json().catch(() => ({}))

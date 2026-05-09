@@ -74,7 +74,7 @@ export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState<TabType>('claims-forms')
   const [forms, setForms] = useState<ClaimForm[]>(STATIC_FORMS)
   const [clients, setClients] = useState<Client[]>([])
-  const [ifaId, setIfaId] = useState('')
+  const [faId, setFaId] = useState('')
 
   // Pre-fill modal state
   const [showPrefill, setShowPrefill] = useState(false)
@@ -91,7 +91,7 @@ export default function LibraryPage() {
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    setIfaId(user.id)
+    setFaId(user.id)
 
     // Load clients
     const { data: clientData } = await supabase.from('clients').select('id, name, company').eq('ifa_id', user.id).order('name')
@@ -109,7 +109,7 @@ export default function LibraryPage() {
       const res = await fetch('/api/atlas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: form.id, clientId, ifaId }),
+        body: JSON.stringify({ formId: form.id, clientId, faId }),
       })
       const data = await res.json()
       setAtlasResult(data)
