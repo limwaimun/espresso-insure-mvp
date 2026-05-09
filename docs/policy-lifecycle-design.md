@@ -5,7 +5,7 @@ Last updated: 2026-05-09 SGT
 
 ## Why this exists
 
-An IFA's job is multi-year: prospecting, quoting, issuing, ongoing service, renewal cycles, claims, and lapsed-policy recovery. Today, Espresso has data about what policies exist but no structured awareness of where each is in its lifecycle.
+An FA's job is multi-year: prospecting, quoting, issuing, ongoing service, renewal cycles, claims, and lapsed-policy recovery. Today, Espresso has data about what policies exist but no structured awareness of where each is in its lifecycle.
 
 Result:
 - FAs cannot see "which renewals need my attention this week"
@@ -61,7 +61,7 @@ Backfill: every existing row defaults to ongoing/active. A migration script then
 Columns:
 - id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - policy_id UUID NOT NULL FK to policies, CASCADE delete
-- ifa_id UUID NOT NULL FK to profiles
+- fa_id UUID NOT NULL FK to profiles
 - client_id UUID NOT NULL FK to clients (denormalized for cross-policy queries)
 - event_type TEXT NOT NULL CHECK in (stage_transition, manual_note, agent_nudge, maya_drafted, maya_sent)
 - from_phase TEXT, from_state TEXT, to_phase TEXT, to_state TEXT
@@ -69,7 +69,7 @@ Columns:
 - metadata JSONB DEFAULT empty (agent name, draft content, signal source)
 - created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 
-Indexes on (policy_id, created_at DESC) and (ifa_id, created_at DESC).
+Indexes on (policy_id, created_at DESC) and (fa_id, created_at DESC).
 RLS enabled. Policy: FAs see own lifecycle events.
 
 client_id is denormalized here even though available via policy_id because the most common query is "all activity on this client" spanning many policies. Avoids a join.

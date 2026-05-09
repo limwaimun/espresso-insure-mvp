@@ -1,3 +1,11 @@
+> **NOTE (added 2026-05-09 evening):** This handoff describes pre-B-cleanup state.
+> The B-cleanup arc (B85a-1 through B85d) was completed in the session that
+> followed this handoff. References to "IFA" / "ifa_id" / queued IFA→FA work
+> in this document are historical. Current state: zero IFA references remain
+> in code, DB, prompts, wire formats, or active docs.
+
+---
+
 # Espresso Session Handoff — 2026-05-09 evening (B79m → B84 shipped)
 
 **Session length:** ~12 hours continuous (Saturday morning to evening SGT).
