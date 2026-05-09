@@ -68,11 +68,28 @@ export default function ClaimsPage() {
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
   const [showNew, setShowNew] = useState(false)
   const [ifaId, setIfaId] = useState<string>('')
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
 
   useEffect(() => {
     load()
     supabase.auth.getUser().then(({ data }) => { if (data.user) setIfaId(data.user.id) })
   }, [])
+
+  async function updateStatus(claimId: string, newStatus: Claim['status']) {
+    setUpdatingStatus(claimId)
+    try {
+      await fetch('/api/claim-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimId, ifaId, status: newStatus }),
+      })
+      await load()
+    } catch {
+      // silently fail — list will still refresh
+    } finally {
+      setUpdatingStatus(null)
+    }
+  }
 
   async function load() {
     const { data } = await supabase
@@ -248,6 +265,18 @@ export default function ClaimsPage() {
                 <button onClick={() => setExpandedClaim(expandedClaim === claim.id ? null : claim.id)} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#BA7517', textAlign: 'left' }}>
                   {expandedClaim === claim.id ? 'Hide attachments ↑' : '📎 Attachments'}
                 </button>
+                <select
+                  value={claim.status}
+                  disabled={updatingStatus === claim.id || !ifaId}
+                  onChange={e => updateStatus(claim.id, e.target.value as Claim['status'])}
+                  style={{ fontSize: 11, fontFamily: 'DM Sans, sans-serif', border: '0.5px solid #E8E2DA', borderRadius: 6, padding: '3px 6px', background: '#FFFFFF', color: '#1A1410', cursor: updatingStatus === claim.id ? 'wait' : 'pointer', opacity: updatingStatus === claim.id ? 0.6 : 1 }}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="approved">Approved</option>
+                  <option value="denied">Denied</option>
+                  <option value="paid">Paid</option>
+                </select>
               </div>
             {/* Expanded attachments */}
             {expandedClaim === claim.id && (
