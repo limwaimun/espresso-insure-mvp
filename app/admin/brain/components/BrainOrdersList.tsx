@@ -54,6 +54,7 @@ const DONE_STATUSES = new Set(['done', 'verified'])
 const FAILED_STATUSES = new Set(['failed', 'blocked', 'reverted', 'rejected'])
 
 const ALL_WORKSTREAMS = ['agents', 'fa_app', 'marketing', 'admin_dashboard', 'meta']
+const ALL_CATEGORIES = ['bug', 'copy', 'feature', 'security', 'security_observability', 'observability', 'infra', 'data']
 
 export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -85,6 +86,19 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
     })).filter(w => w.total > 0)
   }, [orders])
 
+  const categoryStats = useMemo(() => {
+    const oneWeekAgo = Date.now() - 7 * 86400 * 1000
+    const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
+    const cats = new Set(recent.map(o => o.category ?? 'unknown'))
+    ALL_CATEGORIES.forEach(c => cats.add(c))
+    return Array.from(cats).sort().map(c => ({
+      name: c,
+      total: recent.filter(o => (o.category ?? 'unknown') === c).length,
+      done: recent.filter(o => (o.category ?? 'unknown') === c && DONE_STATUSES.has(o.status)).length,
+      failed: recent.filter(o => (o.category ?? 'unknown') === c && FAILED_STATUSES.has(o.status)).length,
+    })).filter(c => c.total > 0)
+  }, [orders])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return orders.filter(o => {
@@ -109,13 +123,12 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
       </div>
 
       {/* Workstream breakdown */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px', marginBottom: 24 }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>
           Last 7d by workstream
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {workstreamStats.map(ws => {
-            const failRate = ws.total > 0 ? ws.failed / ws.total : 0
             const hasFailures = ws.failed > 0
             return (
               <div
@@ -138,6 +151,42 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                 </div>
                 <div style={{ marginTop: 6, height: 3, borderRadius: 2, background: '#E8E2DA', overflow: 'hidden' }}>
                   <div style={{ height: '100%', borderRadius: 2, width: `${ws.total > 0 ? (ws.done / ws.total) * 100 : 0}%`, background: hasFailures ? '#D06060' : '#3A7D5A' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Category breakdown */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px', marginBottom: 24 }}>
+        <div style={{ fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>
+          Last 7d by category
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {categoryStats.map(cat => {
+            const hasFailures = cat.failed > 0
+            return (
+              <div
+                key={cat.name}
+                onClick={() => { setFilter('all'); setSearch(cat.name) }}
+                style={{
+                  background: hasFailures ? '#FCEBEB' : '#F7F4F0',
+                  border: `1px solid ${hasFailures ? '#F7C1C1' : '#E8E2DA'}`,
+                  borderRadius: 8, padding: '10px 14px', cursor: 'pointer', minWidth: 110,
+                }}
+              >
+                <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', fontWeight: 500, marginBottom: 4 }}>
+                  {cat.name}
+                </div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                  {cat.done}/{cat.total} done
+                  {cat.failed > 0 && (
+                    <span style={{ color: '#A32D2D', marginLeft: 6 }}>· {cat.failed} failed</span>
+                  )}
+                </div>
+                <div style={{ marginTop: 6, height: 3, borderRadius: 2, background: '#E8E2DA', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 2, width: `${cat.total > 0 ? (cat.done / cat.total) * 100 : 0}%`, background: hasFailures ? '#D06060' : '#3A7D5A' }} />
                 </div>
               </div>
             )
