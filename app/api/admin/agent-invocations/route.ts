@@ -150,10 +150,42 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => (b.input_tokens + b.output_tokens) - (a.input_tokens + a.output_tokens))
     .slice(0, 10)
 
+  // Hourly bucket breakdown (last 12h) per agent
+  const nowMs = Date.now()
+  const BUCKET_HOURS = 12
+  // Build an array of hour-bucket start timestamps (oldest first)
+  const hourBuckets: number[] = []
+  for (let i = BUCKET_HOURS - 1; i >= 0; i--) {
+    hourBuckets.push(nowMs - (i + 1) * 60 * 60 * 1000)
+  }
+  // Map: agent -> array of {ok, error} per hour bucket
+  const trendByAgent = new Map<string, { ok: number; error: number }[]>()
+  for (const [agent] of byAgent) {
+    trendByAgent.set(agent, Array.from({ length: BUCKET_HOURS }, () => ({ ok: 0, error: 0 })))
+  }
+  for (const row of rows || []) {
+    const rowMs = new Date(row.created_at).getTime()
+    const bucketIndex = hourBuckets.findIndex((start, idx) => {
+      const end = idx < BUCKET_HOURS - 1 ? hourBuckets[idx + 1] : nowMs
+      return rowMs >= start && rowMs < end
+    })
+    if (bucketIndex === -1) continue
+    const agentTrend = trendByAgent.get(row.agent)
+    if (!agentTrend) continue
+    if (row.outcome === 'ok') agentTrend[bucketIndex].ok++
+    else agentTrend[bucketIndex].error++
+  }
+  const trendData: Record<string, { ok: number; error: number }[]> = {}
+  for (const [agent, buckets] of trendByAgent) {
+    trendData[agent] = buckets
+  }
+
   return NextResponse.json({
     totalsByAgent,
     recentErrors: recentErrors.slice(0, 20),
     tokensByUser,
+    trendData,
+    bucketHours: BUCKET_HOURS,
     windowHours,
   })
 }

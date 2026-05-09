@@ -35,9 +35,16 @@ interface RecentError {
   error_message: string | null
 }
 
+interface HourBucket {
+  ok: number
+  error: number
+}
+
 interface InvocationsData {
   totalsByAgent: AgentTotal[]
   recentErrors: RecentError[]
+  trendData: Record<string, HourBucket[]>
+  bucketHours: number
   windowHours: number
 }
 
@@ -164,21 +171,48 @@ export default function AdminAgentsPage() {
                       <th style={headerStyle}>p95 latency</th>
                       <th style={headerStyle}>In tokens</th>
                       <th style={headerStyle}>Out tokens</th>
+                      <th style={{ ...headerStyle, minWidth: 160 }}>12h trend</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {invocationsData.totalsByAgent.map(a => (
-                      <tr key={a.agent}>
-                        <td style={{ ...cellLeft, color: '#1A1410', textTransform: 'capitalize' }}>{a.agent}</td>
-                        <td style={cellStyle}>{formatNumber(a.total)}</td>
-                        <td style={{ ...cellStyle, color: a.ok > 0 ? '#3A7D5A' : undefined }}>{formatNumber(a.ok)}</td>
-                        <td style={{ ...cellStyle, color: a.error > 0 ? '#D06060' : undefined }}>{formatNumber(a.error)}</td>
-                        <td style={cellStyle}>{formatMs(a.p50_latency_ms)}</td>
-                        <td style={cellStyle}>{formatMs(a.p95_latency_ms)}</td>
-                        <td style={cellStyle}>{formatNumber(a.total_input_tokens)}</td>
-                        <td style={cellStyle}>{formatNumber(a.total_output_tokens)}</td>
-                      </tr>
-                    ))}
+                    {invocationsData.totalsByAgent.map(a => {
+                      const trend = invocationsData.trendData?.[a.agent] || []
+                      const maxCalls = Math.max(1, ...trend.map(b => b.ok + b.error))
+                      return (
+                        <tr key={a.agent}>
+                          <td style={{ ...cellLeft, color: '#1A1410', textTransform: 'capitalize' }}>{a.agent}</td>
+                          <td style={cellStyle}>{formatNumber(a.total)}</td>
+                          <td style={{ ...cellStyle, color: a.ok > 0 ? '#3A7D5A' : undefined }}>{formatNumber(a.ok)}</td>
+                          <td style={{ ...cellStyle, color: a.error > 0 ? '#D06060' : undefined }}>{formatNumber(a.error)}</td>
+                          <td style={cellStyle}>{formatMs(a.p50_latency_ms)}</td>
+                          <td style={cellStyle}>{formatMs(a.p95_latency_ms)}</td>
+                          <td style={cellStyle}>{formatNumber(a.total_input_tokens)}</td>
+                          <td style={cellStyle}>{formatNumber(a.total_output_tokens)}</td>
+                          <td style={{ ...cellStyle, verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 28 }}>
+                              {trend.map((bucket, idx) => {
+                                const total = bucket.ok + bucket.error
+                                const height = total === 0 ? 2 : Math.max(4, Math.round((total / maxCalls) * 28))
+                                const hasError = bucket.error > 0
+                                return (
+                                  <div
+                                    key={idx}
+                                    title={`${total} calls, ${bucket.error} errors`}
+                                    style={{
+                                      width: 10,
+                                      height,
+                                      borderRadius: 2,
+                                      background: hasError ? '#D06060' : total === 0 ? '#E8E2DA' : '#3A7D5A',
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
