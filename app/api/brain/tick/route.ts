@@ -214,6 +214,32 @@ async function executeBrainTool(name: string, input: any): Promise<string> {
 // Auto-approve lane: low risk + observability-only categories.
 const AUTO_APPROVE_CATEGORIES = new Set(["copy", "observability", "security_observability"]);
 
+// Patterns that block auto-approval and force manual review.
+// Belt-and-braces check on top of the system prompt's FA-only instruction.
+// B-cleanup arc 2026-05-09 caught a "Trusted by Singapore IFAs" auto-shipment;
+// this filter ensures any future regression goes to manual review instead of
+// shipping silently.
+const FORBIDDEN_TERMINOLOGY_PATTERNS: RegExp[] = [
+  /\bIFA\b/,                            // standalone IFA
+  /\bIFAs\b/,                           // plural
+  /Independent Financial Advisor/i,      // any case
+];
+
+function containsForbiddenTerminology(order: any): { blocked: boolean; matchedPattern?: string } {
+  const haystack = [
+    order.title ?? "",
+    order.intent ?? "",
+    order.rationale ?? "",
+    order.spec ? JSON.stringify(order.spec) : "",
+  ].join("\n");
+  for (const pattern of FORBIDDEN_TERMINOLOGY_PATTERNS) {
+    if (pattern.test(haystack)) {
+      return { blocked: true, matchedPattern: pattern.source };
+    }
+  }
+  return { blocked: false };
+}
+
 type ActiveDirective = { title: string; description: string | null; workstream: string; expires_at: string };
 
 function buildSystemPrompt(
@@ -586,8 +612,22 @@ export async function POST(req: NextRequest) {
     for (const order of orders) {
       if (!order?.title || !order?.intent || !order?.risk_level || !order?.category) continue;
 
+      const forbidden = containsForbiddenTerminology(order);
       const autoApprove =
-        order.risk_level === "low" && AUTO_APPROVE_CATEGORIES.has(order.category);
+        order.risk_level === "low" &&
+        AUTO_APPROVE_CATEGORIES.has(order.category) &&
+        !forbidden.blocked;
+
+      if (forbidden.blocked) {
+        await supabase.from("execution_log").insert({
+          action: "auto_approve_blocked_terminology",
+          success: true,
+          raw_output: JSON.stringify({
+            title: String(order.title).slice(0, 200),
+            matched_pattern: forbidden.matchedPattern,
+          }),
+        });
+      }
 
       const { data, error } = await supabase
         .from("work_orders")
