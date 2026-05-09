@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
+import { checkRateLimit } from '@/lib/agent-rate-limit'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -26,6 +27,20 @@ export async function POST(request: NextRequest) {
         latencyMs: Date.now() - start,
       })
       return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
+    // ── Rate limit ────────────────────────────────────────────────────────────
+    const rl = checkRateLimit(auth.userId, 'sage')
+    if (!rl.allowed) {
+      await logAgentInvocation({
+        agent: 'sage',
+        userId: auth.userId,
+        source: auth.source,
+        outcome: 'rate_limited',
+        statusCode: 429,
+        latencyMs: Date.now() - start,
+      })
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 })
     }
 
     const {

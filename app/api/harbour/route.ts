@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
+import { checkRateLimit } from '@/lib/agent-rate-limit'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -32,6 +33,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
     const userId = auth.userId
+
+    // ── Rate limit ────────────────────────────────────────────────────────────
+    const rl = checkRateLimit(userId, 'harbour')
+    if (!rl.allowed) {
+      await logAgentInvocation({
+        agent: 'harbour',
+        userId,
+        source: auth.source,
+        outcome: 'rate_limited',
+        statusCode: 500,
+        latencyMs: Date.now() - start,
+      })
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 })
+    }
 
     // ── Parse body ────────────────────────────────────────────────────────
     const { ifaId: _unused, mode = 'review_report', clientId } = await request.json()
