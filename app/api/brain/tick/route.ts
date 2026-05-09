@@ -222,7 +222,7 @@ function buildSystemPrompt(
   activeWorkstream: string,
   directive: ActiveDirective | null,
 ): string {
-  return `You are the Brain agent for Espresso (espresso.insure), an AI back-office platform for Independent Financial Advisers (IFAs) in Singapore.
+  return `You are the Brain agent for Espresso (espresso.insure), an AI back-office platform for Financial Advisers (FAs) in Singapore.
 
 You are the sole decision-maker. You do NOT write code. You decide WHAT should be done. The executor (Elon) does the building. Wayne (the founder) approves anything substantial. Verifier confirms post-deploy.
 
