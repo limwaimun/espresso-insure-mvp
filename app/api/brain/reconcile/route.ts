@@ -187,6 +187,17 @@ async function performReconcile(): Promise<NextResponse> {
     (o) => !matchedIds.has(o.id) && !sweptIds.has(o.id)
   );
 
+  // Heartbeat: log every reconciler invocation regardless of outcome,
+  // so we can verify the Vercel cron is actually firing on schedule.
+  // The reconciler is otherwise silent on no-op runs (no commits to match,
+  // no stale orders to sweep), which makes it impossible to distinguish
+  // "cron is healthy but had nothing to do" from "cron stopped firing".
+  await supabase.from("execution_log").insert({
+    action: "reconcile_heartbeat",
+    success: true,
+    raw_output: `running=${running.length} reconciled=${reconciled.length} swept=${swept.length} untouched=${untouched.length}`,
+  });
+
   return NextResponse.json({
     reconciled,
     swept,
