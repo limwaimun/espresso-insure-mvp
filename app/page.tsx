@@ -337,6 +337,29 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* TRUST STRIP */}
+      <section style={{ background: '#F7F4F0', borderTop: '0.5px solid #E8E2DA', borderBottom: '0.5px solid #E8E2DA', padding: '36px 40px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 28 }}>Built for regulated advisers</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px 48px' }}>
+            {[
+              { icon: '🛡️', label: 'MAS-aware architecture', detail: 'Built with MAS regulatory requirements for licensed advisers in mind' },
+              { icon: '🇸🇬', label: 'Singapore data residency', detail: 'Your client data stays in Singapore-region infrastructure' },
+              { icon: '📋', label: 'Full audit trail', detail: 'Every action logged — ready for compliance review on demand' },
+              { icon: '🔒', label: 'Row-level access controls', detail: 'Each adviser sees only their own clients. Always.' },
+            ].map(t => (
+              <div key={t.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 220 }}>
+                <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{t.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410', marginBottom: 3 }}>{t.label}</div>
+                  <div style={{ fontSize: 12, color: '#9B9088', lineHeight: 1.5 }}>{t.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="lp-section" style={{ background: '#F7F4F0', padding: '96px 40px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
