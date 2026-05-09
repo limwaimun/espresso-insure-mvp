@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface ExecData {
-  byAction: Record<string, { ok: number; fail: number }>
+  byAction: Record<string, { ok: number; fail: number; deferred?: number }>
   recentFailures: { action: string; error: string; created_at: string }[]
   total: number
   totalFail: number
@@ -101,11 +101,19 @@ export default function AdminPage() {
                 <div key={action} style={{ background: '#FBFAF7', border: '1px solid #E8E2DA', borderRadius: 8, padding: '10px 12px' }}>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{action.replace(/_/g, ' ')}</div>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: '#1A1410' }}>
-                    <span style={{ color: '#3A7D5A' }}>{counts.ok}</span>
+                    <span style={{ color: '#3A7D5A', fontWeight: 600 }}>{counts.ok}</span>
                     <span style={{ color: '#9B9088' }}> / </span>
-                    <span style={{ color: counts.fail > 0 ? '#D06060' : '#9B9088' }}>{counts.fail}</span>
+                    <span style={{ color: counts.fail > 0 ? '#D06060' : '#9B9088', fontWeight: counts.fail > 0 ? 600 : 400 }}>{counts.fail}</span>
+                    {(counts.deferred ?? 0) > 0 && (
+                      <>
+                        <span style={{ color: '#9B9088' }}> · </span>
+                        <span style={{ color: '#854F0B' }} title="Intentional deferrals — not failures">{counts.deferred}d</span>
+                      </>
+                    )}
                   </div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', marginTop: 2 }}>ok / fail</div>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#6B6460', marginTop: 2 }}>
+                    ok / fail{(counts.deferred ?? 0) > 0 ? ' / deferred' : ''}
+                  </div>
                 </div>
               ))}
             </div>

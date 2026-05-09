@@ -42,13 +42,25 @@ export async function GET(request: NextRequest) {
   }
 
   // Aggregate by action
-  const byAction: Record<string, { ok: number; fail: number }> = {}
+  const byAction: Record<string, { ok: number; fail: number; deferred: number }> = {}
   const recentFailures: { action: string; error: string; created_at: string }[] = []
 
+  // Some action+error combinations are intentional deferrals, not real failures.
+  // The executor's claim path returns success=false when an order is already running/done/failed,
+  // which is correct behavior (Bolt is choosing NOT to do duplicate work). Bucket those separately.
+  function isIntentionalDeferral(action: string, errorMessage: string | null): boolean {
+    if (action === 'claim' && errorMessage && errorMessage.startsWith('already_claimed_or_not_dispatched')) {
+      return true
+    }
+    return false
+  }
+
   for (const row of rows || []) {
-    if (!byAction[row.action]) byAction[row.action] = { ok: 0, fail: 0 }
+    if (!byAction[row.action]) byAction[row.action] = { ok: 0, fail: 0, deferred: 0 }
     if (row.success === true) {
       byAction[row.action].ok++
+    } else if (isIntentionalDeferral(row.action, row.error_message)) {
+      byAction[row.action].deferred++
     } else {
       byAction[row.action].fail++
       if (recentFailures.length < 10 && row.error_message) {
