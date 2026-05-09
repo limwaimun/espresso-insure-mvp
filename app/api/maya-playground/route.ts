@@ -60,7 +60,7 @@ interface AttachmentPayload {
 }
 
 interface ConversationMessage {
-  role: 'client' | 'ifa' | 'maya'
+  role: 'client' | 'fa' | 'maya'
   content: string
   attachments?: AttachmentPayload[]
 }
@@ -518,7 +518,7 @@ export async function POST(request: NextRequest) {
       faName: string
       messages: ConversationMessage[]
       preferredInsurers?: string[]
-      speakingAs: 'client' | 'ifa'
+      speakingAs: 'client' | 'fa'
       faId?: string
       claims?: { id: string; title: string; status: string; priority: string; daysSinceUpdate: number }[]
     }

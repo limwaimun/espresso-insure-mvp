@@ -52,7 +52,7 @@ interface Attachment {
 
 interface Message {
   id: string
-  role: 'client' | 'ifa' | 'maya'
+  role: 'client' | 'fa' | 'maya'
   content: string
   timestamp: Date
   thinking?: string
@@ -95,7 +95,7 @@ function MayaPlaygroundInner() {
   const [claims, setClaims] = useState<{ id: string; title: string; status: string; priority: string; daysSinceUpdate: number }[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [speakingAs, setSpeakingAs] = useState<'client' | 'ifa'>('client')
+  const [speakingAs, setSpeakingAs] = useState<'client' | 'fa'>('client')
   const [isLoading, setIsLoading] = useState(false)
   const [showDebug, setShowDebug] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState('')
@@ -157,7 +157,7 @@ function MayaPlaygroundInner() {
         if (data.messages?.length > 0) {
           setMessages(data.messages.map((m: { role: string; content: string }, i: number) => ({
             id: `history-${i}`,
-            role: m.role as 'client' | 'ifa' | 'maya',
+            role: m.role as 'client' | 'fa' | 'maya',
             content: m.content,
             timestamp: new Date(),
           })))
@@ -595,7 +595,7 @@ function MayaPlaygroundInner() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
                 <span style={{ fontSize: 11, color: '#6B6460' }}>Speaking as:</span>
                 <div style={{ display: 'flex', background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, overflow: 'hidden' }}>
-                  {(['client', 'ifa'] as const).map(role => (
+                  {(['client', 'fa'] as const).map(role => (
                     <button key={role} onClick={() => setSpeakingAs(role)} style={{ padding: '4px 14px', background: speakingAs === role ? (role === 'client' ? 'rgba(58,125,90,0.10)' : 'rgba(32,160,160,0.08)') : 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, color: speakingAs === role ? (role === 'client' ? '#3A7D5A' : '#20A0A0') : '#6B6460', fontWeight: speakingAs === role ? 600 : 400, transition: 'all 0.12s ease' }}>
                       {role === 'client' ? selectedClient.name : faName}
                     </button>

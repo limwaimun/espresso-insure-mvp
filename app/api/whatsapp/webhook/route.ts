@@ -125,7 +125,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 // ── Sender verification ────────────────────────────────────────────────────
 
 async function verifySender(whatsappNumber: string): Promise<{
-  type: 'ifa' | 'client' | 'unknown'
+  type: 'fa' | 'client' | 'unknown'
   faId: string | null
   clientId: string | null
   faName: string | null
@@ -142,7 +142,7 @@ async function verifySender(whatsappNumber: string): Promise<{
     .single()
 
   if (ifa) {
-    return { type: 'ifa', faId: ifa.id, clientId: null, faName: ifa.name, clientName: null, faWhatsApp: ifa.phone }
+    return { type: 'fa', faId: ifa.id, clientId: null, faName: ifa.name, clientName: null, faWhatsApp: ifa.phone }
   }
 
   // Check if sender is a known client
@@ -490,8 +490,8 @@ export async function POST(request: NextRequest) {
     .from('profiles').select('*').eq('id', faId).single()
 
   // ── STEP 5: Build context for Maya ───────────────────────────────────────
-  const senderRole = sender.type === 'ifa' ? 'FA' : 'Client'
-  const senderName = sender.type === 'ifa' ? (faName || 'Your Advisor') : (clientName || 'Client')
+  const senderRole = sender.type === 'fa' ? 'FA' : 'Client'
+  const senderName = sender.type === 'fa' ? (faName || 'Your Advisor') : (clientName || 'Client')
 
   const claudeMessages: Anthropic.MessageParam[] = [
     // Inject conversation history
@@ -558,7 +558,7 @@ export async function POST(request: NextRequest) {
   if (conversationId) {
     const now = new Date().toISOString()
     await supabase.from('messages').insert([
-      { conversation_id: conversationId, role: sender.type === 'ifa' ? 'ifa' : 'client', content: messageText, created_at: now },
+      { conversation_id: conversationId, role: sender.type === 'fa' ? 'fa' : 'client', content: messageText, created_at: now },
       { conversation_id: conversationId, role: 'assistant', content: mayaReply, created_at: new Date(Date.now() + 1).toISOString() },
     ])
     await supabase.from('conversations').update({
@@ -597,7 +597,7 @@ function buildWebhookSystemPrompt(
   policies: any[],
   faName: string,
   preferredInsurers: string[],
-  senderType: 'ifa' | 'client' | 'unknown'
+  senderType: 'fa' | 'client' | 'unknown'
 ): string {
   const today = new Date().toLocaleDateString('en-SG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -612,7 +612,7 @@ function buildWebhookSystemPrompt(
   return `You are Maya, the AI assistant for ${faName}, an FA based in Singapore. Today: ${today}.
 
 You are in a WhatsApp conversation with:
-${senderType === 'ifa' ? `- ${faName} (your principal FA)` : `- ${client?.name || 'a client'} (client of ${faName})`}
+${senderType === 'fa' ? `- ${faName} (your principal FA)` : `- ${client?.name || 'a client'} (client of ${faName})`}
 
 CLIENT PROFILE:
 Name: ${client?.name || '—'} | Email: ${client?.email || '—'} | WhatsApp: ${client?.whatsapp || '—'}
