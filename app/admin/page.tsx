@@ -99,6 +99,30 @@ export default function AdminPage() {
         ))}
       </div>
 
+      {/* Claim failure alert — shown when claim fail rate > 40% */}
+      {!execLoading && execData && (() => {
+        const claim = execData.byAction?.['claim']
+        if (!claim) return null
+        const total = claim.ok + claim.fail
+        if (total === 0) return null
+        const rate = claim.fail / total
+        if (rate < 0.4) return null
+        return (
+          <div style={{ background: 'rgba(208,96,96,0.07)', border: '1px solid rgba(208,96,96,0.3)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ fontSize: 18 }}>🚨</span>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#A32D2D', marginBottom: 4 }}>
+                Claim action failing at {Math.round(rate * 100)}% ({claim.fail}/{total} in last 24h)
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                Most recent error: already_claimed_or_not_dispatched — orders stuck in 'running' or 'failed' status cannot be re-claimed by Elon. Check Brain Loop for stale running orders.
+              </div>
+              <a href="/admin/brain" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textDecoration: 'none', marginTop: 6, display: 'inline-block' }}>View Brain Loop →</a>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Execution health */}
       <div style={{ ...panelStyle, marginBottom: 24 }}>
         <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
