@@ -86,6 +86,17 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
     })).filter(w => w.total > 0)
   }, [orders])
 
+  const blockStats = useMemo(() => {
+    const oneWeekAgo = Date.now() - 7 * 86400 * 1000
+    const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
+    const blocked = recent.filter(o =>
+      o.title?.toLowerCase().includes('ifa') ||
+      o.intent?.toLowerCase().includes('ifa') ||
+      o.rationale?.toLowerCase().includes('ifa')
+    ).length
+    return blocked
+  }, [orders])
+
   const categoryStats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
     const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
@@ -116,10 +127,11 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
         <StatCard label="Last 7 days" value={stats.total} />
         <StatCard label="Done" value={stats.done} accent="#0F6E56" />
         <StatCard label="Failed / blocked" value={stats.failed} accent={stats.failed > 0 ? '#A32D2D' : undefined} />
+        <StatCard label="Terminology blocks (7d)" value={blockStats} accent={blockStats > 0 ? '#854F0B' : undefined} title="Work orders containing 'IFA' — blocked from auto-approval" />
       </div>
 
       {/* Workstream breakdown */}
@@ -343,9 +355,9 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   )
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
+function StatCard({ label, value, accent, title }: { label: string; value: number; accent?: string; title?: string }) {
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px' }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px' }} title={title}>
       <div style={{ fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>
         {label}
       </div>
