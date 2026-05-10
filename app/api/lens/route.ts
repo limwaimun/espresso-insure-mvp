@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
     let narrative = null
     if (reportType === 'portfolio' || query) {
       const narrativeRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('lens'),
         max_tokens: 600,
         system: 'You are Lens, an analytics agent for Singapore financial advisors. Write in clean flowing prose — no markdown, no headers, no bullet points, no bold text. Just clear, direct sentences an FA can read at a glance. Be specific with numbers and names. Highlight the single most urgent action first.',
         messages: [{
@@ -243,7 +244,7 @@ ${JSON.stringify(metrics, null, 2)}`,
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('lens'),
       inputTokens: narrative ? undefined : null,
       outputTokens: narrative ? undefined : null,
       metadata: { fromCache: false, reportType: reportType || 'portfolio', hasQuery: !!query },

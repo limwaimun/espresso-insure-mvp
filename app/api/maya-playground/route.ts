@@ -26,6 +26,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
 import { logAgentInvocation } from '@/lib/agent-log'
+import { resolveAgentModel } from '@/lib/agent-model'
 import type { Policy } from '@/lib/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
@@ -339,7 +340,7 @@ async function generateAndSaveSummary(
     .join('\n')
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: resolveAgentModel('maya-playground'),
     max_tokens: 500,
     messages: [{
       role: 'user',
@@ -605,7 +606,7 @@ export async function POST(request: NextRequest) {
     const claudeMessages = buildClaudeMessages(messages, client, faName)
 
     let response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('maya-playground'),
       max_tokens: 1000,
       system: systemPrompt,
       messages: claudeMessages,
@@ -646,7 +647,7 @@ export async function POST(request: NextRequest) {
 
       // Continue conversation with tool result
       response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('maya-playground'),
         max_tokens: 1000,
         system: systemPrompt,
         messages: [
@@ -694,7 +695,7 @@ export async function POST(request: NextRequest) {
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('maya-playground'),
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,
       metadata: {

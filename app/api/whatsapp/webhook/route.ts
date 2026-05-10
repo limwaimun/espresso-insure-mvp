@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { sendWhatsAppText } from '@/lib/whatsapp'
 import { logAgentInvocation } from '@/lib/agent-log'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 // ── Abuse protection constants ────────────────────────────────────────────
 const RATE_LIMIT_PER_HOUR = 20        // max messages per sender per hour
@@ -526,7 +527,7 @@ export async function POST(request: NextRequest) {
   let mayaError: string | null = null
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('whatsapp'),
       max_tokens: 500, // Keep WhatsApp replies concise
       system: systemPrompt,
       messages: claudeMessages,
@@ -546,7 +547,7 @@ export async function POST(request: NextRequest) {
       outcome: mayaError ? 'error' : 'ok',
       statusCode: mayaError ? 500 : 200,
       latencyMs: Date.now() - mayaStart,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('whatsapp'),
       inputTokens: mayaTokensIn,
       outputTokens: mayaTokensOut,
       errorMessage: mayaError,

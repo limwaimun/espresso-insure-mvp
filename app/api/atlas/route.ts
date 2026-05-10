@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -220,7 +221,7 @@ export async function POST(request: NextRequest) {
     let mayaScript = null
     if (requiredMissing.length > 0) {
       const scriptRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('atlas'),
         max_tokens: 500,
         messages: [{
           role: 'user',
@@ -244,7 +245,7 @@ Context: This is for a ${form.insurer} ${form.form_type} claim form. Keep it und
     let faFormRequestScript: string | null = null
     if (!formAvailable) {
       const scriptRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('atlas'),
         max_tokens: 300,
         messages: [{
           role: 'user',
@@ -269,7 +270,7 @@ Keep it under 60 words. Friendly and direct. Mention they can find it on the ${f
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('atlas'),
       metadata: {
         formId,
         clientId,

@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       const clientHoldingsList = allHoldings.filter(h => h.client_id === clientId)
 
       const reviewRes = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('harbour'),
         max_tokens: 600,
         system: 'You are Harbour, an investment portfolio review agent for Singapore financial advisors. You assess client investment holdings for review needs, concentration risk, and suitability. Write in clean prose, no markdown.',
         messages: [{
@@ -132,7 +133,7 @@ Return JSON: { "mayaScript": "", "reviewNotes": "", "urgency": "high|medium|low"
         outcome: 'ok',
         statusCode: 200,
         latencyMs: Date.now() - start,
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('harbour'),
         inputTokens: reviewRes.usage?.input_tokens ?? null,
         outputTokens: reviewRes.usage?.output_tokens ?? null,
         metadata: { mode: 'client_review', clientId },
@@ -147,7 +148,7 @@ Return JSON: { "mayaScript": "", "reviewNotes": "", "urgency": "high|medium|low"
 
     // ── Portfolio report mode — full FA overview ───────────────────────────
     const narrativeRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('harbour'),
       max_tokens: 400,
       system: 'You are Harbour, an investment oversight agent for Singapore financial advisors. Write in clean prose, no markdown, no bullet points.',
       messages: [{
@@ -173,7 +174,7 @@ ${overdueReview.slice(0, 3).map(h => `- ${(h.clients as any)?.name}: ${h.product
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('harbour'),
       inputTokens: narrativeRes.usage?.input_tokens ?? null,
       outputTokens: narrativeRes.usage?.output_tokens ?? null,
       metadata: { mode: 'review_report', holdingsCount: allHoldings.length },

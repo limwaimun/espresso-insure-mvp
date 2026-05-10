@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -223,7 +224,7 @@ Provide a structured comparison. Format as JSON:
     }
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('compass'),
       max_tokens: 2000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
@@ -241,7 +242,7 @@ Provide a structured comparison. Format as JSON:
 
     // ── Format a Maya-readable summary ────────────────────────────────────
     const mayaSummaryRes = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('compass'),
       max_tokens: 300,
       messages: [{
         role: 'user',
@@ -259,7 +260,7 @@ Analysis: ${JSON.stringify(analysis)}`
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('compass'),
       inputTokens: response.usage?.input_tokens ?? null,
       outputTokens: response.usage?.output_tokens ?? null,
       metadata: { mode: mode || 'comparison' },

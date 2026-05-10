@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { verifySession } from '@/lib/auth-middleware'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +42,7 @@ interface RouteResult {
 
 async function classifyIntent(message: string, hasClientContext: boolean): Promise<{ intent: Intent; params: Record<string, string> }> {
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: resolveAgentModel('relay'),
     max_tokens: 300,
     messages: [{
       role: 'user',
@@ -285,7 +286,7 @@ export async function POST(request: NextRequest) {
       outcome: agentRes.ok ? 'ok' : 'error',
       statusCode: agentRes.status,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('relay'),
       metadata: { intent: route.intent, subAgent: route.agentUrl.split('/api/')[1], hasClientId: !!clientId },
     })
     return NextResponse.json({

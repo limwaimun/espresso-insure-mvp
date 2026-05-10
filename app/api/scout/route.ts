@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       const base64 = Buffer.from(bytes).toString('base64')
 
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('scout'),
         max_tokens: 1200,
         messages: [
           {
@@ -124,7 +125,7 @@ Use null for any fields not found in the document.`,
         outcome: 'ok',
         statusCode: 200,
         latencyMs: Date.now() - start,
-        model: 'claude-sonnet-4-6',
+        model: resolveAgentModel('scout'),
         inputTokens: response.usage?.input_tokens ?? null,
         outputTokens: response.usage?.output_tokens ?? null,
         metadata: { mode: 'pdf_extraction', fileSizeBytes: file.size },
@@ -143,7 +144,7 @@ Use null for any fields not found in the document.`,
     if (!query) return NextResponse.json({ error: 'query is required' }, { status: 400 })
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('scout'),
       max_tokens: 800,
       messages: [
         {
@@ -196,7 +197,7 @@ Respond in this exact JSON format:
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model: resolveAgentModel('scout'),
       inputTokens: response.usage?.input_tokens ?? null,
       outputTokens: response.usage?.output_tokens ?? null,
       metadata: { mode: 'market_intelligence' },
