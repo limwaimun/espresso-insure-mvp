@@ -4,13 +4,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // pdfjs-dist (used in lib/policy-extraction/pdfjs-extract.ts) declares
-  // @napi-rs/canvas as an optional dependency. Bundling pdfjs causes the
-  // optional require to throw at module-load time on Vercel, before our
-  // try/catch can run. Marking it external keeps it as a runtime require
-  // and lets Node handle the missing optional dep gracefully (logs a
-  // warning, continues). See B-pe-15b.2.
-  serverExternalPackages: ['pdfjs-dist'],
   // Expose build-time metadata to the client bundle so the UI can show
   // which commit is currently deployed. Vercel auto-populates
   // VERCEL_GIT_COMMIT_SHA and VERCEL_GIT_COMMIT_REF during build.
