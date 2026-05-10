@@ -64,16 +64,7 @@ export default function HomePage() {
           .g4 { grid-template-columns: 1fr; }
           .stats-row > div { width: 45%; }
         }
-        .mobile-cta-bar { display: none; }
-        @media (max-width: 640px) {
-          .mobile-cta-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: rgba(247,244,240,0.97); backdrop-filter: blur(12px); border-top: 0.5px solid #E8E2DA; padding: 12px 20px 20px; gap: 10px; align-items: center; }
-        }
       `}</style>
-
-      {/* MOBILE STICKY CTA */}
-      <div className="mobile-cta-bar">
-        <Link href="/trial" className="lp-btn-amber" style={{ flex: 1, fontSize: 15, padding: '13px 20px', textAlign: 'center' }}>Start free trial — 14 days free</Link>
-      </div>
 
       {/* NAV */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(247,244,240,0.95)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid #E8E2DA' }}>
