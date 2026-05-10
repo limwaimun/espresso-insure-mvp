@@ -11,7 +11,7 @@
  * Idempotent: counts existing rows for the policy. Skip if >0 unless
  * force:true. Force does delete-then-insert.
  *
- * Cost (claude-sonnet-4-6 + voyage-3.5-lite):
+ * Cost (claude-haiku-4-5 + voyage-3.5-lite):
  *   - Claude page-text extraction: ~$0.30 per 16-page PDF.
  *     Output tokens are higher than brief/sections since we're
  *     dumping verbatim policy text. ~$1.50-$3.50 estimated for
@@ -29,7 +29,7 @@ import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { embedTexts } from '@/lib/voyage-client'
 
-const PARSE_MODEL = 'claude-sonnet-4-6'
+const PARSE_MODEL = 'claude-haiku-4-5'
 const MAX_TOKENS = 16000 // enough for ~50 pages of policy text
 const POLICY_DOCUMENTS_BUCKET = 'policy-documents'
 const PDF_SIZE_LIMIT_BYTES = 32 * 1024 * 1024
@@ -178,8 +178,8 @@ export interface ParseChunksError {
 // Pricing
 // ---------------------------------------------------------------------------
 
-const COST_PER_INPUT_TOKEN = 3 / 1_000_000
-const COST_PER_OUTPUT_TOKEN = 15 / 1_000_000
+const COST_PER_INPUT_TOKEN = 1 / 1_000_000
+const COST_PER_OUTPUT_TOKEN = 5 / 1_000_000
 const VOYAGE_COST_PER_TOKEN = 0.02 / 1_000_000
 
 // ---------------------------------------------------------------------------

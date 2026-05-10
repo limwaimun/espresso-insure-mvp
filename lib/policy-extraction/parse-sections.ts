@@ -10,7 +10,7 @@
  * and !force, skips. With force=true, deletes existing rows then
  * inserts fresh.
  *
- * Cost per call (claude-sonnet-4-6): roughly $0.10–$0.15 per policy
+ * Cost per call (claude-haiku-4-5): roughly $0.10–$0.15 per policy
  * (most cost is input — re-reading the PDF). Output is small (~500
  * tokens for a 10-section index).
  */
@@ -25,7 +25,7 @@ import {
   type SectionEntry,
 } from './sections-schema'
 
-const PARSE_MODEL = 'claude-sonnet-4-6'
+const PARSE_MODEL = 'claude-haiku-4-5'
 const MAX_TOKENS = 2048
 const POLICY_DOCUMENTS_BUCKET = 'policy-documents'
 const PDF_SIZE_LIMIT_BYTES = 32 * 1024 * 1024
@@ -117,8 +117,8 @@ export interface ParseSectionsError {
 // Pricing
 // ---------------------------------------------------------------------------
 
-const COST_PER_INPUT_TOKEN = 3 / 1_000_000
-const COST_PER_OUTPUT_TOKEN = 15 / 1_000_000
+const COST_PER_INPUT_TOKEN = 1 / 1_000_000
+const COST_PER_OUTPUT_TOKEN = 5 / 1_000_000
 
 // ---------------------------------------------------------------------------
 // Main entry point

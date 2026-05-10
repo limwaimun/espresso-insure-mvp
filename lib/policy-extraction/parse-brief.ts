@@ -8,7 +8,7 @@
  * Idempotent: safe to re-run on the same policy. parse_status
  * transitions: pending/failed -> parsing -> done/failed.
  *
- * Cost per call (claude-sonnet-4-6): roughly $0.05–$0.15 per policy
+ * Cost per call (claude-haiku-4-5): roughly $0.05–$0.15 per policy
  * depending on PDF length. Token usage logged to policies row for
  * cost tracking.
  */
@@ -23,7 +23,7 @@ import {
   type ParsedPolicySummary,
 } from './brief-schema';
 
-const PARSE_MODEL = 'claude-sonnet-4-6';
+const PARSE_MODEL = 'claude-haiku-4-5';
 const MAX_TOKENS = 4096;
 const POLICY_DOCUMENTS_BUCKET = 'policy-documents';
 const PDF_SIZE_LIMIT_BYTES = 32 * 1024 * 1024; // 32 MB
@@ -98,8 +98,8 @@ export interface ParseBriefError {
   retryable: boolean;
 }
 
-const COST_PER_INPUT_TOKEN = 3 / 1_000_000;
-const COST_PER_OUTPUT_TOKEN = 15 / 1_000_000;
+const COST_PER_INPUT_TOKEN = 1 / 1_000_000;
+const COST_PER_OUTPUT_TOKEN = 5 / 1_000_000;
 
 // ---------------------------------------------------------------------------
 // Main entry point
