@@ -67,21 +67,21 @@ export const NominationTypeSchema = z.enum([
 
 export const BeneficiarySchema = z.object({
   name: z.string(),
-  relationship: z.string().nullable(),
-  share_percent: z.number().nullable(),
+  relationship: z.string().nullish(),
+  share_percent: z.number().nullish(),
 });
 
 export const RiderSchema = z.object({
   name: z.string(),
-  annual_premium: z.number().nullable(),
-  effect_summary: z.string().nullable(),
+  annual_premium: z.number().nullish(),
+  effect_summary: z.string().nullish(),
 });
 
 export const CIStageCoverageSchema = z.object({
   early_stage: z.boolean(),
   intermediate_stage: z.boolean(),
   severe_stage: z.boolean(),
-  total_conditions_covered: z.number().nullable(),
+  total_conditions_covered: z.number().nullish(),
 });
 
 // ---------------------------------------------------------------------------
@@ -90,44 +90,44 @@ export const CIStageCoverageSchema = z.object({
 
 export const ParsedPolicySummaryV1Schema = z.object({
   // ===== Identification =====
-  policyholder_name: z.string().nullable(),
-  insured_person_name: z.string().nullable(),
-  nric_masked: z.string().nullable(),
-  date_of_birth: z.string().nullable(), // ISO date string YYYY-MM-DD where extractable
-  policy_number: z.string().nullable(),
-  plan_name: z.string().nullable(),
-  plan_tier: z.string().nullable(), // e.g. "Plan A", "Standard", "Preferred"
+  policyholder_name: z.string().nullish(),
+  insured_person_name: z.string().nullish(),
+  nric_masked: z.string().nullish(),
+  date_of_birth: z.string().nullish(), // ISO date string YYYY-MM-DD where extractable
+  policy_number: z.string().nullish(),
+  plan_name: z.string().nullish(),
+  plan_tier: z.string().nullish(), // e.g. "Plan A", "Standard", "Preferred"
 
   // ===== Insurer =====
-  insurer_name: z.string().nullable(),
-  product_family: z.string().nullable(), // e.g. "HealthShield Gold Max", "PRUActive Life"
+  insurer_name: z.string().nullish(),
+  product_family: z.string().nullish(), // e.g. "HealthShield Gold Max", "PRUActive Life"
   regulatory_type: RegulatoryTypeSchema,
 
   // ===== Money =====
-  currency: z.string().nullable(), // ISO 4217: SGD, USD, etc.
-  annual_premium: z.number().nullable(),
+  currency: z.string().nullish(), // ISO 4217: SGD, USD, etc.
+  annual_premium: z.number().nullish(),
   premium_frequency: PremiumFrequencySchema,
-  premium_payment_term_years: z.number().nullable(),
-  sum_assured: z.number().nullable(),
+  premium_payment_term_years: z.number().nullish(),
+  sum_assured: z.number().nullish(),
   // IS plan specifics (null for non-IS):
-  annual_deductible: z.number().nullable(),
-  co_insurance_percent: z.number().nullable(),
-  co_insurance_cap: z.number().nullable(),
-  annual_claim_limit: z.number().nullable(),
-  lifetime_claim_limit: z.number().nullable(), // null means "unlimited" — see notes_on_money
+  annual_deductible: z.number().nullish(),
+  co_insurance_percent: z.number().nullish(),
+  co_insurance_cap: z.number().nullish(),
+  annual_claim_limit: z.number().nullish(),
+  lifetime_claim_limit: z.number().nullish(), // null means "unlimited" — see notes_on_money
 
   // ===== Dates (ISO YYYY-MM-DD) =====
-  issue_date: z.string().nullable(),
-  cover_start_date: z.string().nullable(),
-  renewal_date: z.string().nullable(),
-  maturity_date: z.string().nullable(),
-  premium_cessation_date: z.string().nullable(),
+  issue_date: z.string().nullish(),
+  cover_start_date: z.string().nullish(),
+  renewal_date: z.string().nullish(),
+  maturity_date: z.string().nullish(),
+  premium_cessation_date: z.string().nullish(),
 
   // ===== Coverage =====
   death_benefit: z.boolean(),
   terminal_illness_benefit: z.boolean(),
   tpd_benefit: z.boolean(),
-  ci_coverage: CIStageCoverageSchema.nullable(), // null if non-CI policy
+  ci_coverage: CIStageCoverageSchema.nullish(), // null if non-CI policy
   riders_attached: z.array(RiderSchema),
 
   // ===== Beneficiaries =====
@@ -145,9 +145,9 @@ export const ParsedPolicySummaryV1Schema = z.object({
   fa_review_flags: z.array(z.string()),
 
   // ===== Free-text caveats (when extraction was uncertain) =====
-  notes_on_money: z.string().nullable(),
-  notes_on_dates: z.string().nullable(),
-  notes_on_coverage: z.string().nullable(),
+  notes_on_money: z.string().nullish(),
+  notes_on_dates: z.string().nullish(),
+  notes_on_coverage: z.string().nullish(),
 
   // ===== Extraction metadata =====
   extraction_confidence: z.enum(['high', 'medium', 'low']),
