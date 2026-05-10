@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
+import { resolveAgentModel } from '@/lib/agent-model'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -93,8 +94,9 @@ Respond in this exact JSON format with no other text:
   "caveat": "one sentence caveat Maya should add when presenting this"
 }`
 
+    const model = resolveAgentModel('sage')
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model,
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -117,7 +119,7 @@ Respond in this exact JSON format with no other text:
       outcome: 'ok',
       statusCode: 200,
       latencyMs: Date.now() - start,
-      model: 'claude-sonnet-4-6',
+      model,
       inputTokens: response.usage?.input_tokens ?? null,
       outputTokens: response.usage?.output_tokens ?? null,
     })
