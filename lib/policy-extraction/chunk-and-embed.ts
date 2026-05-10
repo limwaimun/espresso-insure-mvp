@@ -41,7 +41,7 @@ const MIN_CHARS_PER_CHUNK = 100 // skip tiny fragments
 
 // Voyage parameters
 const EMBEDDING_MODEL = 'voyage-3.5-lite'
-const VOYAGE_MAX_BATCH = 128
+const VOYAGE_MAX_BATCH = 8 // B-pe-6.1: free-tier ceiling
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -540,6 +540,10 @@ export async function parseAndEmbedPolicyChunks(
       const sorted = [...res.data].sort((a, b) => a.index - b.index)
       for (const e of sorted) embeddings.push(e.embedding)
       voyageTokensTotal += res.usage.total_tokens
+      // B-pe-6.1: pace successive batches to respect free-tier RPM
+      if (i + VOYAGE_MAX_BATCH < pending.length) {
+        await new Promise((res) => setTimeout(res, 250))
+      }
     } catch (err) {
       return {
         ok: false,

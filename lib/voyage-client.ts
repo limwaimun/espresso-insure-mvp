@@ -82,29 +82,60 @@ export async function embedTexts(
   if (request.inputType) body.input_type = request.inputType;
   if (request.outputDimension) body.output_dimension = request.outputDimension;
 
-  const startedAt = Date.now();
-  const response = await fetch(VOYAGE_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  // B-pe-6.1: retry on 429 with exponential backoff.
+  // Free-tier Voyage limits per-minute throughput; transient throttling
+  // is expected and recoverable. Other status codes (4xx auth, 5xx
+  // server) fail immediately — they aren't fixed by retry.
+  const MAX_ATTEMPTS = 4;
+  const BACKOFF_MS = [1000, 2000, 4000];
 
-  const elapsedMs = Date.now() - startedAt;
+  let response: Response | undefined;
+  let elapsedMs = 0;
+  let lastErrorBody: unknown = null;
+  let lastStatus: number | undefined;
+  let lastStatusText = '';
 
-  if (!response.ok) {
-    let errorBody: unknown;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const startedAt = Date.now();
+    response = await fetch(VOYAGE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+    elapsedMs = Date.now() - startedAt;
+
+    if (response.ok) break;
+
+    lastStatus = response.status;
+    lastStatusText = response.statusText;
     try {
-      errorBody = await response.json();
+      lastErrorBody = await response.json();
     } catch {
-      errorBody = await response.text().catch(() => 'unparseable');
+      lastErrorBody = await response.text().catch(() => 'unparseable');
     }
+
+    // Only retry on 429 (rate limit). Any other failure is final.
+    if (response.status !== 429 || attempt === MAX_ATTEMPTS - 1) {
+      throw new VoyageError(
+        `Voyage API ${response.status} ${response.statusText} (after ${elapsedMs}ms)` +
+          (attempt > 0 ? ` [${attempt + 1} attempts]` : ''),
+        response.status,
+        lastErrorBody,
+      );
+    }
+
+    // Wait before retrying.
+    await new Promise((res) => setTimeout(res, BACKOFF_MS[attempt]));
+  }
+
+  if (!response || !response.ok) {
     throw new VoyageError(
-      `Voyage API ${response.status} ${response.statusText} (after ${elapsedMs}ms)`,
-      response.status,
-      errorBody,
+      `Voyage API ${lastStatus ?? '???'} ${lastStatusText} (after ${elapsedMs}ms) [exhausted retries]`,
+      lastStatus,
+      lastErrorBody,
     );
   }
 
