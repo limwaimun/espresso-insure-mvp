@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
     serviceSupabase.from('policies').select('*', { count: 'exact', head: true }),
   ])
 
-  // Active IFAs in last 7 days
+  // Active FAs in last 7 days
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  const activeIFAs7d = profiles?.filter(p => {
+  const activeFAs7d = profiles?.filter(p => {
     const lastLogin = lastLoginMap[p.id]
     return lastLogin && lastLogin >= sevenDaysAgo
   }).length || 0
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       totalFAs: profiles?.length || 0,
       totalClients: totalClients || 0,
       totalPolicies: totalPolicies || 0,
-      activeIFAs7d,
+      activeFAs7d,
     },
   })
 }

@@ -36,7 +36,7 @@ const AGENTS = [
 ]
 
 export default function AdminPage() {
-  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeIFAs7d: 0 })
+  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0 })
   const [recentFAs, setRecentFAs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [execData, setExecData] = useState<ExecData | null>(null)
@@ -90,7 +90,7 @@ export default function AdminPage() {
           { label: 'Registered FAs', value: loading ? '…' : stats.totalFAs },
           { label: 'Total clients', value: loading ? '…' : stats.totalClients },
           { label: 'Total policies', value: loading ? '…' : stats.totalPolicies },
-          { label: 'Active IFAs (7d)', value: loading ? '…' : stats.activeIFAs7d },
+          { label: 'Active FAs (7d)', value: loading ? '…' : stats.activeFAs7d },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 10, padding: '20px 24px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
