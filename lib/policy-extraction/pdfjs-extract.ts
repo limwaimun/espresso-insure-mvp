@@ -21,7 +21,7 @@
  * NRIC redaction is applied to all returned content.
  */
 
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.min.mjs'
 
 export interface PageContent {
   page_number: number
