@@ -87,7 +87,7 @@ export async function embedTexts(
   // is expected and recoverable. Other status codes (4xx auth, 5xx
   // server) fail immediately — they aren't fixed by retry.
   const MAX_ATTEMPTS = 4;
-  const BACKOFF_MS = [1000, 2000, 4000];
+  const BACKOFF_MS = [30000, 60000, 120000]; // B-pe-6.2: free-tier rate window is longer than 7s
 
   let response: Response | undefined;
   let elapsedMs = 0;
