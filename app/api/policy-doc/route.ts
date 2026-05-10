@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
+import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,6 +35,28 @@ async function assertPolicyOwnership(policyId: string, userId: string) {
     .single()
   if (error || !data) return { ok: false as const, status: 404, error: 'Policy not found or unauthorized' }
   return { ok: true as const }
+}
+
+/**
+ * B-pe-4 — auto-trigger brief parse after a PDF document is uploaded.
+ * Fire-and-forget: caller's upload response should not be blocked by
+ * Claude's 8-25s parse latency. Failures are recorded on the policies
+ * row (parse_status='failed', parse_last_error populated) and the FA
+ * can retry from the UI.
+ *
+ * Only triggers on application/pdf — image/word/excel docs aren't
+ * brief-parsable.
+ */
+function maybeAutoTriggerBriefParse(policyId: string, mimeType: string): void {
+  if (mimeType !== 'application/pdf') return
+  // Intentionally not awaited. Errors are logged to console and
+  // recorded on the policies row by parsePolicyBrief itself.
+  parsePolicyBrief(policyId).catch((err) => {
+    console.error(
+      '[auto-trigger] parsePolicyBrief failed for policy ' + policyId + ':',
+      err,
+    )
+  })
 }
 
 // POST — upload one doc for a policy (inserts a row in policy_documents)
@@ -90,6 +113,9 @@ export async function POST(request: NextRequest) {
       await supabase.storage.from(BUCKET).remove([filePath])
       return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
     }
+
+    // B-pe-4 — fire-and-forget brief parse (PDF only)
+    maybeAutoTriggerBriefParse(policyId, file.type)
 
     return NextResponse.json({ success: true, doc: inserted })
   } catch (err) {

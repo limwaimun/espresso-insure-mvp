@@ -6,12 +6,13 @@ import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
-import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save, FileText } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 import { policyStatusPill, annualPremium } from '@/lib/policies'
 import { phaseLabel, stateLabel, phaseColor, validTransitions, type LifecycleEvent } from '@/lib/policy-lifecycle'
 import { formatRelativeTime } from '@/lib/dates'
 import Modal from '@/components/Modal'
+import BriefModal from '@/components/BriefModal'
 import { inputStyle, labelStyle, btnPrimary, btnOutline } from '@/lib/styles'
 
 export type { Policy }  // re-export: kept so ClientDetailPage's `import { Policy } from './PolicyRow'` keeps working during the unification transition.
@@ -59,6 +60,9 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
   const [advanceText, setAdvanceText] = useState('')
   const [selectedTransition, setSelectedTransition] = useState<{ to_phase: string; to_state: string; label: string } | null>(null)
   const [advanceError, setAdvanceError] = useState<string | null>(null)
+
+  // Brief modal state (B-pe-4)
+  const [briefOpen, setBriefOpen] = useState(false)
 
   // Activity timeline state (lazy-loaded on first expand)
   const [events, setEvents] = useState<LifecycleEvent[]>([])
@@ -197,6 +201,7 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
               { icon: <Bot size={12} color="#BA7517" />, label: 'Draft renewal reminder', onClick: () => onAskMaya(policy, 'renewal_reminder'), accent: true },
               { icon: <Activity size={12} color="#6B6460" />, label: 'Log activity', onClick: () => setLogActivityOpen(true), dividerBefore: true },
               { icon: <ArrowUpRight size={12} color="#6B6460" />, label: 'Advance stage', onClick: () => setAdvanceOpen(true) },
+              { icon: <FileText size={12} color="#6B6460" />, label: 'Brief', onClick: () => setBriefOpen(true), dividerBefore: true },
               ...(clientInfo ? [{
                 icon: <User size={12} color="#6B6460" />,
                 label: 'View client',
@@ -410,6 +415,15 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Brief modal (B-pe-4) */}
+      {briefOpen && (
+        <BriefModal
+          onClose={() => setBriefOpen(false)}
+          policyId={policy.id}
+          policyLabel={`${policy.insurer || 'Policy'}${policy.policy_number ? ' — ' + policy.policy_number : ''}`}
+        />
       )}
 
       {/* B82d: Advance stage modal */}

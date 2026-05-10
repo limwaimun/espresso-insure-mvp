@@ -97,3 +97,77 @@ export async function POST(req: NextRequest) {
     brief: result.brief,
   });
 }
+
+
+/**
+ * GET handler — admin-only. Returns cached brief + parse metadata
+ * for a policy_id. Does NOT trigger a parse; use POST for that.
+ *
+ * Usage:
+ *   GET /api/policy-parse/brief?policy_id=<uuid>
+ *
+ * Response:
+ *   { ok, parse_status, schema_version, brief, summary,
+ *     model, parsed_at, cost_usd, tokens, last_error }
+ */
+export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ ok: false, error: 'unauthenticated' }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (!profile || profile.role !== 'admin') {
+    return NextResponse.json({ ok: false, error: 'admin only' }, { status: 403 });
+  }
+
+  const url = new URL(req.url);
+  const policyId = url.searchParams.get('policy_id')?.trim();
+  if (!policyId) {
+    return NextResponse.json(
+      { ok: false, error: 'policy_id query param is required' },
+      { status: 400 },
+    );
+  }
+
+  const { data: policy, error: policyErr } = await supabase
+    .from('policies')
+    .select(
+      'id, parse_status, parse_schema_version, parsed_brief, parsed_summary, ' +
+        'parse_model, parsed_at, parse_cost_usd, parse_input_tokens, ' +
+        'parse_output_tokens, parse_last_error, parse_attempt_count',
+    )
+    .eq('id', policyId)
+    .single();
+
+  if (policyErr || !policy) {
+    return NextResponse.json(
+      { ok: false, error: 'policy not found' },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    policy_id: (policy as any).id,
+    parse_status: (policy as any).parse_status,
+    schema_version: (policy as any).parse_schema_version,
+    brief: (policy as any).parsed_brief,
+    summary: (policy as any).parsed_summary,
+    model: (policy as any).parse_model,
+    parsed_at: (policy as any).parsed_at,
+    cost_usd: (policy as any).parse_cost_usd,
+    input_tokens: (policy as any).parse_input_tokens,
+    output_tokens: (policy as any).parse_output_tokens,
+    last_error: (policy as any).parse_last_error,
+    attempt_count: (policy as any).parse_attempt_count,
+  });
+}
