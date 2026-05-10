@@ -459,6 +459,51 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* PRICING */}
+      <section id="pricing" className="lp-section" style={{ background: '#FFFFFF', padding: '96px 40px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: '#BA7517', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 16 }}>Pricing</p>
+          <h2 className="lp-h2" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 50, fontWeight: 400, color: '#1A1410', textAlign: 'center', lineHeight: 1.15, marginBottom: 14 }}>Simple, transparent pricing.<br /><em style={{ color: '#BA7517' }}>14 days free to start.</em></h2>
+          <p style={{ fontSize: 16, color: '#5F5A57', textAlign: 'center', marginBottom: 64 }}>No credit card required. Cancel anytime.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, maxWidth: 760, margin: '0 auto 48px' }}>
+            {/* Solo */}
+            <div className="lp-card" style={{ padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#BA7517', marginBottom: 8 }}>Solo</div>
+                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 52, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>SGD 79<span style={{ fontSize: 18, color: '#9B9088', fontFamily: 'DM Sans, sans-serif', fontWeight: 300 }}>/mo</span></div>
+                <div style={{ fontSize: 13, color: '#9B9088', marginTop: 6 }}>Up to 50 active clients</div>
+              </div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, padding: 0, margin: 0 }}>
+                {['Maya 24/7 in WhatsApp', 'Renewal tracking & alerts', 'Claims intake support', 'Client dashboard', 'CSV import'].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#3D3532' }}>
+                    <span style={{ color: '#1D9E75', flexShrink: 0 }}>✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/trial" className="lp-btn-out" style={{ fontSize: 15, padding: '13px 24px', textAlign: 'center', marginTop: 'auto' }}>Start free trial</Link>
+            </div>
+            {/* Pro */}
+            <div className="lp-card" style={{ padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 24, border: '1.5px solid #BA7517', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#BA7517', color: '#FFF', fontSize: 11, fontWeight: 500, padding: '4px 14px', borderRadius: 100, whiteSpace: 'nowrap' }}>Most popular</div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#BA7517', marginBottom: 8 }}>Pro</div>
+                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 52, fontWeight: 400, color: '#1A1410', lineHeight: 1 }}>SGD 149<span style={{ fontSize: 18, color: '#9B9088', fontFamily: 'DM Sans, sans-serif', fontWeight: 300 }}>/mo</span></div>
+                <div style={{ fontSize: 13, color: '#9B9088', marginTop: 6 }}>Unlimited clients</div>
+              </div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, padding: 0, margin: 0 }}>
+                {['Everything in Solo', 'Unlimited clients', 'Full claims coordination', 'Scout PDF extraction', 'Priority support', 'Compass gap analysis'].map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#3D3532' }}>
+                    <span style={{ color: '#1D9E75', flexShrink: 0 }}>✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/trial" className="lp-btn-amber" style={{ fontSize: 15, padding: '13px 24px', textAlign: 'center', marginTop: 'auto' }}>Start free trial</Link>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: '#9B9088', textAlign: 'center' }}>Questions? Email <a href="mailto:hello@espresso.insure" style={{ color: '#BA7517' }}>hello@espresso.insure</a></p>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section style={{ background: '#FFFFFF', padding: '96px 40px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
