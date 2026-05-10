@@ -12,9 +12,10 @@
  * is manual-trigger only.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief';
+import { parsePolicySections } from '@/lib/policy-extraction/parse-sections';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 min — Claude PDF parse can be slow on long docs
@@ -81,6 +82,29 @@ export async function POST(req: NextRequest) {
       500;
     return NextResponse.json(result, { status });
   }
+
+  // B-pe-7: chain Layer A -> Layer B. Fire-and-forget; errors
+  // logged but don't affect the brief response. Layer B failures
+  // can be retried manually via /api/policy-parse/sections.
+  // Layer C (chunks) is NOT chained here because the combined
+  // A+B+C runtime can exceed Vercel's 300s function budget on
+  // real-world PDFs. Layer C remains manually triggered.
+  after(async () => {
+    try {
+      const r = await parsePolicySections(result.policyId)
+      if (!r.ok && r.stage !== 'already_parsed') {
+        console.error(
+          `[chain] parsePolicySections failed for policy ${result.policyId}:`,
+          r.error,
+        )
+      }
+    } catch (err) {
+      console.error(
+        `[chain] parsePolicySections threw for policy ${result.policyId}:`,
+        err,
+      )
+    }
+  })
 
   // Return summary + brief preview + cost
   return NextResponse.json({
