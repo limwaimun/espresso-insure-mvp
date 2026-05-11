@@ -239,15 +239,20 @@ export async function GET(req: NextRequest) {
     const m = d.match(/^(\d{4})/)
     return m ? Number(m[1]) : null
   }
-  const dateFields = [
+  const policyDateFields = [
     'issue_date', 'cover_start_date', 'renewal_date',
-    'maturity_date', 'premium_cessation_date', 'date_of_birth',
+    'maturity_date', 'premium_cessation_date',
   ]
-  for (const df of dateFields) {
+  for (const df of policyDateFields) {
     const y = parseDateYear(parsedSummary[df])
     if (y !== null && (y < 1990 || y > 2080)) {
       sanityIssues.push(`${df} year ${y} outside plausible range 1990-2080`)
     }
+  }
+  // DOB has a different plausible range — humans were born before 1990
+  const dobYear = parseDateYear(parsedSummary.date_of_birth)
+  if (dobYear !== null && (dobYear < 1925 || dobYear > 2025)) {
+    sanityIssues.push(`date_of_birth year ${dobYear} outside plausible range 1925-2025`)
   }
 
   const pct = parsedSummary.co_insurance_percent
