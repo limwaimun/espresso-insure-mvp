@@ -99,6 +99,33 @@ export default function AdminPage() {
         ))}
       </div>
 
+      {/* Anthropic API limit alert — shown when brain_tick failures contain the usage-limit error */}
+      {!execLoading && execData && (() => {
+        const limitError = (execData.recentFailures || []).find(
+          f => f.action === 'brain_tick' && f.error.includes('API usage limits')
+        )
+        if (!limitError) return null
+        // Extract the resume date from the error string if present
+        const match = limitError.error.match(/You will regain access on ([^."]+)/)
+        const resumeDate = match ? match[1].trim() : null
+        return (
+          <div style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.35)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#854F0B', marginBottom: 4 }}>
+                Anthropic API usage limit reached — Brain is paused
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                {resumeDate
+                  ? `Access resumes: ${resumeDate}`
+                  : 'Check Anthropic console for plan limit details.'}
+              </div>
+              <a href="https://console.anthropic.com" target="_blank" rel="noreferrer" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textDecoration: 'none', marginTop: 6, display: 'inline-block' }}>Open Anthropic Console →</a>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Claim failure alert — shown when claim fail rate > 40% */}
       {!execLoading && execData && (() => {
         const claim = execData.byAction?.['claim']
