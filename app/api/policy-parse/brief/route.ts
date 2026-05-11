@@ -15,7 +15,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief';
-import { parsePolicySections } from '@/lib/policy-extraction/parse-sections';
+import { parsePolicySectionsWithStatus } from '@/lib/policy-extraction/status';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 min — Claude PDF parse can be slow on long docs
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   // real-world PDFs. Layer C remains manually triggered.
   after(async () => {
     try {
-      const r = await parsePolicySections(result.policyId)
+      const r = await parsePolicySectionsWithStatus(result.policyId)
       if (!r.ok && r.stage !== 'already_parsed') {
         console.error(
           `[chain] parsePolicySections failed for policy ${result.policyId}:`,

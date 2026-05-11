@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
 import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief'
-import { parsePolicySections } from '@/lib/policy-extraction/parse-sections'
 import {
-  parseAndEmbedPolicyChunks,
-  assignSectionIdsForPolicy,
-} from '@/lib/policy-extraction/chunk-and-embed'
+  parsePolicySectionsWithStatus,
+  parseAndEmbedPolicyChunksWithStatus,
+} from '@/lib/policy-extraction/status'
+import { assignSectionIdsForPolicy } from '@/lib/policy-extraction/chunk-and-embed'
 import { after } from 'next/server'
 
 const supabase = createClient(
@@ -70,8 +70,8 @@ function maybeAutoTriggerBriefParse(policyId: string, mimeType: string): void {
   after(async () => {
     const results = await Promise.allSettled([
       parsePolicyBrief(policyId),
-      parsePolicySections(policyId),
-      parseAndEmbedPolicyChunks(policyId, { skipSectionAssignment: true }),
+      parsePolicySectionsWithStatus(policyId),
+      parseAndEmbedPolicyChunksWithStatus(policyId, { skipSectionAssignment: true }),
     ])
     const [briefRes, sectionsRes, chunksRes] = results
 

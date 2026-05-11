@@ -14,7 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { parsePolicySections } from '@/lib/policy-extraction/parse-sections'
+import { parsePolicySectionsWithStatus } from '@/lib/policy-extraction/status'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // 5 min — Claude PDF parse can be slow on long docs
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const result = await parsePolicySections(policyId, { force: !!body.force })
+  const result = await parsePolicySectionsWithStatus(policyId, { force: !!body.force })
 
   if (!result.ok) {
     const status =

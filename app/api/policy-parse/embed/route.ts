@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { parseAndEmbedPolicyChunks } from '@/lib/policy-extraction/chunk-and-embed'
+import { parseAndEmbedPolicyChunksWithStatus } from '@/lib/policy-extraction/status'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'policy_id is required' }, { status: 400 })
   }
 
-  const result = await parseAndEmbedPolicyChunks(policyId, { force: !!body.force })
+  const result = await parseAndEmbedPolicyChunksWithStatus(policyId, { force: !!body.force })
 
   if (!result.ok) {
     const status =
