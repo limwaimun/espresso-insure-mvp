@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
   // 1) Find the most recent PDF for this policy
   const { data: doc, error: docError } = await supabase
     .from('policy_documents')
-    .select('storage_path, file_name, file_size_bytes')
+    .select('file_path, file_name, file_size')
     .eq('policy_id', policyId)
     .order('uploaded_at', { ascending: false })
     .limit(1)
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   const t_dl_start = Date.now();
   const { data: fileBlob, error: dlError } = await supabase.storage
     .from('policy-documents')
-    .download(doc.storage_path);
+    .download(doc.file_path);
 
   if (dlError || !fileBlob) {
     return NextResponse.json(
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
         ok: false,
         errorType: 'storage_download',
         errorMessage: dlError?.message || 'download returned null',
-        storagePath: doc.storage_path,
+        storagePath: doc.file_path,
       },
       { status: 500 }
     );
@@ -125,8 +125,8 @@ export async function GET(req: NextRequest) {
       ok: true,
       file: {
         name: doc.file_name,
-        sizeBytes: doc.file_size_bytes,
-        storagePath: doc.storage_path,
+        sizeBytes: doc.file_size,
+        storagePath: doc.file_path,
       },
       numPages: result.totalPages,
       totalChars,
