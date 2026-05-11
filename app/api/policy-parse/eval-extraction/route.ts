@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   // 1) Pull Claude chunks (baseline)
   const { data: chunks, error: chunksErr } = await supabase
     .from('policy_doc_chunks')
-    .select('chunk_index, chunk_text')
+    .select('chunk_index, content')
     .eq('policy_id', policyId)
     .order('chunk_index');
 
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const claudeText = chunks.map((c) => c.chunk_text || '').join('\n');
+  const claudeText = chunks.map((c) => c.content || '').join('\n');
 
   // 2) Fetch PDF doc
   const { data: doc, error: docErr } = await supabase
@@ -166,8 +166,8 @@ export async function GET(req: NextRequest) {
   const unpdfSampleIdx = [4, 9, 13]; // 0-indexed largest pages from probe
 
   for (const i of claudeSampleIdx) {
-    out.push(`--- CLAUDE CHUNK ${i} (${(chunks[i].chunk_text || '').length} chars) ---`);
-    out.push(chunks[i].chunk_text || '(empty)');
+    out.push(`--- CLAUDE CHUNK ${i} (${(chunks[i].content || '').length} chars) ---`);
+    out.push(chunks[i].content || '(empty)');
     out.push('');
   }
 
