@@ -71,7 +71,7 @@ export default function HomePage() {
         <div className="lp-nav" style={{ maxWidth: 1080, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px' }}>
           <a href="/" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 24, fontWeight: 400, color: '#1A1410' }}>espresso<span style={{ color: '#BA7517' }}>.</span></a>
           <div className="nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-            {[['How it works', '#how-it-works'], ['Features', '#features'], ['Pricing', '#pricing']].map(([l, h]) => (
+            {[['How it works', '#how-it-works'], ['Pricing', '#pricing']].map(([l, h]) => (
               <a key={l} href={h} className="lp-nav-link" style={{ fontSize: 14, color: '#3D3532' }}>{l}</a>
             ))}
           </div>
