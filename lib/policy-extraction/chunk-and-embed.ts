@@ -282,7 +282,7 @@ function approxTokens(text: string): number {
 
 export async function parseAndEmbedPolicyChunks(
   policyId: string,
-  options: { force?: boolean; forceClaudeExtraction?: boolean } = {},
+  options: { force?: boolean; forceClaudeExtraction?: boolean; skipSectionAssignment?: boolean } = {},
 ): Promise<ParseChunksResult | ParseChunksError> {
   const supabase = createServiceRoleClient()
 
@@ -329,36 +329,43 @@ export async function parseAndEmbedPolicyChunks(
     }
   }
 
-  // 3. Load sections (we need them to map chunks to section_id)
-  const { data: sectionRows, error: sectionsErr } = await supabase
-    .from('policy_sections')
-    .select('id, page_start, page_end, section_kind')
-    .eq('policy_id', policyId)
-    .order('page_start', { ascending: true, nullsFirst: false })
+  // 3. Load sections (we need them to map chunks to section_id).
+  //    B-pe-17b: when skipSectionAssignment=true, skip the fetch entirely
+  //    and use empty sections array. All chunks insert with section_id=null
+  //    and assignSectionIdsForPolicy() backfills after Layer B completes.
+  //    This enables parallel A+B+C orchestration from the upload path.
+  let sections: SectionForMapping[] = []
+  if (!options.skipSectionAssignment) {
+    const { data: sectionRows, error: sectionsErr } = await supabase
+      .from('policy_sections')
+      .select('id, page_start, page_end, section_kind')
+      .eq('policy_id', policyId)
+      .order('page_start', { ascending: true, nullsFirst: false })
 
-  if (sectionsErr) {
-    return {
-      ok: false,
-      policyId,
-      stage: 'no_sections',
-      error: `Could not load sections: ${sectionsErr.message}`,
-      retryable: true,
+    if (sectionsErr) {
+      return {
+        ok: false,
+        policyId,
+        stage: 'no_sections',
+        error: `Could not load sections: ${sectionsErr.message}`,
+        retryable: true,
+      }
     }
-  }
 
-  if (!sectionRows || sectionRows.length === 0) {
-    return {
-      ok: false,
-      policyId,
-      stage: 'no_sections',
-      error:
-        'No policy_sections rows for this policy. Run Layer B (sections ' +
-        'extraction) before Layer C.',
-      retryable: false,
+    if (!sectionRows || sectionRows.length === 0) {
+      return {
+        ok: false,
+        policyId,
+        stage: 'no_sections',
+        error:
+          'No policy_sections rows for this policy. Run Layer B (sections ' +
+          'extraction) before Layer C.',
+        retryable: false,
+      }
     }
-  }
 
-  const sections: SectionForMapping[] = sectionRows as SectionForMapping[]
+    sections = sectionRows as SectionForMapping[]
+  }
 
   // 4. Fetch policy_documents row
   const { data: docs, error: docsErr } = await supabase
@@ -690,4 +697,118 @@ export async function parseAndEmbedPolicyChunks(
     elapsedMs,
     forced: !!options.force,
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// B-pe-17b: section-id backfill helper.
+// ---------------------------------------------------------------------------
+
+export interface AssignSectionIdsResult {
+  ok: boolean
+  policyId: string
+  chunksTotal: number
+  chunksUpdated: number
+  error?: string
+}
+
+/**
+ * Assigns section_id on policy_doc_chunks rows by joining to policy_sections
+ * on page_number BETWEEN page_start AND page_end. Used by the upload-path
+ * parallel orchestration (A+B+C in parallel, then backfill) so Layer C does
+ * not have a hard dependency on Layer B completing first.
+ *
+ * Idempotent. Safe to re-run. Returns the count of chunks updated.
+ */
+export async function assignSectionIdsForPolicy(
+  policyId: string,
+): Promise<AssignSectionIdsResult> {
+  const supabase = createServiceRoleClient()
+
+  // Count total chunks for this policy first (for the return value)
+  const { count: chunksTotal, error: countErr } = await supabase
+    .from('policy_doc_chunks')
+    .select('id', { count: 'exact', head: true })
+    .eq('policy_id', policyId)
+
+  if (countErr) {
+    return {
+      ok: false,
+      policyId,
+      chunksTotal: 0,
+      chunksUpdated: 0,
+      error: `count failed: ${countErr.message}`,
+    }
+  }
+
+  if (!chunksTotal || chunksTotal === 0) {
+    return { ok: true, policyId, chunksTotal: 0, chunksUpdated: 0 }
+  }
+
+  // Load sections for this policy
+  const { data: sectionRows, error: sErr } = await supabase
+    .from('policy_sections')
+    .select('id, page_start, page_end')
+    .eq('policy_id', policyId)
+    .order('page_start', { ascending: true, nullsFirst: false })
+
+  if (sErr) {
+    return {
+      ok: false,
+      policyId,
+      chunksTotal,
+      chunksUpdated: 0,
+      error: `sections load failed: ${sErr.message}`,
+    }
+  }
+  if (!sectionRows || sectionRows.length === 0) {
+    return { ok: true, policyId, chunksTotal, chunksUpdated: 0 }
+  }
+
+  // Load all chunk rows for this policy with their page numbers
+  const { data: chunkRows, error: cErr } = await supabase
+    .from('policy_doc_chunks')
+    .select('id, page_number')
+    .eq('policy_id', policyId)
+
+  if (cErr || !chunkRows) {
+    return {
+      ok: false,
+      policyId,
+      chunksTotal,
+      chunksUpdated: 0,
+      error: `chunks load failed: ${cErr?.message ?? 'no rows'}`,
+    }
+  }
+
+  let updated = 0
+  for (const chunk of chunkRows) {
+    if (chunk.page_number == null) continue
+    const section = sectionRows.find(
+      (s) =>
+        s.page_start != null &&
+        s.page_end != null &&
+        chunk.page_number >= s.page_start &&
+        chunk.page_number <= s.page_end,
+    )
+    if (!section) continue
+
+    const { error: updErr } = await supabase
+      .from('policy_doc_chunks')
+      .update({ section_id: section.id })
+      .eq('id', chunk.id)
+
+    if (updErr) {
+      return {
+        ok: false,
+        policyId,
+        chunksTotal,
+        chunksUpdated: updated,
+        error: `update failed at chunk ${chunk.id}: ${updErr.message}`,
+      }
+    }
+    updated++
+  }
+
+  return { ok: true, policyId, chunksTotal, chunksUpdated: updated }
 }

@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
 import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief'
 import { parsePolicySections } from '@/lib/policy-extraction/parse-sections'
+import {
+  parseAndEmbedPolicyChunks,
+  assignSectionIdsForPolicy,
+} from '@/lib/policy-extraction/chunk-and-embed'
 import { after } from 'next/server'
 
 const supabase = createClient(
@@ -51,17 +55,26 @@ async function assertPolicyOwnership(policyId: string, userId: string) {
  */
 function maybeAutoTriggerBriefParse(policyId: string, mimeType: string): void {
   if (mimeType !== 'application/pdf') return
-  // B-pe-17a — fire Layer A (brief) and Layer B (sections) IN PARALLEL via
-  // Promise.all. Wrapped in after() so the work continues after the response
-  // is sent without holding the function open. Errors are logged here and
-  // recorded on the policies row by parsePolicyBrief / parsePolicySections
-  // themselves. Layer C (chunks) is still manual POST today.
+  // B-pe-17b — fire Layer A (brief), Layer B (sections), AND Layer C
+  // (chunks+embed) all IN PARALLEL via Promise.allSettled. Layer C runs
+  // with skipSectionAssignment=true so it doesn't block on Layer B's
+  // sections being written. After all three settle, run
+  // assignSectionIdsForPolicy to backfill section_id on the chunk rows.
+  //
+  // Wrapped in after() so the work continues post-HTTP-response without
+  // blocking the upload acknowledgement. Errors are logged here AND
+  // recorded on the policies row by each layer's persistence path.
+  //
+  // Expected wall clock on 16-page PDF: ~19s (down from 26s sequential
+  // post-B-pe-17a, down from 145s pre-session).
   after(async () => {
     const results = await Promise.allSettled([
       parsePolicyBrief(policyId),
       parsePolicySections(policyId),
+      parseAndEmbedPolicyChunks(policyId, { skipSectionAssignment: true }),
     ])
-    const [briefRes, sectionsRes] = results
+    const [briefRes, sectionsRes, chunksRes] = results
+
     if (briefRes.status === 'rejected') {
       console.error(
         '[auto-trigger] parsePolicyBrief failed for policy ' + policyId + ':',
@@ -73,6 +86,35 @@ function maybeAutoTriggerBriefParse(policyId: string, mimeType: string): void {
         '[auto-trigger] parsePolicySections failed for policy ' + policyId + ':',
         sectionsRes.reason,
       )
+    }
+    if (chunksRes.status === 'rejected') {
+      console.error(
+        '[auto-trigger] parseAndEmbedPolicyChunks failed for policy ' + policyId + ':',
+        chunksRes.reason,
+      )
+    }
+
+    // Backfill section_id only if BOTH sections and chunks succeeded.
+    // If either failed, leave chunks with section_id=null; admin can
+    // re-run the relevant layer and backfill happens automatically on
+    // the next chunks parse.
+    const sectionsOk = sectionsRes.status === 'fulfilled' && sectionsRes.value.ok
+    const chunksOk = chunksRes.status === 'fulfilled' && chunksRes.value.ok
+    if (sectionsOk && chunksOk) {
+      try {
+        const backfill = await assignSectionIdsForPolicy(policyId)
+        if (!backfill.ok) {
+          console.error(
+            '[auto-trigger] assignSectionIdsForPolicy failed for policy ' + policyId + ':',
+            backfill.error,
+          )
+        }
+      } catch (err) {
+        console.error(
+          '[auto-trigger] assignSectionIdsForPolicy threw for policy ' + policyId + ':',
+          err,
+        )
+      }
     }
   })
 }
@@ -132,7 +174,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
     }
 
-    // B-pe-4 + B-pe-17a — fire-and-forget A + B in parallel (PDF only)
+    // B-pe-4 + B-pe-17a + B-pe-17b — fire A+B+C in parallel, backfill section_id (PDF only)
     maybeAutoTriggerBriefParse(policyId, file.type)
 
     return NextResponse.json({ success: true, doc: inserted })
