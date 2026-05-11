@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySession } from '@/lib/auth-middleware'
 import { parsePolicyBrief } from '@/lib/policy-extraction/parse-brief'
+import { parsePolicySections } from '@/lib/policy-extraction/parse-sections'
+import { after } from 'next/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,13 +51,29 @@ async function assertPolicyOwnership(policyId: string, userId: string) {
  */
 function maybeAutoTriggerBriefParse(policyId: string, mimeType: string): void {
   if (mimeType !== 'application/pdf') return
-  // Intentionally not awaited. Errors are logged to console and
-  // recorded on the policies row by parsePolicyBrief itself.
-  parsePolicyBrief(policyId).catch((err) => {
-    console.error(
-      '[auto-trigger] parsePolicyBrief failed for policy ' + policyId + ':',
-      err,
-    )
+  // B-pe-17a — fire Layer A (brief) and Layer B (sections) IN PARALLEL via
+  // Promise.all. Wrapped in after() so the work continues after the response
+  // is sent without holding the function open. Errors are logged here and
+  // recorded on the policies row by parsePolicyBrief / parsePolicySections
+  // themselves. Layer C (chunks) is still manual POST today.
+  after(async () => {
+    const results = await Promise.allSettled([
+      parsePolicyBrief(policyId),
+      parsePolicySections(policyId),
+    ])
+    const [briefRes, sectionsRes] = results
+    if (briefRes.status === 'rejected') {
+      console.error(
+        '[auto-trigger] parsePolicyBrief failed for policy ' + policyId + ':',
+        briefRes.reason,
+      )
+    }
+    if (sectionsRes.status === 'rejected') {
+      console.error(
+        '[auto-trigger] parsePolicySections failed for policy ' + policyId + ':',
+        sectionsRes.reason,
+      )
+    }
   })
 }
 
@@ -114,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save document record' }, { status: 500 })
     }
 
-    // B-pe-4 — fire-and-forget brief parse (PDF only)
+    // B-pe-4 + B-pe-17a — fire-and-forget A + B in parallel (PDF only)
     maybeAutoTriggerBriefParse(policyId, file.type)
 
     return NextResponse.json({ success: true, doc: inserted })
