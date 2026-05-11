@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { X, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react'
+import { X, RefreshCw, AlertCircle, CheckCircle2, Clock, Loader2, Coffee, Check, Circle } from 'lucide-react'
 
 type ParseStatus = 'pending' | 'parsing' | 'done' | 'failed' | 'stale'
 
@@ -41,6 +41,52 @@ interface Props {
   onClose: () => void
   policyId: string
   policyLabel: string
+}
+
+// B-pe-18c — per-layer parse status (from /api/policy-parse/status)
+type UnifiedStatus = 'pending' | 'running' | 'done' | 'failed'
+interface LayerStatus {
+  status: UnifiedStatus
+  started_at: string | null
+  completed_at: string | null
+  error: string | null
+}
+interface ParseStatusResponse {
+  ok: true
+  policy_id: string
+  brief: LayerStatus
+  sections: LayerStatus
+  chunks: LayerStatus
+  overall: UnifiedStatus
+}
+
+function layerSubtext(l: LayerStatus, now: number): string {
+  if (l.status === 'done' && l.started_at && l.completed_at) {
+    const ms = +new Date(l.completed_at) - +new Date(l.started_at)
+    return ms > 0 ? `${Math.round(ms / 1000)}s` : 'complete'
+  }
+  if (l.status === 'done') return 'complete'
+  if (l.status === 'running' && l.started_at) {
+    const elapsed = Math.max(0, Math.round((now - +new Date(l.started_at)) / 1000))
+    return `${elapsed}s elapsed…`
+  }
+  if (l.status === 'running') return 'running…'
+  if (l.status === 'failed') return 'failed'
+  return 'waiting'
+}
+
+function layerIcon(status: UnifiedStatus): { icon: React.ReactNode; color: string } {
+  switch (status) {
+    case 'done':
+      return { icon: <Check size={14} />, color: '#3A8A5B' }
+    case 'running':
+      return { icon: <Loader2 size={14} className="brief-spin" />, color: '#BA7517' }
+    case 'failed':
+      return { icon: <AlertCircle size={14} />, color: '#C15050' }
+    case 'pending':
+    default:
+      return { icon: <Circle size={14} />, color: '#9B9088' }
+  }
 }
 
 function statusPill(status: ParseStatus): { bg: string; text: string; icon: React.ReactNode; label: string } {
@@ -94,6 +140,63 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
       cancelled = true
     }
   }, [policyId])
+
+  // B-pe-18c — poll /api/policy-parse/status for per-layer state
+  const [parseStatus, setParseStatus] = useState<ParseStatusResponse | null>(null)
+  const [nowTick, setNowTick] = useState<number>(() => Date.now())
+
+  useEffect(() => {
+    let cancelled = false
+    let interval: ReturnType<typeof setInterval> | null = null
+    let inFlight: AbortController | null = null
+
+    async function fetchOnce() {
+      if (cancelled) return
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      inFlight?.abort()
+      const ctl = new AbortController()
+      inFlight = ctl
+      try {
+        const res = await fetch(
+          `/api/policy-parse/status?policy_id=${encodeURIComponent(policyId)}`,
+          { signal: ctl.signal },
+        )
+        if (cancelled) return
+        if (!res.ok) return
+        const json = (await res.json()) as ParseStatusResponse | { ok: false }
+        if (cancelled || !('ok' in json) || !json.ok) return
+        setParseStatus(json)
+        if (json.overall === 'done' || json.overall === 'failed') {
+          if (interval) { clearInterval(interval); interval = null }
+        }
+      } catch {
+        // network error / aborted — swallow; next tick will retry
+      }
+    }
+
+    fetchOnce()
+    interval = setInterval(fetchOnce, 3000)
+
+    function onVis() {
+      if (document.visibilityState === 'visible') fetchOnce()
+    }
+    document.addEventListener('visibilitychange', onVis)
+
+    return () => {
+      cancelled = true
+      if (interval) clearInterval(interval)
+      inFlight?.abort()
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [policyId])
+
+  // Tick once a second to drive elapsed-time labels while anything is running.
+  useEffect(() => {
+    if (!parseStatus) return
+    if (parseStatus.overall !== 'running' && parseStatus.overall !== 'pending') return
+    const t = setInterval(() => setNowTick(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [parseStatus])
 
   async function triggerParse(force: boolean) {
     setParsing(true)
@@ -185,6 +288,80 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
             </span>
           )}
         </div>
+
+        {parseStatus && (
+          <div style={{
+            background: '#FBFAF7', border: '1px solid #F1EFE8', borderRadius: 8,
+            padding: '14px 16px', marginBottom: 16,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              marginBottom: 10, color: '#1A1410',
+            }}>
+              <Coffee size={14} color="#BA7517" />
+              <span style={{ fontSize: 12, fontWeight: 500 }}>
+                {parseStatus.overall === 'done'
+                  ? 'All three layers complete'
+                  : parseStatus.overall === 'failed'
+                  ? 'One or more layers failed'
+                  : 'Brewing your policy intelligence'}
+              </span>
+              {parseStatus.overall === 'done' && (
+                <Check size={14} color="#3A8A5B" />
+              )}
+            </div>
+
+            {parseStatus.overall !== 'done' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {([
+                  ['Brief extraction', parseStatus.brief],
+                  ['Section index', parseStatus.sections],
+                  ['Search indexing', parseStatus.chunks],
+                ] as Array<[string, LayerStatus]>).map(([label, l]) => {
+                  const { icon, color } = layerIcon(l.status)
+                  return (
+                    <div key={label} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      fontSize: 12,
+                    }}>
+                      <span style={{ color, display: 'inline-flex' }}>{icon}</span>
+                      <span style={{
+                        color: l.status === 'pending' ? '#9B9088' : '#1A1410',
+                        flex: 1,
+                      }}>
+                        {label}
+                      </span>
+                      <span style={{
+                        color: '#9B9088', fontFamily: 'DM Mono, monospace',
+                        fontSize: 11,
+                      }}>
+                        {layerSubtext(l, nowTick)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {(['brief', 'sections', 'chunks'] as const).map((k) => {
+              const l = parseStatus[k]
+              if (l.status !== 'failed' || !l.error) return null
+              const layerName = k === 'brief'
+                ? 'Brief extraction'
+                : k === 'sections' ? 'Section index' : 'Search indexing'
+              return (
+                <div key={k} style={{
+                  marginTop: 8,
+                  fontSize: 11, color: '#A03838',
+                  fontFamily: 'DM Mono, monospace',
+                  wordBreak: 'break-word',
+                }}>
+                  <strong>{layerName}:</strong> {l.error}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {error && (
           <div style={{
