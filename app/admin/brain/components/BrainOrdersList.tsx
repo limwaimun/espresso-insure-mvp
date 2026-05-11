@@ -97,6 +97,14 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
     return blocked
   }, [orders])
 
+  const stalePendingCount = useMemo(() => {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000
+    return orders.filter(o =>
+      o.status === 'proposed' &&
+      new Date(o.created_at).getTime() < oneHourAgo
+    ).length
+  }, [orders])
+
   const categoryStats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
     const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
@@ -127,6 +135,15 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      {stalePendingCount > 0 && (
+        <div style={{ background: 'rgba(58,125,90,0.07)', border: '1px solid rgba(58,125,90,0.3)', borderRadius: 10, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 16 }}>⏳</span>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#0F6E56' }}>
+            <strong>{stalePendingCount} proposed order{stalePendingCount > 1 ? 's' : ''}</strong> waiting &gt;1h for approval or dispatch — review below.
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 16 }}>
         <StatCard label="Last 7 days" value={stats.total} />
         <StatCard label="Done" value={stats.done} accent="#0F6E56" />
