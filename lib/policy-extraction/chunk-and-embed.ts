@@ -28,6 +28,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { embedTexts } from '@/lib/voyage-client'
+import { extractPagesWithUnpdf } from './pdf-text'
 
 const PARSE_MODEL = 'claude-haiku-4-5'
 const MAX_TOKENS = 16000 // enough for ~50 pages of policy text
@@ -155,6 +156,8 @@ export interface ParseChunksResult {
   embeddingModel: string
   elapsedMs: number
   forced: boolean
+  extractionMethod: 'unpdf' | 'claude'
+  boilerplateLinesRemoved: number
 }
 
 export interface ParseChunksError {
@@ -279,7 +282,7 @@ function approxTokens(text: string): number {
 
 export async function parseAndEmbedPolicyChunks(
   policyId: string,
-  options: { force?: boolean } = {},
+  options: { force?: boolean; forceClaudeExtraction?: boolean } = {},
 ): Promise<ParseChunksResult | ParseChunksError> {
   const supabase = createServiceRoleClient()
 
@@ -405,82 +408,132 @@ export async function parseAndEmbedPolicyChunks(
 
   const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer())
 
-  // 6. Call Claude to extract page text
+  // 6. Extract page text — unpdf-first (B-pe-15f), Claude fallback for
+  //    scanned PDFs or when explicitly forced via options.
   const startedAt = Date.now()
-  let response
-  try {
-    response = await anthropic.messages.create({
-      model: PARSE_MODEL,
-      max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
-      tools: [EXTRACT_PAGES_TOOL],
-      tool_choice: { type: 'tool', name: 'submit_page_text' },
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: pdfBuffer.toString('base64'),
-              },
-            },
-            {
-              type: 'text',
-              text:
-                'Extract verbatim page-by-page text from this Singapore ' +
-                'insurance policy PDF. Use the submit_page_text tool.',
-            },
-          ],
-        },
-      ],
-    })
-  } catch (err) {
-    return {
-      ok: false,
-      policyId,
-      stage: 'claude_call',
-      error: `Claude API error: ${(err as Error).message}`,
-      retryable: true,
+  const useClaudeExtraction = options.forceClaudeExtraction === true
+
+  let pages: PageContent[]
+  let inputTokens = 0
+  let outputTokens = 0
+  let extractionMethod: 'unpdf' | 'claude' = 'unpdf'
+  let boilerplateLinesRemoved = 0
+
+  if (!useClaudeExtraction) {
+    // 6a. unpdf path (fast, free, text-bearing PDFs only)
+    try {
+      const extracted = await extractPagesWithUnpdf(
+        new Uint8Array(pdfBuffer.buffer, pdfBuffer.byteOffset, pdfBuffer.byteLength),
+      )
+      pages = extracted.pages
+      boilerplateLinesRemoved = extracted.boilerplateLinesRemoved
+
+      const meaningfulCount = pages.filter(
+        (p) => p.is_meaningful && p.content.trim(),
+      ).length
+
+      // If unpdf finds almost nothing meaningful, the PDF is likely
+      // scanned/image-only. Surface as retryable with explicit hint.
+      if (meaningfulCount < 2 && pages.length >= 3) {
+        return {
+          ok: false,
+          policyId,
+          stage: 'validation',
+          error:
+            `unpdf extraction returned only ${meaningfulCount} meaningful ` +
+            `pages out of ${pages.length}. Likely a scanned PDF. ` +
+            `Retry with options.forceClaudeExtraction = true.`,
+          retryable: true,
+        }
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        policyId,
+        stage: 'validation',
+        error: `unpdf extraction failed: ${(err as Error).message}`,
+        retryable: true,
+      }
     }
+  } else {
+    // 6b. Claude path (scanned PDFs, regression fallback)
+    extractionMethod = 'claude'
+    let response
+    try {
+      response = await anthropic.messages.create({
+        model: PARSE_MODEL,
+        max_tokens: MAX_TOKENS,
+        system: SYSTEM_PROMPT,
+        tools: [EXTRACT_PAGES_TOOL],
+        tool_choice: { type: 'tool', name: 'submit_page_text' },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: pdfBuffer.toString('base64'),
+                },
+              },
+              {
+                type: 'text',
+                text:
+                  'Extract verbatim page-by-page text from this Singapore ' +
+                  'insurance policy PDF. Use the submit_page_text tool.',
+              },
+            ],
+          },
+        ],
+      })
+    } catch (err) {
+      return {
+        ok: false,
+        policyId,
+        stage: 'claude_call',
+        error: `Claude API error: ${(err as Error).message}`,
+        retryable: true,
+      }
+    }
+
+    const toolBlock = response.content.find(
+      (block): block is Extract<typeof block, { type: 'tool_use' }> =>
+        block.type === 'tool_use' && block.name === 'submit_page_text',
+    )
+
+    if (!toolBlock) {
+      return {
+        ok: false,
+        policyId,
+        stage: 'claude_call',
+        error: 'Claude did not call submit_page_text',
+        retryable: true,
+      }
+    }
+
+    const parsed = PageContentArraySchema.safeParse(toolBlock.input)
+    if (!parsed.success) {
+      const issuesPreview = parsed.error.issues
+        .slice(0, 5)
+        .map((i) => `${i.path.join('.')}: ${i.message}`)
+        .join('; ')
+      return {
+        ok: false,
+        policyId,
+        stage: 'validation',
+        error: `Schema validation failed: ${issuesPreview}`,
+        retryable: true,
+      }
+    }
+
+    pages = parsed.data.pages
+    inputTokens = response.usage.input_tokens
+    outputTokens = response.usage.output_tokens
   }
 
   const elapsedMs = Date.now() - startedAt
-
-  // 7. Extract tool use
-  const toolBlock = response.content.find(
-    (block): block is Extract<typeof block, { type: 'tool_use' }> =>
-      block.type === 'tool_use' && block.name === 'submit_page_text',
-  )
-
-  if (!toolBlock) {
-    return {
-      ok: false,
-      policyId,
-      stage: 'claude_call',
-      error: 'Claude did not call submit_page_text',
-      retryable: true,
-    }
-  }
-
-  const parsed = PageContentArraySchema.safeParse(toolBlock.input)
-  if (!parsed.success) {
-    const issuesPreview = parsed.error.issues
-      .slice(0, 5)
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('; ')
-    return {
-      ok: false,
-      policyId,
-      stage: 'validation',
-      error: `Schema validation failed: ${issuesPreview}`,
-      retryable: true,
-    }
-  }
-
-  const pages: PageContent[] = parsed.data.pages
   const meaningfulPages = pages.filter((p) => p.is_meaningful && p.content.trim()).length
 
   // 8. Chunk per page
@@ -613,8 +666,6 @@ export async function parseAndEmbedPolicyChunks(
   }
 
   // 11. Build result
-  const inputTokens = response.usage.input_tokens
-  const outputTokens = response.usage.output_tokens
   const claudeCostUsd =
     inputTokens * COST_PER_INPUT_TOKEN + outputTokens * COST_PER_OUTPUT_TOKEN
   const voyageCostUsd = voyageTokensTotal * VOYAGE_COST_PER_TOKEN
@@ -633,6 +684,8 @@ export async function parseAndEmbedPolicyChunks(
     voyageCostUsd,
     totalCostUsd: claudeCostUsd + voyageCostUsd,
     model: PARSE_MODEL,
+    extractionMethod,
+    boilerplateLinesRemoved,
     embeddingModel: EMBEDDING_MODEL,
     elapsedMs,
     forced: !!options.force,
