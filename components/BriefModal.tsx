@@ -150,6 +150,34 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
   const [parseStatus, setParseStatus] = useState<ParseStatusResponse | null>(null)
   const [nowTick, setNowTick] = useState<number>(() => Date.now())
 
+  // B-pe-18d — retry state for the failure-recovery button
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState<string | null>(null)
+  const [retryMessage, setRetryMessage] = useState<string | null>(null)
+
+  async function triggerRetry() {
+    setRetrying(true)
+    setRetryError(null)
+    setRetryMessage(null)
+    try {
+      const res = await fetch('/api/policy-parse/retry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policy_id: policyId }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        setRetryError((json.error || `HTTP ${res.status}`).slice(0, 200))
+      } else {
+        setRetryMessage(json.message || 'Retry started.')
+      }
+    } catch (e) {
+      setRetryError((e as Error).message.slice(0, 200))
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     let interval: ReturnType<typeof setInterval> | null = null
@@ -359,12 +387,36 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
                 color: '#1A1410',
                 lineHeight: 1.5,
               }}>
-                <div style={{ marginBottom: 4 }}>
+                <div style={{ marginBottom: 8 }}>
                   Some details may be incomplete. The basic policy info above is ready,
                   but Maya may not have full context.
                 </div>
-                <div style={{ fontSize: 11, color: '#6B6460' }}>
-                  This will refresh automatically on the next view.
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={triggerRetry}
+                    disabled={retrying}
+                    style={{
+                      fontSize: 12, padding: '6px 12px', borderRadius: 6,
+                      border: '1px solid #E8E2DA', background: '#FFFFFF', color: '#1A1410',
+                      cursor: retrying ? 'not-allowed' : 'pointer',
+                      opacity: retrying ? 0.5 : 1,
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <RefreshCw size={11} className={retrying ? 'brief-spin' : undefined} />
+                    {retrying ? 'Retrying…' : 'Retry'}
+                  </button>
+                  {retryMessage && (
+                    <span style={{ fontSize: 11, color: '#3A8A5B' }}>{retryMessage}</span>
+                  )}
+                  {retryError && (
+                    <span style={{ fontSize: 11, color: '#A03838' }}>{retryError}</span>
+                  )}
+                  {!retryMessage && !retryError && (
+                    <span style={{ fontSize: 11, color: '#6B6460' }}>
+                      Or this will refresh automatically on the next view.
+                    </span>
+                  )}
                 </div>
               </div>
             )}
