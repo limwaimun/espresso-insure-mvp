@@ -8,6 +8,44 @@ import type { Policy } from './types'
 
 export type { Policy }
 
+// ── B-pe-18c.1: parse-overall helper ────────────────────────────────────
+//
+// Mirrors the vocabulary normalisation in /api/policy-parse/status:
+//   parse_status='parsing' -> 'running'
+//   parse_status='stale'   -> 'pending'
+//   *_status='skipped'     -> 'done'
+// Returns the worst-state-wins roll-up across all three layers.
+//
+// Used by PolicyRow's small inline indicator. The BriefModal does its
+// own polling via /api/policy-parse/status; this helper feeds the row
+// indicator from data already in scope (no extra HTTP per row).
+
+export type ParseOverall = 'pending' | 'running' | 'done' | 'failed'
+
+function normaliseBrief(raw: unknown): ParseOverall {
+  if (raw === 'parsing') return 'running'
+  if (raw === 'stale') return 'pending'
+  if (raw === 'done' || raw === 'failed' || raw === 'pending' || raw === 'running') return raw
+  return 'pending'
+}
+
+function normaliseLayer(raw: unknown): ParseOverall {
+  if (raw === 'skipped') return 'done'
+  if (raw === 'done' || raw === 'failed' || raw === 'pending' || raw === 'running') return raw
+  return 'pending'
+}
+
+export function computeParseOverall(policy: Record<string, unknown>): ParseOverall {
+  const brief    = normaliseBrief(policy.parse_status)
+  const sections = normaliseLayer(policy.sections_status)
+  const chunks   = normaliseLayer(policy.chunks_status)
+  const states: ParseOverall[] = [brief, sections, chunks]
+  if (states.some(s => s === 'failed')) return 'failed'
+  if (states.some(s => s === 'running')) return 'running'
+  if (states.some(s => s === 'pending')) return 'pending'
+  return 'done'
+}
+
 // ── Days-to-renewal ─────────────────────────────────────────────────────
 
 export function daysToRenewal(policy: Pick<Policy, 'renewal_date'>): number | null {

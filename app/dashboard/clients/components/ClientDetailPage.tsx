@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { computeParseOverall } from '@/lib/policies'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HoldingsSection from '@/components/HoldingsSection'
@@ -389,6 +390,7 @@ export default function ClientDetailPage({
                       confirmingDelete={confirmDeleteId === policy.id}
                       setConfirming={setConfirmDeleteId}
                       cardRefreshKey={cardRefreshKey}
+                      parseOverall={computeParseOverall(policy as unknown as Record<string, unknown>)}
                     />
                   ))}
                 </tbody>

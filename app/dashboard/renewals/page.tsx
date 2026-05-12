@@ -26,6 +26,7 @@ import {
   isActionNeeded,
   isUnderReview,
   renewalBucket,
+  computeParseOverall,
   type Policy,
 } from '@/lib/policies'
 import { formatDate } from '@/lib/dates'
@@ -204,6 +205,7 @@ export default function RenewalsPage() {
                       company: policy.clients.company,
                       id: policy.client_id,
                     }}
+                    parseOverall={computeParseOverall(policy as unknown as Record<string, unknown>)}
                   />
                 )
               })}

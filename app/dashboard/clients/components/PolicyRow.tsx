@@ -6,9 +6,9 @@ import { formatDate } from '@/lib/dates'
 import PortalMenu from '@/components/PortalMenu'
 import DocList from '@/components/DocList'
 import { KV } from '@/components/HoldingsDisplayPrimitives'
-import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save, FileText } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save, FileText, Loader2, Circle, AlertCircle } from 'lucide-react'
 import type { Policy } from '@/lib/types'
-import { policyStatusPill, annualPremium } from '@/lib/policies'
+import { policyStatusPill, annualPremium, type ParseOverall } from '@/lib/policies'
 import { phaseLabel, stateLabel, phaseColor, validTransitions, type LifecycleEvent } from '@/lib/policy-lifecycle'
 import { formatRelativeTime } from '@/lib/dates'
 import Modal from '@/components/Modal'
@@ -22,7 +22,7 @@ export type { Policy }  // re-export: kept so ClientDetailPage's `import { Polic
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey, clientInfo }: {
+export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingDelete, setConfirming, cardRefreshKey, clientInfo, parseOverall }: {
   policy: Policy
   faId: string
   onEdit: (p: Policy) => void
@@ -37,6 +37,13 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
    * page (where the client context is already known). Mirrors ClaimCard B80b1.
    */
   clientInfo?: { name: string; company: string | null; id: string }
+  /**
+   * B-pe-18c.1: parse-pipeline indicator next to policy number.
+   * Renders a small icon when value is 'pending' | 'running' | 'failed'.
+   * No icon when 'done' or undefined. BriefModal handles the live progress
+   * detail (this is just the at-a-glance row signal).
+   */
+  parseOverall?: ParseOverall
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
@@ -166,7 +173,19 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
             <div>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1410' }}>{policy.product_name || policy.type || '—'}</div>
               {policy.policy_number && (
-                <div style={{ fontSize: 10, color: '#9B9088', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>{policy.policy_number}</div>
+                <div style={{ fontSize: 10, color: '#9B9088', fontFamily: 'DM Mono, monospace', marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span>{policy.policy_number}</span>
+                  <style>{`@keyframes policyrow-spin { to { transform: rotate(360deg) } } .policyrow-spin { animation: policyrow-spin 1s linear infinite; }`}</style>
+                  {parseOverall === 'running' && (
+                    <Loader2 size={11} className="policyrow-spin" color="#BA7517" aria-label="Parsing policy document" />
+                  )}
+                  {parseOverall === 'pending' && (
+                    <Circle size={11} color="#9B9088" aria-label="Policy parse queued" />
+                  )}
+                  {parseOverall === 'failed' && (
+                    <AlertCircle size={11} color="#C15050" aria-label="Policy parse failed" />
+                  )}
+                </div>
               )}
             </div>
           </div>
