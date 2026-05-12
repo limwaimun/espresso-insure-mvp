@@ -4,6 +4,7 @@ import { getAdminUser } from '@/lib/admin'
 import BrainOrdersList from './components/BrainOrdersList'
 import DirectivePanel from './components/DirectivePanel'
 import BrainModelPanel from './components/BrainModelPanel'
+import AgentModelsPanel from './components/AgentModelsPanel'
 import AnthropicLimitBanner from './components/AnthropicLimitBanner'
 import type { ActiveDirective } from './components/DirectivePanel'
 
@@ -79,6 +80,7 @@ export default async function BrainAdminPage() {
           <>
             <AnthropicLimitBanner />
             <BrainModelPanel />
+            <AgentModelsPanel />
             <DirectivePanel active={active} />
             <BrainOrdersList orders={orders} />
           </>
