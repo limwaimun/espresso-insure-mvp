@@ -37,6 +37,7 @@ const AGENTS = [
 
 export default function AdminPage() {
   const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0 })
+  const [workstreamStats, setWorkstreamStats] = useState<{ name: string; total: number; done: number; failed: number }[] | null>(null)
   const [recentFAs, setRecentFAs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [execData, setExecData] = useState<ExecData | null>(null)
@@ -48,6 +49,7 @@ export default function AdminPage() {
       .then(r => r.json())
       .then(data => {
         if (data.stats) setStats(data.stats)
+        if (data.workstreamStats) setWorkstreamStats(data.workstreamStats)
         if (data.profiles) setRecentFAs(data.profiles.slice(0, 10))
         setLoading(false)
       })
@@ -98,6 +100,44 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
+
+      {/* Workstream health (7d) */}
+      {workstreamStats && workstreamStats.length > 0 && workstreamStats.some(w => w.total > 0) && (
+        <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+            Workstream health (7d)
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {workstreamStats.filter(w => w.total > 0).map(ws => {
+              const hasFailures = ws.failed > 0
+              return (
+                <div
+                  key={ws.name}
+                  style={{
+                    background: hasFailures ? '#FCEBEB' : '#FBFAF7',
+                    border: `1px solid ${hasFailures ? '#F7C1C1' : '#E8E2DA'}`,
+                    borderRadius: 8, padding: '10px 14px', minWidth: 120,
+                  }}
+                >
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1A1410', fontWeight: 500, marginBottom: 4 }}>
+                    {ws.name}
+                  </div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                    {ws.done}/{ws.total} done
+                    {ws.failed > 0 && (
+                      <span style={{ color: '#A32D2D', marginLeft: 6 }}>· {ws.failed} failed</span>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 6, height: 3, borderRadius: 2, background: '#E8E2DA', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 2, width: `${ws.total > 0 ? (ws.done / ws.total) * 100 : 0}%`, background: hasFailures ? '#D06060' : '#3A7D5A' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <a href="/admin/brain" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textDecoration: 'none', marginTop: 10, display: 'inline-block' }}>View Brain Loop →</a>
+        </div>
+      )}
 
       {/* Anthropic API limit alert — shown when brain_tick failures contain the usage-limit error */}
       {!execLoading && execData && (() => {

@@ -72,6 +72,24 @@ export async function GET(request: NextRequest) {
     return lastLogin && lastLogin >= sevenDaysAgo
   }).length || 0
 
+  // Workstream stats from work_orders (last 7 days)
+  const { data: workOrders } = await serviceSupabase
+    .from('work_orders')
+    .select('workstream, status')
+    .gte('created_at', sevenDaysAgo)
+
+  const wsMap: Record<string, { total: number; done: number; failed: number }> = {}
+  for (const wo of workOrders || []) {
+    const ws = wo.workstream || 'unknown'
+    if (!wsMap[ws]) wsMap[ws] = { total: 0, done: 0, failed: 0 }
+    wsMap[ws].total++
+    if (['done', 'verified'].includes(wo.status)) wsMap[ws].done++
+    if (['failed', 'blocked', 'reverted', 'rejected'].includes(wo.status)) wsMap[ws].failed++
+  }
+  const workstreamStats = Object.entries(wsMap)
+    .map(([name, counts]) => ({ name, ...counts }))
+    .sort((a, b) => b.total - a.total)
+
   return NextResponse.json({
     profiles,
     clientCounts: countMap,
@@ -82,5 +100,6 @@ export async function GET(request: NextRequest) {
       totalPolicies: totalPolicies || 0,
       activeFAs7d,
     },
+    workstreamStats,
   })
 }
