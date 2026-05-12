@@ -177,13 +177,35 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
                   <span>{policy.policy_number}</span>
                   <style>{`@keyframes policyrow-spin { to { transform: rotate(360deg) } } .policyrow-spin { animation: policyrow-spin 1s linear infinite; }`}</style>
                   {parseOverall === 'running' && (
-                    <Loader2 size={11} className="policyrow-spin" color="#BA7517" aria-label="Parsing policy document" />
+                    <span
+                      title="Analyzing policy document…"
+                      style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
+                    >
+                      <Loader2 size={11} className="policyrow-spin" color="#BA7517" aria-label="Analyzing policy document" />
+                    </span>
                   )}
                   {parseOverall === 'pending' && (
-                    <Circle size={11} color="#9B9088" aria-label="Policy parse queued" />
+                    <span
+                      title="Policy analysis queued"
+                      style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
+                    >
+                      <Circle size={11} color="#9B9088" aria-label="Policy analysis queued" />
+                    </span>
                   )}
                   {parseOverall === 'failed' && (
-                    <AlertCircle size={11} color="#C15050" aria-label="Policy parse failed" />
+                    <span
+                      title="Policy analysis failed — open Brief to see error"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        cursor: 'help',
+                        color: '#C15050',
+                      }}
+                    >
+                      <AlertCircle size={14} color="#C15050" aria-label="Policy analysis failed" />
+                      <span style={{ fontSize: 10, fontFamily: 'DM Sans, sans-serif', fontWeight: 500 }}>
+                        Parse failed
+                      </span>
+                    </span>
                   )}
                 </div>
               )}
