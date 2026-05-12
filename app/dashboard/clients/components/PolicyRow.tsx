@@ -9,6 +9,7 @@ import { KV } from '@/components/HoldingsDisplayPrimitives'
 import { ChevronDown, ChevronRight, MoreVertical, Bot, Pencil, Trash2, User, Activity, ArrowUpRight, Save, FileText, Loader2, Circle, AlertCircle } from 'lucide-react'
 import type { Policy } from '@/lib/types'
 import { policyStatusPill, annualPremium, type ParseOverall } from '@/lib/policies'
+import { isAdminUserId } from '@/lib/admin-ids'
 import { phaseLabel, stateLabel, phaseColor, validTransitions, type LifecycleEvent } from '@/lib/policy-lifecycle'
 import { formatRelativeTime } from '@/lib/dates'
 import Modal from '@/components/Modal'
@@ -464,6 +465,7 @@ export default function PolicyRow({ policy, faId, onEdit, onAskMaya, confirmingD
           onClose={() => setBriefOpen(false)}
           policyId={policy.id}
           policyLabel={`${policy.insurer || 'Policy'}${policy.policy_number ? ' — ' + policy.policy_number : ''}`}
+          isAdmin={isAdminUserId(faId)}
         />
       )}
 

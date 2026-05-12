@@ -41,6 +41,11 @@ interface Props {
   onClose: () => void
   policyId: string
   policyLabel: string
+  /**
+   * B-pe-18e: when true, render admin-only debug info
+   * (model name, token counts, cost). FA-facing views pass false or omit.
+   */
+  isAdmin?: boolean
 }
 
 // B-pe-18c — per-layer parse status (from /api/policy-parse/status)
@@ -105,7 +110,7 @@ function statusPill(status: ParseStatus): { bg: string; text: string; icon: Reac
   }
 }
 
-export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
+export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = false }: Props) {
   const [data, setData] = useState<BriefData | null>(null)
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
@@ -277,12 +282,12 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
               Parsed {new Date(data.parsed_at).toLocaleString()}
             </span>
           )}
-          {data?.model && (
+          {isAdmin && data?.model && (
             <span style={{ fontSize: 11, color: '#9B9088', fontFamily: 'DM Mono, monospace' }}>
               {data.model}
             </span>
           )}
-          {data?.cost_usd != null && (
+          {isAdmin && data?.cost_usd != null && (
             <span style={{ fontSize: 11, color: '#9B9088' }}>
               ${Number(data.cost_usd).toFixed(4)} · {data.input_tokens}+{data.output_tokens} toks
             </span>
@@ -314,9 +319,9 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
             {parseStatus.overall !== 'done' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {([
-                  ['Brief extraction', parseStatus.brief],
-                  ['Section index', parseStatus.sections],
-                  ['Search indexing', parseStatus.chunks],
+                  ['Reading the policy', parseStatus.brief],
+                  ['Mapping the document', parseStatus.sections],
+                  ['Preparing for Maya', parseStatus.chunks],
                 ] as Array<[string, LayerStatus]>).map(([label, l]) => {
                   const { icon, color } = layerIcon(l.status)
                   return (
@@ -343,12 +348,34 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
               </div>
             )}
 
-            {(['brief', 'sections', 'chunks'] as const).map((k) => {
+            {parseStatus.overall === 'failed' && (
+              <div style={{
+                marginTop: 10,
+                padding: '10px 12px',
+                background: 'rgba(193, 80, 80, 0.06)',
+                border: '1px solid rgba(193, 80, 80, 0.18)',
+                borderRadius: 6,
+                fontSize: 12,
+                color: '#1A1410',
+                lineHeight: 1.5,
+              }}>
+                <div style={{ marginBottom: 4 }}>
+                  Some details may be incomplete. The basic policy info above is ready,
+                  but Maya may not have full context.
+                </div>
+                <div style={{ fontSize: 11, color: '#6B6460' }}>
+                  This will refresh automatically on the next view.
+                </div>
+              </div>
+            )}
+
+            {/* B-pe-18e: admin sees raw layer errors; FAs see the friendly message above */}
+            {isAdmin && (['brief', 'sections', 'chunks'] as const).map((k) => {
               const l = parseStatus[k]
               if (l.status !== 'failed' || !l.error) return null
               const layerName = k === 'brief'
-                ? 'Brief extraction'
-                : k === 'sections' ? 'Section index' : 'Search indexing'
+                ? 'Reading the policy'
+                : k === 'sections' ? 'Mapping the document' : 'Preparing for Maya'
               return (
                 <div key={k} style={{
                   marginTop: 8,
@@ -399,7 +426,7 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
             }}
           >
             <RefreshCw size={11} className={parsing ? 'brief-spin' : undefined} />
-            {parsing ? 'Parsing…' : 'Parse'}
+            {parsing ? 'Analyzing…' : 'Analyze policy'}
           </button>
 
           {status === 'done' && (
@@ -413,7 +440,7 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
                 opacity: parsing ? 0.5 : 1,
               }}
             >
-              Force re-parse
+              Re-analyze
             </button>
           )}
         </div>
@@ -445,7 +472,7 @@ export default function BriefModal({ onClose, policyId, policyLabel }: Props) {
             padding: 24, textAlign: 'center', color: '#9B9088', fontSize: 12,
             background: '#FBFAF7', border: '1px solid #F1EFE8', borderRadius: 6,
           }}>
-            No brief yet. Click <strong>Parse</strong> above to generate one.
+            No brief yet. Click <strong>Analyze policy</strong> above to generate one.
           </div>
         )}
       </div>
