@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     ok: true,
     policy_id: policyId,
     retried: toRetry,
-    message: `Retrying ${toRetry.length} layer${toRetry.length === 1 ? '' : 's'}. Refresh in a few seconds.`,
+    message: `Retrying. Refresh in a few seconds.`,
   })
 }
 

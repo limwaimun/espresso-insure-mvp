@@ -97,16 +97,16 @@ function layerIcon(status: UnifiedStatus): { icon: React.ReactNode; color: strin
 function statusPill(status: ParseStatus): { bg: string; text: string; icon: React.ReactNode; label: string } {
   switch (status) {
     case 'done':
-      return { bg: 'rgba(58, 138, 91, 0.10)', text: '#3A8A5B', icon: <CheckCircle2 size={11} />, label: 'Brief ready' }
+      return { bg: 'rgba(58, 138, 91, 0.10)', text: '#3A8A5B', icon: <CheckCircle2 size={11} />, label: 'Analyzed' }
     case 'parsing':
-      return { bg: 'rgba(186, 117, 23, 0.10)', text: '#BA7517', icon: <Loader2 size={11} className="brief-spin" />, label: 'Parsing…' }
+      return { bg: 'rgba(186, 117, 23, 0.10)', text: '#BA7517', icon: <Loader2 size={11} className="brief-spin" />, label: 'Analyzing…' }
     case 'failed':
-      return { bg: 'rgba(193, 80, 80, 0.10)', text: '#C15050', icon: <AlertCircle size={11} />, label: 'Parse failed' }
+      return { bg: 'rgba(193, 80, 80, 0.10)', text: '#C15050', icon: <AlertCircle size={11} />, label: 'Analysis failed' }
     case 'stale':
-      return { bg: 'rgba(155, 144, 136, 0.15)', text: '#6B6460', icon: <Clock size={11} />, label: 'Stale (re-parse pending)' }
+      return { bg: 'rgba(155, 144, 136, 0.15)', text: '#6B6460', icon: <Clock size={11} />, label: 'Outdated — needs re-analysis' }
     case 'pending':
     default:
-      return { bg: 'rgba(155, 144, 136, 0.10)', text: '#9B9088', icon: <Clock size={11} />, label: 'Not yet parsed' }
+      return { bg: 'rgba(155, 144, 136, 0.10)', text: '#9B9088', icon: <Clock size={11} />, label: 'Not yet analyzed' }
   }
 }
 
@@ -170,6 +170,20 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
         setRetryError((json.error || `HTTP ${res.status}`).slice(0, 200))
       } else {
         setRetryMessage(json.message || 'Retry started.')
+        // B-pe-18f: immediate status poll so the running state appears
+        // in the modal within ~100ms instead of waiting up to 3s for
+        // the next tick. Errors swallowed — next tick will catch up.
+        try {
+          const sRes = await fetch(
+            `/api/policy-parse/status?policy_id=${encodeURIComponent(policyId)}`,
+          )
+          if (sRes.ok) {
+            const sJson = await sRes.json()
+            if (sJson?.ok) setParseStatus(sJson)
+          }
+        } catch {
+          // swallow — polling will catch up
+        }
       }
     } catch (e) {
       setRetryError((e as Error).message.slice(0, 200))
@@ -199,7 +213,10 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
         const json = (await res.json()) as ParseStatusResponse | { ok: false }
         if (cancelled || !('ok' in json) || !json.ok) return
         setParseStatus(json)
-        if (json.overall === 'done' || json.overall === 'failed') {
+        // B-pe-18f: keep polling on 'failed' so a Retry-triggered
+        // running -> done transition is observed without needing the
+        // modal to be closed and reopened. Only 'done' is truly terminal.
+        if (json.overall === 'done') {
           if (interval) { clearInterval(interval); interval = null }
         }
       } catch {
@@ -307,7 +324,7 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
 
           {data?.parsed_at && (
             <span style={{ fontSize: 11, color: '#9B9088' }}>
-              Parsed {new Date(data.parsed_at).toLocaleString()}
+              Analyzed {new Date(data.parsed_at).toLocaleString()}
             </span>
           )}
           {isAdmin && data?.model && (
@@ -334,9 +351,9 @@ export default function BriefModal({ onClose, policyId, policyLabel, isAdmin = f
               <Coffee size={14} color="#BA7517" />
               <span style={{ fontSize: 12, fontWeight: 500 }}>
                 {parseStatus.overall === 'done'
-                  ? 'All three layers complete'
+                  ? 'Policy ready for Maya'
                   : parseStatus.overall === 'failed'
-                  ? 'One or more layers failed'
+                  ? 'Some details may be incomplete'
                   : 'Brewing your policy intelligence'}
               </span>
               {parseStatus.overall === 'done' && (
