@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import type { WorkOrder } from '../page'
 import RefireAction from './RefireAction'
 
-type Filter = 'all' | 'active' | 'done' | 'failed'
+type Filter = 'all' | 'active' | 'done' | 'failed' | 'rejected'
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   proposed:   { bg: '#E6F1FB', color: '#185FA5', border: '#B5D4F4' },
@@ -125,6 +125,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
       if (filter === 'active' && !ACTIVE_STATUSES.has(eff)) return false
       if (filter === 'done' && !DONE_STATUSES.has(eff)) return false
       if (filter === 'failed' && !FAILED_STATUSES.has(eff)) return false
+      if (filter === 'rejected' && eff !== 'rejected') return false
       if (q) {
         const hay = `${o.title} ${o.workstream ?? ''} ${o.category ?? ''}`.toLowerCase()
         if (!hay.includes(q)) return false
@@ -225,7 +226,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          {(['all', 'active', 'done', 'failed'] as Filter[]).map(f => (
+          {(['all', 'active', 'done', 'failed', 'rejected'] as Filter[]).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
