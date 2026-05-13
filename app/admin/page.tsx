@@ -36,7 +36,7 @@ const AGENTS = [
 ]
 
 export default function AdminPage() {
-  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0 })
+  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0, pendingProposed: 0 })
   const [workstreamStats, setWorkstreamStats] = useState<{ name: string; total: number; done: number; failed: number }[] | null>(null)
   const [recentFAs, setRecentFAs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,16 +87,17 @@ export default function AdminPage() {
       </p>
 
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 28 }}>
         {[
           { label: 'Registered FAs', value: loading ? '…' : stats.totalFAs },
           { label: 'Total clients', value: loading ? '…' : stats.totalClients },
           { label: 'Total policies', value: loading ? '…' : stats.totalPolicies },
           { label: 'Active FAs (7d)', value: loading ? '…' : stats.activeFAs7d },
+          { label: 'Pending approval', value: loading ? '…' : stats.pendingProposed, alert: !loading && stats.pendingProposed > 0 },
         ].map(k => (
-          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 10, padding: '20px 24px' }}>
+          <div key={k.label} style={{ background: '#FFFFFF', border: `1px solid ${(k as any).alert ? 'rgba(186,117,23,0.4)' : '#E8E2DA'}`, borderRadius: 10, padding: '20px 24px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: '#1A1410' }}>{k.value}</div>
+            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 36, fontWeight: 300, color: `${(k as any).alert ? '#854F0B' : '#1A1410'}` }}>{k.value}</div>
           </div>
         ))}
       </div>

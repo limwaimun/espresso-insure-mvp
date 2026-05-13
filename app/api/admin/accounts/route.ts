@@ -90,6 +90,15 @@ export async function GET(request: NextRequest) {
     .map(([name, counts]) => ({ name, ...counts }))
     .sort((a, b) => b.total - a.total)
 
+  // Count work orders currently in proposed status (queue depth)
+  const pendingProposed = (workOrders || []).filter(wo => wo.status === 'proposed').length
+  // Also count all proposed, not just last-7d — re-query without date filter
+  const { data: allProposed } = await serviceSupabase
+    .from('work_orders')
+    .select('id', { count: 'exact', head: false })
+    .eq('status', 'proposed')
+  const pendingProposedTotal = allProposed?.length ?? 0
+
   return NextResponse.json({
     profiles,
     clientCounts: countMap,
@@ -99,6 +108,7 @@ export async function GET(request: NextRequest) {
       totalClients: totalClients || 0,
       totalPolicies: totalPolicies || 0,
       activeFAs7d,
+      pendingProposed: pendingProposedTotal,
     },
     workstreamStats,
   })
