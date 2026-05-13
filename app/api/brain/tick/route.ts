@@ -284,6 +284,7 @@ This is a soft steer. Prefer proposing work consistent with this directive acros
 Next.js (Vercel), Supabase, Stripe, Resend, Anthropic.
 
 # How to think
+0. Read do_not_propose. If any item there matches what you're about to propose (same title or close paraphrase), STOP — pick different work, or ask Wayne a question instead of re-proposing.
 1. Read system_state. Notice what's actually happening — errors, traffic, urgent flags.
 2. Read recent_orders. What did we already try? What's pending?
 3. Read recent_answered_questions to honor your past clarifications from Wayne.
@@ -414,6 +415,7 @@ export async function POST(req: NextRequest) {
       .limit(20);
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 86400 * 1000).toISOString();
     const { data: recentOrders } = await supabase
       .from("work_orders")
       .select("id, title, intent, status, risk_level, category, workstream, created_at, completed_at, verified_at")
@@ -421,10 +423,81 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(50);
 
+    // B-pe-19 (Brain): assemble the do_not_propose list from two signals.
+    //   Signal A: work_orders status=failed OR (status=proposed + stale 3d, no approval)
+    //   Signal B: execution_log auto_approve_blocked_terminology entries
+    // Both deduped by title (case-insensitive), capped at 30 entries.
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400 * 1000).toISOString();
+    const { data: rejectedOrders } = await supabase
+      .from("work_orders")
+      .select("title, status, created_at")
+      .or(
+        "status.eq.failed," +
+        `and(status.eq.proposed,approved_by.is.null,created_at.lt.${threeDaysAgo})`
+      )
+      .gte("created_at", fourteenDaysAgo)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    const { data: blockedByFilter } = await supabase
+      .from("execution_log")
+      .select("created_at, raw_output")
+      .eq("action", "auto_approve_blocked_terminology")
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    // Dedupe by title (case-insensitive). Most recent occurrence wins.
+    const doNotProposeMap = new Map<string, { title: string; reason: string; count: number; last_seen: string }>();
+    for (const r of (rejectedOrders ?? [])) {
+      const t = (r.title ?? "").trim();
+      if (!t) continue;
+      const key = t.toLowerCase();
+      const reason = r.status === "failed" ? "previously failed" : "silently rejected (3+ days no approval)";
+      const existing = doNotProposeMap.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        doNotProposeMap.set(key, { title: t, reason, count: 1, last_seen: r.created_at });
+      }
+    }
+    for (const entry of (blockedByFilter ?? [])) {
+      try {
+        const raw = entry.raw_output as any;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const t = (parsed?.title ?? "").trim();
+        if (!t) continue;
+        const key = t.toLowerCase();
+        const reason = `blocked by auto-approve filter (${parsed?.matched_pattern ?? "terminology"})`;
+        const existing = doNotProposeMap.get(key);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          doNotProposeMap.set(key, { title: t, reason, count: 1, last_seen: entry.created_at });
+        }
+      } catch {
+        // ignore malformed raw_output
+      }
+    }
+    const doNotPropose = Array.from(doNotProposeMap.values())
+      .sort((a, b) => (a.last_seen < b.last_seen ? 1 : -1))
+      .slice(0, 30);
+
     const recentAnswers = await recentAnsweredQuestions(supabase, 20);
 
     const userMessage = [
       `# Active workstream this tick: ${activeWorkstream} (tick #${tick_count})`,
+      "",
+      "# do_not_propose (titles to NEVER re-propose — recently rejected or filter-blocked)",
+      "",
+      "Brain has previously proposed each of these titles and they were rejected or blocked.",
+      "Do NOT propose the same title or any meaningful paraphrase. Pick different work.",
+      "If you believe a rejected item is now worth re-attempting, ASK Wayne first via a question",
+      "rather than re-proposing autonomously.",
+      "",
+      "```json",
+      JSON.stringify(doNotPropose, null, 2),
+      "```",
       "",
       "# system_state (urgent first, then most recent)",
       "```json",
