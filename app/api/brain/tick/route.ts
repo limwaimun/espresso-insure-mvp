@@ -240,6 +240,26 @@ function containsForbiddenTerminology(order: any): { blocked: boolean; matchedPa
   return { blocked: false };
 }
 
+// B-pe-20-gate: marketing-page surfaces that must not be auto-approved.
+// Brain has historically duplicated sections on these pages (e.g. 2026-05-10
+// duplicate <Pricing> on app/page.tsx). File-path match is more robust than
+// title regex because Brain declares files_to_change explicitly in propose_work.
+const MARKETING_PATH_PATTERNS: RegExp[] = [
+  /^app\/page\.tsx$/,
+  /^app\/\(marketing\)\//,
+];
+
+function containsMarketingPathChange(order: any): { blocked: boolean; matchedPath?: string } {
+  const paths = Array.isArray(order?.files_to_change) ? order.files_to_change : [];
+  for (const p of paths) {
+    if (typeof p !== "string") continue;
+    for (const pattern of MARKETING_PATH_PATTERNS) {
+      if (pattern.test(p)) return { blocked: true, matchedPath: p };
+    }
+  }
+  return { blocked: false };
+}
+
 type ActiveDirective = { title: string; description: string | null; workstream: string; expires_at: string };
 
 function buildSystemPrompt(
@@ -425,7 +445,7 @@ export async function POST(req: NextRequest) {
 
     // B-pe-19 (Brain): assemble the do_not_propose list from two signals.
     //   Signal A: work_orders status=failed OR (status=proposed + stale 3d, no approval)
-    //   Signal B: execution_log auto_approve_blocked_terminology entries
+    //   Signal B: execution_log auto_approve_blocked_terminology + auto_approve_blocked_marketing_path entries
     // Both deduped by title (case-insensitive), capped at 30 entries.
     const threeDaysAgo = new Date(Date.now() - 3 * 86400 * 1000).toISOString();
     const { data: rejectedOrders } = await supabase
@@ -442,7 +462,7 @@ export async function POST(req: NextRequest) {
     const { data: blockedByFilter } = await supabase
       .from("execution_log")
       .select("created_at, raw_output")
-      .eq("action", "auto_approve_blocked_terminology")
+      .in("action", ["auto_approve_blocked_terminology", "auto_approve_blocked_marketing_path"])
       .gte("created_at", thirtyDaysAgo)
       .order("created_at", { ascending: false })
       .limit(30);
@@ -468,7 +488,7 @@ export async function POST(req: NextRequest) {
         const t = (parsed?.title ?? "").trim();
         if (!t) continue;
         const key = t.toLowerCase();
-        const reason = `blocked by auto-approve filter (${parsed?.matched_pattern ?? "terminology"})`;
+        const reason = `blocked by auto-approve filter (${parsed?.matched_pattern ?? parsed?.matched_path ?? "policy"})`;
         const existing = doNotProposeMap.get(key);
         if (existing) {
           existing.count += 1;
@@ -697,10 +717,12 @@ export async function POST(req: NextRequest) {
       if (!order?.title || !order?.intent || !order?.risk_level || !order?.category) continue;
 
       const forbidden = containsForbiddenTerminology(order);
+      const marketing = containsMarketingPathChange(order);
       const autoApprove =
         order.risk_level === "low" &&
         AUTO_APPROVE_CATEGORIES.has(order.category) &&
-        !forbidden.blocked;
+        !forbidden.blocked &&
+        !marketing.blocked;
 
       if (forbidden.blocked) {
         await supabase.from("execution_log").insert({
@@ -709,6 +731,17 @@ export async function POST(req: NextRequest) {
           raw_output: JSON.stringify({
             title: String(order.title).slice(0, 200),
             matched_pattern: forbidden.matchedPattern,
+          }),
+        });
+      }
+
+      if (marketing.blocked) {
+        await supabase.from("execution_log").insert({
+          action: "auto_approve_blocked_marketing_path",
+          success: true,
+          raw_output: JSON.stringify({
+            title: String(order.title).slice(0, 200),
+            matched_path: marketing.matchedPath,
           }),
         });
       }
