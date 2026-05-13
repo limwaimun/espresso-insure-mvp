@@ -36,7 +36,7 @@ const AGENTS = [
 ]
 
 export default function AdminPage() {
-  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0, pendingProposed: 0 })
+  const [stats, setStats] = useState({ totalFAs: 0, totalClients: 0, totalPolicies: 0, activeFAs7d: 0, pendingProposed: 0, failedVerifications24h: 0 })
   const [workstreamStats, setWorkstreamStats] = useState<{ name: string; total: number; done: number; failed: number }[] | null>(null)
   const [recentFAs, setRecentFAs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +51,7 @@ export default function AdminPage() {
         if (data.stats) setStats(data.stats)
         if (data.workstreamStats) setWorkstreamStats(data.workstreamStats)
         if (data.profiles) setRecentFAs(data.profiles.slice(0, 10))
+        // Derive failed verifications from workstream failed totals (proxy)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -87,13 +88,14 @@ export default function AdminPage() {
       </p>
 
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16, marginBottom: 28 }}>
         {[
           { label: 'Registered FAs', value: loading ? '…' : stats.totalFAs },
           { label: 'Total clients', value: loading ? '…' : stats.totalClients },
           { label: 'Total policies', value: loading ? '…' : stats.totalPolicies },
           { label: 'Active FAs (7d)', value: loading ? '…' : stats.activeFAs7d },
           { label: 'Pending approval', value: loading ? '…' : stats.pendingProposed, alert: !loading && stats.pendingProposed > 0 },
+          { label: 'Failed verifs (24h)', value: loading ? '…' : (workstreamStats ? workstreamStats.reduce((s, w) => s + w.failed, 0) : 0), alert: !loading && workstreamStats != null && workstreamStats.reduce((s, w) => s + w.failed, 0) > 2 },
         ].map(k => (
           <div key={k.label} style={{ background: '#FFFFFF', border: `1px solid ${(k as any).alert ? 'rgba(186,117,23,0.4)' : '#E8E2DA'}`, borderRadius: 10, padding: '20px 24px' }}>
             <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>{k.label}</div>
