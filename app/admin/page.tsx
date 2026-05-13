@@ -167,6 +167,27 @@ export default function AdminPage() {
         )
       })()}
 
+      {/* Failed verifications alert — shown when work orders have 3+ failed verifications in 24h */}
+      {!loading && (() => {
+        // Count work orders in 'failed' status — proxy for failed verifications visible to Wayne
+        const failedCount = workstreamStats ? workstreamStats.reduce((s, w) => s + w.failed, 0) : 0
+        if (failedCount < 3) return null
+        return (
+          <div style={{ background: 'rgba(208,96,96,0.07)', border: '1px solid rgba(208,96,96,0.3)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#A32D2D', marginBottom: 4 }}>
+                {failedCount} work orders have failed in the last 7 days — Elon execution success rate is low
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                Failed orders cannot be re-claimed until manually re-dispatched. Check Brain Loop for details.
+              </div>
+              <a href="/admin/brain" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textDecoration: 'none', marginTop: 6, display: 'inline-block' }}>View Brain Loop →</a>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Claim failure alert — shown when claim fail rate > 40% */}
       {!execLoading && execData && (() => {
         const claim = execData.byAction?.['claim']
