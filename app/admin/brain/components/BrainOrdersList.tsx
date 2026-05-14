@@ -105,6 +105,19 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
     ).length
   }, [orders])
 
+  const doNotProposeCount = useMemo(() => {
+    // Count unique titles with status='rejected' or 3+ failures — proxy for do_not_propose list depth
+    const rejected = new Set(orders.filter(o => o.status === 'rejected').map(o => o.title))
+    const failCounts: Record<string, number> = {}
+    for (const o of orders) {
+      if (o.status === 'failed') {
+        failCounts[o.title] = (failCounts[o.title] ?? 0) + 1
+      }
+    }
+    const repeatedFails = new Set(Object.entries(failCounts).filter(([, n]) => n >= 2).map(([t]) => t))
+    return new Set([...rejected, ...repeatedFails]).size
+  }, [orders])
+
   const categoryStats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
     const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
@@ -150,6 +163,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
         <StatCard label="Done" value={stats.done} accent="#0F6E56" />
         <StatCard label="Failed / blocked" value={stats.failed} accent={stats.failed > 0 ? '#A32D2D' : undefined} />
         <StatCard label="Terminology blocks (7d)" value={blockStats} accent={blockStats > 0 ? '#854F0B' : undefined} title="Work orders containing 'IFA' — blocked from auto-approval" />
+        <StatCard label="Blocked titles" value={doNotProposeCount} accent={doNotProposeCount > 10 ? '#A32D2D' : doNotProposeCount > 5 ? '#854F0B' : undefined} title="Unique rejected or repeatedly-failed titles Brain cannot re-propose without approval" />
       </div>
 
       {/* Workstream breakdown */}
