@@ -328,7 +328,7 @@ export default function AdminPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Agent', 'Total calls', 'OK', 'Errors', 'Error rate', 'Input tokens'].map(h => (
+                  {['Agent', 'Total calls', 'OK', 'Errors', 'Error rate', 'Input tokens', 'Output tokens', 'p95 latency'].map(h => (
                     <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', textAlign: h === 'Agent' ? 'left' : 'right', padding: '6px 10px', borderBottom: '1px solid #E8E2DA' }}>
                       {h}
                     </th>
@@ -350,6 +350,8 @@ export default function AdminPage() {
                         {isHighError ? ' ⚠' : ''}
                       </td>
                       <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{a.total_input_tokens ? a.total_input_tokens.toLocaleString() : '0'}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{(a as any).total_output_tokens ? (a as any).total_output_tokens.toLocaleString() : '0'}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{(a as any).p95_latency_ms != null ? `${Math.round((a as any).p95_latency_ms)}ms` : '—'}</td>
                     </tr>
                   )
                 })}
