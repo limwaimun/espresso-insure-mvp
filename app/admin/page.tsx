@@ -19,8 +19,20 @@ interface TokensByUser {
   total_calls: number
 }
 
+interface TotalsByAgent {
+  agent: string
+  ok: number
+  error: number
+  rate_limited: number
+  total: number
+  p50_latency_ms: number | null
+  total_input_tokens: number | null
+  total_output_tokens: number | null
+}
+
 interface AgentInvocationsData {
   tokensByUser: TokensByUser[]
+  totalsByAgent?: TotalsByAgent[]
 }
 
 const AGENTS = [
@@ -305,6 +317,47 @@ export default function AdminPage() {
           ))}
         </div>
       </div>
+
+      {/* Per-agent invocation counts */}
+      {invocData && invocData.totalsByAgent && invocData.totalsByAgent.length > 0 && (
+        <div style={{ ...panelStyle, marginBottom: 24 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
+            Agent invocations <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
+          </h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Agent', 'Total calls', 'OK', 'Errors', 'Error rate', 'Input tokens'].map(h => (
+                    <th key={h} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, color: '#9B9088', textTransform: 'uppercase' as const, letterSpacing: '0.08em', textAlign: h === 'Agent' ? 'left' : 'right', padding: '6px 10px', borderBottom: '1px solid #E8E2DA' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {invocData.totalsByAgent.map(a => {
+                  const errorRate = a.total > 0 ? a.error / a.total : 0
+                  const isHighError = errorRate >= 0.2
+                  return (
+                    <tr key={a.agent} style={{ background: isHighError ? 'rgba(208,96,96,0.04)' : 'transparent' }}>
+                      <td style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1A1410', fontWeight: 500, padding: '7px 10px' }}>{a.agent}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{a.total}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#3A7D5A', padding: '7px 10px', textAlign: 'right' }}>{a.ok}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: a.error > 0 ? '#D06060' : '#9B9088', fontWeight: a.error > 0 ? 600 : 400, padding: '7px 10px', textAlign: 'right' }}>{a.error}</td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: isHighError ? '#D06060' : '#9B9088', fontWeight: isHighError ? 600 : 400, padding: '7px 10px', textAlign: 'right' }}>
+                        {a.total > 0 ? `${Math.round(errorRate * 100)}%` : '—'}
+                        {isHighError ? ' ⚠' : ''}
+                      </td>
+                      <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#6B6460', padding: '7px 10px', textAlign: 'right' }}>{a.total_input_tokens ? a.total_input_tokens.toLocaleString() : '0'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Per-FA token spend */}
       {invocData && invocData.tokensByUser && invocData.tokensByUser.length > 0 && (
