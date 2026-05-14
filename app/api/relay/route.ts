@@ -58,6 +58,8 @@ Categories:
 - portfolio_report: overview of the FA's entire client portfolio or business metrics
 - renewal_pipeline: upcoming policy renewals, renewal dates, expiring policies
 - coverage_gap: what coverage a client is missing, what they should add
+- investment_research: researching a fund, ETF, or investment-linked product
+- portfolio_review: reviewing a client's investment holdings or overall investment portfolio
 - unknown: doesn't fit any category
 
 Also extract any key parameters (insurer, product_type, coverage_type, form_type).
