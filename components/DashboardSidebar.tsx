@@ -23,6 +23,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     { id: 'renewals',  label: 'Renewals',  href: '/dashboard/renewals',  active: !!pathname?.includes('renewals'),  badge: counts?.renewals || 0 },
     { id: 'claims',    label: 'Claims',    href: '/dashboard/claims',    active: !!pathname?.includes('claims'),    badge: counts?.claims || 0,   urgent: (counts?.claims || 0) > 0 },
     { id: 'analytics', label: 'Analytics', href: '/dashboard/analytics', active: !!pathname?.includes('analytics') },
+    { id: 'library',   label: 'Library',   href: '/dashboard/library',   active: !!pathname?.includes('library') },
     { id: 'settings',  label: 'Settings',  href: '/dashboard/settings',  active: !!pathname?.includes('settings') },
   ]
 
@@ -34,6 +35,7 @@ const DashboardSidebar = ({ profile, counts }: DashboardSidebarProps) => {
     renewals:  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M5 1v2M11 1v2M2 6h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
     claims:    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="1" width="10" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M6 5h4M6 8h4M6 11h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
     analytics: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12L5.5 7.5 8.5 10 11 7l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    library:   <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="4" height="12" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="7" y="2" width="4" height="12" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="12" y="2" width="2" height="12" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg>,
     settings:  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   }
 
