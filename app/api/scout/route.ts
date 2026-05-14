@@ -95,7 +95,7 @@ Extract structured product data from this insurance product brochure or document
   "minSumAssured": number or null,
   "maxSumAssured": number or null,
   "entryAgeMin": number or null,
-  "entryAgeMaxe": number or null,
+  "entryAgeMax": number or null,
   "standoutFeatures": ["what makes this product distinctive"],
   "status": "active"
 }
