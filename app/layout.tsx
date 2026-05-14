@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   keywords: ['FA', 'financial adviser', 'insurance', 'Singapore', 'WhatsApp', 'AI assistant', 'back-office', 'renewals', 'claims'],
   alternates: {
     canonical: '/',
+    languages: {
+      'en-SG': '/',
+    },
   },
   openGraph: {
     type: 'website',
