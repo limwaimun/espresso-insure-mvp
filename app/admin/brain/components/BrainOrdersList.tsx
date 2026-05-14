@@ -262,7 +262,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
       <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, overflow: 'hidden' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 110px 90px 110px 100px 32px',
+          gridTemplateColumns: '1fr 110px 90px 110px 60px 100px 32px',
           gap: 12, alignItems: 'center',
           padding: '10px 16px', borderBottom: '1px solid #F1EFE8',
           fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -271,6 +271,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
           <div>Workstream</div>
           <div>Risk</div>
           <div>Status</div>
+          <div>Verified</div>
           <div>Created</div>
           <div></div>
         </div>
@@ -292,7 +293,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                 onClick={() => setExpanded(isOpen ? null : o.id)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 110px 90px 110px 100px 32px',
+                  gridTemplateColumns: '1fr 110px 90px 110px 60px 100px 32px',
                   gap: 12, alignItems: 'center',
                   padding: '12px 16px',
                   cursor: 'pointer',
@@ -306,6 +307,15 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
                 <div>{o.workstream ? pill(o.workstream, { bg: '#F1EFE8', color: '#6B6460', border: '#E8E2DA' }) : <span style={{ color: '#9B9088' }}>—</span>}</div>
                 <div>{o.risk_level ? pill(o.risk_level, riskS) : <span style={{ color: '#9B9088' }}>—</span>}</div>
                 <div>{pill(effectiveStatus, statusS)}</div>
+                <div style={{ fontSize: 14, textAlign: 'center' }} title={o.verification_result?.verified === true ? 'Verified' : o.verification_result?.verified === false ? 'Verification failed' : o.verified_at ? 'Verified' : ''}>
+                  {o.verification_result?.verified === true || (o.verified_at && o.verification_result?.verified !== false) ? (
+                    <span style={{ color: '#0F6E56' }}>✓</span>
+                  ) : o.verification_result?.verified === false ? (
+                    <span style={{ color: '#A32D2D' }}>✗</span>
+                  ) : (
+                    <span style={{ color: '#E8E2DA' }}>—</span>
+                  )}
+                </div>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
                   {relativeTime(o.created_at)}
                 </div>
