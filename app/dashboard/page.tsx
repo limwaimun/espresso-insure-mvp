@@ -197,6 +197,20 @@ export default async function DashboardHome() {
         ))}
       </div>
 
+      {/* Onboarding prompt — shown only when book is empty */}
+      {(clientCount === 0 || clientCount === null) && (
+        <div style={{ background: '#FFFFFF', border: '1px solid #FAC775', borderRadius: 12, padding: '28px 28px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ fontSize: 32, flexShrink: 0 }}>👋</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 16, fontWeight: 500, color: '#1A1410', marginBottom: 6 }}>Welcome to Espresso — let&apos;s import your first client</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#5F5A57', marginBottom: 16 }}>Add a client to unlock your dashboard. Once your first client is in, Espresso starts surfacing renewals, claims, and relationship prompts automatically.</div>
+            <Link href="/dashboard/clients" style={{ textDecoration: 'none' }}>
+              <span style={{ display: 'inline-block', background: '#BA7517', color: '#FFFFFF', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, padding: '9px 20px', borderRadius: 8, cursor: 'pointer' }}>Add your first client →</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Three columns */}
       <div className="dashboard-cols">
 
