@@ -156,6 +156,22 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* High fail-rate alert — shown when 24h execution fail rate exceeds 50% */}
+      {!execLoading && execData && typeof execData.failRate === 'number' && execData.failRate >= 0.5 && execData.total >= 5 && (
+        <div style={{ background: 'rgba(208,96,96,0.09)', border: '1px solid rgba(208,96,96,0.4)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <span style={{ fontSize: 18 }}>🚨</span>
+          <div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#A32D2D', marginBottom: 4 }}>
+              Brain execution fail rate critical: {Math.round(execData.failRate * 100)}% ({execData.totalFail}/{execData.total} in last 24h)
+            </div>
+            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+              More than half of execution log entries are failures. Check per-action breakdown and recent failures below.
+            </div>
+            <a href="/admin/brain" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#BA7517', textDecoration: 'none', marginTop: 6, display: 'inline-block' }}>View Brain Loop →</a>
+          </div>
+        </div>
+      )}
+
       {/* Anthropic API limit alert — shown when brain_tick failures contain the usage-limit error */}
       {!execLoading && execData && (() => {
         const limitError = (execData.recentFailures || []).find(
