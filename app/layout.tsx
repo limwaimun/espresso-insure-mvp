@@ -136,6 +136,26 @@ const websiteJsonLd = {
   },
 };
 
+const webPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': 'https://espresso.insure/#webpage',
+  url: 'https://espresso.insure/',
+  name: 'Espresso — Your AI Back-Office. Inside WhatsApp.',
+  description: 'Maya handles intake, renewals, and claims for Singapore FAs — 24/7, inside the WhatsApp groups you already use with clients.',
+  inLanguage: 'en-SG',
+  isPartOf: {
+    '@type': 'WebSite',
+    '@id': 'https://espresso.insure/#website',
+    url: 'https://espresso.insure',
+    name: 'Espresso',
+  },
+  speakable: {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['h1', 'h2'],
+  },
+};
+
 const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -240,6 +260,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
         />
         <script
           type="application/ld+json"
