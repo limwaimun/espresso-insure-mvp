@@ -1,14 +1,18 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://espresso.insure'),
   title: 'Start Your Free Trial — Espresso',
-  description: 'Set up your AI back-office in under 30 minutes. Maya handles client intake, renewals, and claims inside WhatsApp — 14 days free, no credit card required.',
+  description: 'Try Espresso free for 14 days. No credit card needed. Maya handles intake, renewals, and claims for Singapore FAs — 24/7 inside WhatsApp.',
+  alternates: {
+    canonical: '/trial',
+  },
   openGraph: {
     type: 'website',
     url: 'https://espresso.insure/trial',
     siteName: 'Espresso',
     title: 'Start Your Free Trial — Espresso',
-    description: 'Set up your AI back-office in under 30 minutes. Maya handles client intake, renewals, and claims inside WhatsApp — 14 days free, no credit card required.',
+    description: 'Try Espresso free for 14 days. No credit card needed. Maya handles intake, renewals, and claims for Singapore FAs — 24/7 inside WhatsApp.',
     locale: 'en_SG',
     images: [
       {
@@ -22,10 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Start Your Free Trial — Espresso',
-    description: 'Set up your AI back-office in under 30 minutes. Maya handles client intake, renewals, and claims inside WhatsApp — 14 days free, no credit card required.',
+    description: 'Try Espresso free for 14 days. No credit card needed. Maya handles intake, renewals, and claims for Singapore FAs — 24/7 inside WhatsApp.',
     images: ['https://espresso.insure/og-image.png'],
-  },
-  alternates: {
-    canonical: '/trial',
   },
 };
