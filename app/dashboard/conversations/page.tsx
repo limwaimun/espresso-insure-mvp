@@ -11,10 +11,9 @@ export default async function ConversationsPage() {
 
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: 'calc(100vh - 120px)',
-      background: '#1C0F0A',
+      padding: '24px 28px',
+      background: '#F7F4F0',
+      minHeight: '100vh',
     }}>
       {/* Header */}
       <div style={{
@@ -24,332 +23,164 @@ export default async function ConversationsPage() {
         marginBottom: '24px',
       }}>
         <h1 style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '28px',
-          fontWeight: 400,
-          color: '#F5ECD7',
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: 22,
+          fontWeight: 500,
+          color: '#1A1410',
           margin: 0,
         }}>
           Conversations
         </h1>
-        
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-        }}>
-          <button className="btn-secondary" style={{
-            fontSize: '13px',
-            padding: '8px 16px',
-          }}>
-            Filter
-          </button>
-          <button className="btn-primary" style={{
-            fontSize: '13px',
-            padding: '8px 16px',
-          }}>
-            New conversation
-          </button>
-        </div>
       </div>
 
       {/* Stats Bar */}
       <div style={{
-        display: 'flex',
-        gap: '16px',
-        marginBottom: '24px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 10,
+        marginBottom: 20,
       }}>
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '16px',
-          flex: 1,
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: '#C8813A',
-            marginBottom: '4px',
-          }}>
-            Total
+        {[
+          { label: 'Total', value: conversations?.length || 0 },
+          { label: 'Active', value: conversations?.filter(c => c.status === 'active').length || 0 },
+          { label: 'Completed', value: conversations?.filter(c => c.status === 'completed').length || 0 },
+          { label: 'Gaps identified', value: conversations?.reduce((sum, conv) => sum + (conv.gaps_identified || 0), 0) || 0 },
+        ].map(k => (
+          <div key={k.label} style={{ background: '#FFFFFF', border: '0.5px solid #E8E2DA', borderRadius: 10, padding: '14px 16px' }}>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#1A1410', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{k.label}</div>
+            <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 500, color: '#1A1410', lineHeight: 1 }}>{k.value}</div>
           </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '24px',
-            fontWeight: 600,
-            color: '#F5ECD7',
-          }}>
-            {conversations?.length || 0}
-          </div>
-        </div>
-        
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '16px',
-          flex: 1,
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: '#C8813A',
-            marginBottom: '4px',
-          }}>
-            Active
-          </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '24px',
-            fontWeight: 600,
-            color: '#F5ECD7',
-          }}>
-            {conversations?.filter(c => c.status === 'active').length || 0}
-          </div>
-        </div>
-        
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '16px',
-          flex: 1,
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: '#C8813A',
-            marginBottom: '4px',
-          }}>
-            Completed
-          </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '24px',
-            fontWeight: 600,
-            color: '#F5ECD7',
-          }}>
-            {conversations?.filter(c => c.status === 'completed').length || 0}
-          </div>
-        </div>
-        
-        <div style={{
-          background: '#120A06',
-          border: '1px solid #2E1A0E',
-          borderRadius: '8px',
-          padding: '16px',
-          flex: 1,
-        }}>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: '#C8813A',
-            marginBottom: '4px',
-          }}>
-            Gaps identified
-          </div>
-          <div style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: '24px',
-            fontWeight: 600,
-            color: '#F5ECD7',
-          }}>
-            {conversations?.reduce((sum, conv) => sum + (conv.gaps_identified || 0), 0) || 0}
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Conversations List */}
       <div style={{
-        flex: 1,
-        background: '#120A06',
-        border: '1px solid #2E1A0E',
-        borderRadius: '8px',
+        background: '#FFFFFF',
+        border: '0.5px solid #E8E2DA',
+        borderRadius: 12,
         overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
       }}>
         <div style={{
-          padding: '20px',
-          borderBottom: '1px solid #2E1A0E',
+          padding: '14px 16px',
+          borderBottom: '0.5px solid #E8E2DA',
+          background: '#FAFAF8',
         }}>
           <div style={{
             fontFamily: 'DM Sans, sans-serif',
-            fontSize: '14px',
+            fontSize: 13,
             fontWeight: 500,
-            color: '#F5ECD7',
-            marginBottom: '16px',
+            color: '#1A1410',
           }}>
             All conversations
           </div>
-          
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-          }}>
-            <button style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              fontWeight: 500,
-              padding: '6px 12px',
-              borderRadius: '100px',
-              background: '#C8813A',
-              color: '#120A06',
-              border: 'none',
-              cursor: 'pointer',
-            }}>
-              All
-            </button>
-            <button style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              fontWeight: 500,
-              padding: '6px 12px',
-              borderRadius: '100px',
-              background: 'transparent',
-              color: '#C9B99A',
-              border: '1px solid #2E1A0E',
-              cursor: 'pointer',
-            }}>
-              Active
-            </button>
-            <button style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              fontWeight: 500,
-              padding: '6px 12px',
-              borderRadius: '100px',
-              background: 'transparent',
-              color: '#C9B99A',
-              border: '1px solid #2E1A0E',
-              cursor: 'pointer',
-            }}>
-              Completed
-            </button>
-          </div>
         </div>
         
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-        }}>
+        <div>
           {conversations && conversations.length > 0 ? (
             conversations.map((conversation) => (
               <div
                 key={conversation.id}
                 style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #2E1A0E',
+                  padding: '14px 16px',
+                  borderBottom: '0.5px solid #E8E2DA',
                   cursor: 'pointer',
-                }}
-              >
-                <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: 12,
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#FEF3E2',
+                  border: '1px solid #FAC775',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#854F0B',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  flexShrink: 0,
                 }}>
-                  {/* Avatar */}
+                  {conversation.clients?.name?.charAt(0) || 'C'}
+                </div>
+                
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: '#C8813A',
                     display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#120A06',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    flexShrink: 0,
+                    marginBottom: 3,
                   }}>
-                    {conversation.clients?.name?.charAt(0) || 'C'}
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: '#1A1410',
+                    }}>
+                      {conversation.clients?.name || 'Client'}
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 11,
+                      color: '#5F5A57',
+                    }}>
+                      {conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : 'No messages'}
+                    </div>
                   </div>
                   
-                  {/* Content */}
-                  <div style={{ flex: 1 }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
                     <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '4px',
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 12,
+                      color: '#5F5A57',
+                      lineHeight: 1.4,
+                      maxWidth: '70%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        color: '#F5ECD7',
-                      }}>
-                        {conversation.clients?.name || 'Client'}
-                      </div>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '11px',
-                        color: '#C9B99A',
-                      }}>
-                        {conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : 'No messages'}
-                      </div>
+                      {conversation.last_message || 'No message yet'}
                     </div>
                     
                     <div style={{
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
+                      gap: 6,
                     }}>
-                      <div style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: '12px',
-                        color: '#C9B99A',
-                        lineHeight: 1.4,
-                        maxWidth: '70%',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {conversation.last_message || 'No message yet'}
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}>
-                        {conversation.gaps_identified && conversation.gaps_identified > 0 && (
-                          <span style={{
-                            background: '#E53E3E',
-                            color: '#FFFFFF',
-                            fontSize: '10px',
-                            fontWeight: 500,
-                            padding: '2px 6px',
-                            borderRadius: '100px',
-                          }}>
-                            {conversation.gaps_identified} gap{conversation.gaps_identified > 1 ? 's' : ''}
-                          </span>
-                        )}
-                        
+                      {conversation.gaps_identified && conversation.gaps_identified > 0 && (
                         <span style={{
-                          background: conversation.status === 'active' ? '#38A169' : '#C9B99A',
-                          color: conversation.status === 'active' ? '#120A06' : '#1C0F0A',
-                          fontSize: '10px',
+                          background: '#FCEBEB',
+                          color: '#A32D2D',
+                          border: '0.5px solid #F7C1C1',
+                          fontSize: 10,
                           fontWeight: 500,
-                          padding: '2px 8px',
-                          borderRadius: '100px',
+                          padding: '2px 7px',
+                          borderRadius: 100,
                         }}>
-                          {conversation.status || 'unknown'}
+                          {conversation.gaps_identified} gap{conversation.gaps_identified > 1 ? 's' : ''}
                         </span>
-                      </div>
+                      )}
+                      
+                      <span style={{
+                        background: conversation.status === 'active' ? '#E1F5EE' : '#F3F2F0',
+                        color: conversation.status === 'active' ? '#0F6E56' : '#5F5A57',
+                        border: `0.5px solid ${conversation.status === 'active' ? '#9FE1CB' : '#D8D4CE'}`,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        padding: '2px 8px',
+                        borderRadius: 100,
+                      }}>
+                        {conversation.status || 'unknown'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -357,21 +188,22 @@ export default async function ConversationsPage() {
             ))
           ) : (
             <div style={{
-              padding: '60px 20px',
+              padding: '48px 20px',
               textAlign: 'center',
             }}>
               <div style={{
-                fontFamily: 'Cormorant Garamond, serif',
-                fontSize: '24px',
-                color: '#F5ECD7',
-                marginBottom: '16px',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 16,
+                fontWeight: 500,
+                color: '#1A1410',
+                marginBottom: 8,
               }}>
                 No conversations yet
               </div>
               <div style={{
                 fontFamily: 'DM Sans, sans-serif',
-                fontSize: '14px',
-                color: '#C9B99A',
+                fontSize: 13,
+                color: '#5F5A57',
                 lineHeight: 1.6,
                 maxWidth: '400px',
                 margin: '0 auto',
