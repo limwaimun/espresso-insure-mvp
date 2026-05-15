@@ -230,9 +230,30 @@ export default function AdminPage() {
 
       {/* Execution health */}
       <div style={{ ...panelStyle, marginBottom: 24 }}>
-        <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: '0 0 16px' }}>
-          Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: '#1A1410', margin: 0 }}>
+            Execution health <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#9B9088' }}>(last 24h)</span>
+          </h2>
+          {!execLoading && execData && typeof execData.failRate === 'number' && (
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
+                Total: <strong style={{ color: '#1A1410' }}>{execData.total}</strong>
+              </span>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#6B6460' }}>
+                Failed: <strong style={{ color: execData.totalFail > 0 ? '#D06060' : '#1A1410' }}>{execData.totalFail}</strong>
+              </span>
+              <span style={{
+                fontFamily: 'DM Mono, monospace', fontSize: 12, fontWeight: 600,
+                padding: '3px 10px', borderRadius: 100,
+                background: execData.failRate > 0.4 ? 'rgba(208,96,96,0.12)' : execData.failRate > 0.2 ? 'rgba(186,117,23,0.12)' : 'rgba(58,125,90,0.12)',
+                color: execData.failRate > 0.4 ? '#A32D2D' : execData.failRate > 0.2 ? '#854F0B' : '#0F6E56',
+                border: `1px solid ${execData.failRate > 0.4 ? 'rgba(208,96,96,0.3)' : execData.failRate > 0.2 ? 'rgba(186,117,23,0.3)' : 'rgba(58,125,90,0.3)'}`,
+              }}>
+                {Math.round(execData.failRate * 100)}% fail rate
+              </span>
+            </div>
+          )}
+        </div>
         {execLoading && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6B6460' }}>Loading…</div>}
         {!execLoading && execData && !(execData as any).error && (
           <>
