@@ -91,13 +91,22 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.total - a.total)
 
   // Count work orders currently in proposed status (queue depth)
-  const pendingProposed = (workOrders || []).filter(wo => wo.status === 'proposed').length
   // Also count all proposed, not just last-7d — re-query without date filter
   const { data: allProposed } = await serviceSupabase
     .from('work_orders')
     .select('id', { count: 'exact', head: false })
     .eq('status', 'proposed')
   const pendingProposedTotal = allProposed?.length ?? 0
+
+  // Count work orders with failed verification in last 24h
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: recentVerified } = await serviceSupabase
+    .from('work_orders')
+    .select('verification_result')
+    .gte('verified_at', twentyFourHoursAgo)
+  const failedVerifications24h = (recentVerified || []).filter(
+    wo => wo.verification_result?.verified === false
+  ).length
 
   return NextResponse.json({
     profiles,
@@ -109,6 +118,7 @@ export async function GET(request: NextRequest) {
       totalPolicies: totalPolicies || 0,
       activeFAs7d,
       pendingProposed: pendingProposedTotal,
+      failedVerifications24h,
     },
     workstreamStats,
   })
