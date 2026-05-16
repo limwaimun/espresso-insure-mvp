@@ -111,6 +111,16 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
     ).length
   }, [orders])
 
+  const staleRunningCount = useMemo(() => {
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
+    return orders.filter(o =>
+      o.status === 'dispatched' &&
+      o.dispatched_at != null &&
+      new Date(o.dispatched_at).getTime() < twoHoursAgo &&
+      o.completed_at == null
+    ).length
+  }, [orders])
+
   const doNotProposeCount = useMemo(() => {
     // Count unique titles with status='rejected' or 3+ failures — proxy for do_not_propose list depth
     const rejected = new Set(orders.filter(o => o.status === 'rejected').map(o => o.title))
@@ -172,6 +182,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
         <StatCard label="Avg daily orders" value={stats.avgDaily} title="Average work orders per day over the last 7 days" />
         <StatCard label="Terminology blocks (7d)" value={blockStats} accent={blockStats > 0 ? '#854F0B' : undefined} title="Work orders containing 'IFA' — blocked from auto-approval" />
         <StatCard label="Blocked titles" value={doNotProposeCount} accent={doNotProposeCount > 10 ? '#A32D2D' : doNotProposeCount > 5 ? '#854F0B' : undefined} title="Unique rejected or repeatedly-failed titles Brain cannot re-propose without approval" />
+        <StatCard label="Stale running (>2h)" value={staleRunningCount} accent={staleRunningCount > 0 ? '#A32D2D' : undefined} title="Orders dispatched more than 2 hours ago with no completion — likely stuck" />
       </div>
 
       {/* Workstream breakdown */}
