@@ -220,6 +220,28 @@ export default function AdminPage() {
         )
       })()}
 
+      {/* Agent error rate alert — shown when any agent has error rate >= 20% */}
+      {invocData && invocData.totalsByAgent && (() => {
+        const problematic = (invocData.totalsByAgent || []).filter(a => a.total >= 3 && a.error / a.total >= 0.2)
+        if (problematic.length === 0) return null
+        return (
+          <div style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.35)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#854F0B', marginBottom: 4 }}>
+                {problematic.length === 1
+                  ? `Agent '${problematic[0].agent}' error rate: ${Math.round((problematic[0].error / problematic[0].total) * 100)}% (${problematic[0].error}/${problematic[0].total} calls in 24h)`
+                  : `${problematic.length} agents with elevated error rates (24h): ${problematic.map(a => `${a.agent} ${Math.round((a.error / a.total) * 100)}%`).join(', ')}`
+                }
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                Threshold: ≥20% error rate with ≥3 calls. See agent invocations table below for details.
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Claim failure alert — shown when claim fail rate > 40% */}
       {!execLoading && execData && (() => {
         const claim = execData.byAction?.['claim']
