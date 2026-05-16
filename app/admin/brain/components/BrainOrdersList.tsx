@@ -66,10 +66,16 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   const stats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 86400 * 1000
     const recent = orders.filter(o => new Date(o.created_at).getTime() > oneWeekAgo)
+    const done = recent.filter(o => DONE_STATUSES.has(o.status)).length
+    const failed = recent.filter(o => FAILED_STATUSES.has(o.status)).length
+    const avgDaily = Math.round((recent.length / 7) * 10) / 10
+    const successRate = recent.length > 0 ? Math.round((done / recent.length) * 100) : 0
     return {
       total: recent.length,
-      done: recent.filter(o => DONE_STATUSES.has(o.status)).length,
-      failed: recent.filter(o => FAILED_STATUSES.has(o.status)).length,
+      done,
+      failed,
+      avgDaily,
+      successRate,
     }
   }, [orders])
 
@@ -162,6 +168,8 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
         <StatCard label="Last 7 days" value={stats.total} />
         <StatCard label="Done" value={stats.done} accent="#0F6E56" />
         <StatCard label="Failed / blocked" value={stats.failed} accent={stats.failed > 0 ? '#A32D2D' : undefined} />
+        <StatCard label="Success rate (7d)" value={`${stats.successRate}%`} accent={stats.successRate < 50 ? '#A32D2D' : stats.successRate < 70 ? '#854F0B' : '#0F6E56'} title="Done orders as a % of all orders in the last 7 days" />
+        <StatCard label="Avg daily orders" value={stats.avgDaily} title="Average work orders per day over the last 7 days" />
         <StatCard label="Terminology blocks (7d)" value={blockStats} accent={blockStats > 0 ? '#854F0B' : undefined} title="Work orders containing 'IFA' — blocked from auto-approval" />
         <StatCard label="Blocked titles" value={doNotProposeCount} accent={doNotProposeCount > 10 ? '#A32D2D' : doNotProposeCount > 5 ? '#854F0B' : undefined} title="Unique rejected or repeatedly-failed titles Brain cannot re-propose without approval" />
       </div>
@@ -397,7 +405,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
   )
 }
 
-function StatCard({ label, value, accent, title }: { label: string; value: number; accent?: string; title?: string }) {
+function StatCard({ label, value, accent, title }: { label: string; value: number | string; accent?: string; title?: string }) {
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 8, padding: '14px 18px' }} title={title}>
       <div style={{ fontSize: 11, color: '#9B9088', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>
