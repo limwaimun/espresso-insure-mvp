@@ -166,6 +166,18 @@ const breadcrumbJsonLd = {
       name: 'Home',
       item: 'https://espresso.insure/',
     },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Start Free Trial',
+      item: 'https://espresso.insure/trial',
+    },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      name: 'Login',
+      item: 'https://espresso.insure/login',
+    },
   ],
 };
 
