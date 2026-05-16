@@ -242,6 +242,30 @@ export default function AdminPage() {
         )
       })()}
 
+      {/* Token drain alert — shown when any FA exceeds 100k tokens in 24h */}
+      {invocData && invocData.tokensByUser && (() => {
+        const drainFAs = (invocData.tokensByUser || []).filter(u => (u.input_tokens + u.output_tokens) > 100000)
+        if (drainFAs.length === 0) return null
+        const worst = drainFAs.reduce((a, b) => (a.input_tokens + a.output_tokens) > (b.input_tokens + b.output_tokens) ? a : b)
+        const worstTotal = worst.input_tokens + worst.output_tokens
+        return (
+          <div style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.35)', borderRadius: 10, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <div>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#854F0B', marginBottom: 4 }}>
+                {drainFAs.length === 1
+                  ? `FA ${worst.user_id === 'anonymous' ? 'anonymous' : worst.user_id.slice(0, 8) + '…'} used ${worstTotal.toLocaleString()} tokens in 24h — possible token drain`
+                  : `${drainFAs.length} FAs each exceeded 100k tokens in 24h — check for token drain`
+                }
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: '#6B6460' }}>
+                Threshold: 100,000 tokens per FA per 24h. See token spend table below.
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Claim failure alert — shown when claim fail rate > 40% */}
       {!execLoading && execData && (() => {
         const claim = execData.byAction?.['claim']
