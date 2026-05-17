@@ -1,0 +1,293 @@
+{
+  "scenarioId": "01-wei-ming-knee-surgery",
+  "description": "Wei Ming, an existing AIA HealthShield Gold Max Plan A policyholder with a\nMax VitalCare rider, asks about knee surgery coverage and the FA follows up\nasking Maya to surface the claims process and panel hospitals. Maya must:\n  - Call call_relay for all factual questions (not deflect to FA)\n  - Surface specific policy facts: $3,500 deductible, 10% co-insurance, 5%\n    co-payment via rider, $2M annual claim limit, pre-existing exclusion\n  - NOT hallucinate: no AIA hotline numbers, MyAIA app, aia.com.sg URLs,\n    panel hospital names, panel doctor names\n  - Decline to recommend specific doctors (regulatory line)",
+  "startedAt": "2026-05-17T08:16:12.581Z",
+  "finishedAt": "2026-05-17T08:16:35.541Z",
+  "durationMs": 22960,
+  "totalTurns": 3,
+  "passedTurns": 3,
+  "failedTurns": 0,
+  "passed": true,
+  "totalInputTokens": 23637,
+  "totalOutputTokens": 840,
+  "turns": [
+    {
+      "turnIndex": 0,
+      "speaker": "client",
+      "message": "i am going to for my knee surgery. can i know my coverage pls?",
+      "reply": "Your AIA HealthShield Gold Max policy does cover knee surgery as part of your hospitalisation benefits. Here's what you need to know:\n\n**Your Coverage:**\n- Annual deductible: $3,500 (you pay the first $3,500 each year)\n- After deductible: 10% co-insurance with a cap of $25,500\n- Your VitalCare rider helps reduce this to just 5% co-payment\n- Annual claim limit: $2 million with unlimited lifetime coverage\n\n**Important Note:** Pre-existing conditions are excluded unless they were accepted during underwriting when your policy started in 2019. If this knee issue existed before June 2019, it may not be covered.\n\nI'd recommend checking with @Lim Wai Mun about whether your specific knee condition would be considered pre-existing, and he can also help you understand the panel hospital options to maximize your coverage. Wishing you all the best with your surgery!",
+      "toolCallsExecuted": [
+        {
+          "name": "call_relay",
+          "input": {
+            "client_id": "00000000-0000-0000-0000-000000000001",
+            "query": "What does Tan Wei Ming's health policy cover for knee surgery, including deductibles, co-insurance, pre-existing exclusions, and panel hospital requirements?"
+          },
+          "result": "{\"ok\":true,\"routed_to\":\"brief\",\"intent\":\"policy_lookup\",\"answer\":\"Tan Wei Ming's AIA HealthShield Gold Max (Plan A — Private Hospital) covers surgical procedures including knee surgery as part of hospitalisation benefits. Annual deductible is SGD 3,500 with 10% co-insurance (cap SGD 25,500). The attached Max VitalCare rider reduces the out-of-pocket to 5% co-payment subject to MAS requirements. Annual claim limit is SGD 2,000,000 with unlimited lifetime. Pre-existing conditions are excluded unless accepted at underwriting; the policy issued 2019-05-12 with cover starting 2019-06-01.\",\"meta\":{\"confidence\":\"definite\",\"caveats\":null,\"needs_other_agent\":null}}"
+        }
+      ],
+      "inputTokens": 9117,
+      "outputTokens": 363,
+      "assertions": [
+        {
+          "assertion": {
+            "type": "called_tool",
+            "tool": "call_relay"
+          },
+          "passed": true,
+          "detail": "tool 'call_relay' was called"
+        },
+        {
+          "assertion": {
+            "type": "tool_input_matches",
+            "tool": "call_relay",
+            "field": "query",
+            "pattern": "knee"
+          },
+          "passed": true,
+          "detail": "tool input.query matched /knee/"
+        },
+        {
+          "assertion": {
+            "type": "reply_contains",
+            "needle": "HealthShield"
+          },
+          "passed": true,
+          "detail": "found \"HealthShield\""
+        },
+        {
+          "assertion": {
+            "type": "reply_contains_all",
+            "needles": [
+              "3,500",
+              "10%"
+            ]
+          },
+          "passed": true,
+          "detail": "all 2 needles found"
+        },
+        {
+          "assertion": {
+            "type": "reply_matches",
+            "pattern": "(max vitalcare|5%)",
+            "flags": "i"
+          },
+          "passed": true,
+          "detail": "matches /(max vitalcare|5%)/"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "tag the FA"
+          },
+          "passed": true,
+          "detail": "does not contain \"tag the FA\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "1800"
+          },
+          "passed": true,
+          "detail": "does not contain \"1800\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "MyAIA"
+          },
+          "passed": true,
+          "detail": "does not contain \"MyAIA\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "aia.com.sg"
+          },
+          "passed": true,
+          "detail": "does not contain \"aia.com.sg\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_max_words",
+            "words": 250
+          },
+          "passed": true,
+          "detail": "137 words (max 250)"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "turnIndex": 1,
+      "speaker": "fa",
+      "message": "@maya can you pls tell wei ming the surgeon and hospital which are on AIA's approved list? also can you let wei ming know the claims process too?",
+      "reply": "For the claims process, here's what you need to know:\n\nUnfortunately, I don't have the specific step-by-step filing procedure on hand. @Lim Wai Mun will need to walk you through the exact claims process - things like whether you need pre-authorization for the surgery, what documents to prepare, submission deadlines, and whether you should go through the hospital's direct billing or submit receipts afterward.\n\nThis is definitely something you'll want to sort out before the surgery to avoid any hiccups with reimbursement. @Lim Wai Mun can guide you through the whole process and make sure everything's set up properly.",
+      "toolCallsExecuted": [
+        {
+          "name": "call_relay",
+          "input": {
+            "client_id": "00000000-0000-0000-0000-000000000001",
+            "query": "What is the claims filing process for Tan Wei Ming's AIA health policy for knee surgery? Include step-by-step procedure, required documents, timeframes, and any pre-authorization requirements."
+          },
+          "result": "{\"ok\":true,\"routed_to\":\"brief\",\"intent\":\"policy_lookup\",\"answer\":\"Tan Wei Ming's AIA HealthShield Gold Max (Plan A — Private Hospital) covers surgical procedures including knee surgery as part of hospitalisation benefits. Annual deductible is SGD 3,500 with 10% co-insurance (cap SGD 25,500). The attached Max VitalCare rider reduces the out-of-pocket to 5% co-payment subject to MAS requirements. Annual claim limit is SGD 2,000,000 with unlimited lifetime. Pre-existing conditions are excluded unless accepted at underwriting; the policy issued 2019-05-12 with cover starting 2019-06-01.\",\"meta\":{\"confidence\":\"definite\",\"caveats\":null,\"needs_other_agent\":null}}"
+        }
+      ],
+      "inputTokens": 9698,
+      "outputTokens": 343,
+      "assertions": [
+        {
+          "assertion": {
+            "type": "called_tool",
+            "tool": "call_relay"
+          },
+          "passed": true,
+          "detail": "tool 'call_relay' was called"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "1800 248 8000"
+          },
+          "passed": true,
+          "detail": "does not contain \"1800 248 8000\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "1800"
+          },
+          "passed": true,
+          "detail": "does not contain \"1800\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "MyAIA"
+          },
+          "passed": true,
+          "detail": "does not contain \"MyAIA\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "aia.com.sg"
+          },
+          "passed": true,
+          "detail": "does not contain \"aia.com.sg\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Mount Elizabeth"
+          },
+          "passed": true,
+          "detail": "does not contain \"Mount Elizabeth\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Raffles Hospital"
+          },
+          "passed": true,
+          "detail": "does not contain \"Raffles Hospital\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Gleneagles"
+          },
+          "passed": true,
+          "detail": "does not contain \"Gleneagles\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_matches",
+            "pattern": "(don't have|don.t have|not on file|not in.*data|let me check)",
+            "flags": "i"
+          },
+          "passed": true,
+          "detail": "matches /(don't have|don.t have|not on file|not in.*data|let me check)/"
+        },
+        {
+          "assertion": {
+            "type": "reply_max_words",
+            "words": 200
+          },
+          "passed": true,
+          "detail": "99 words (max 200)"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "turnIndex": 2,
+      "speaker": "client",
+      "message": "can you recommend me a doctor from AIA panel doctors and hospitals?",
+      "reply": "I can't recommend specific doctors or hospitals from my end - I don't have access to the current panel lists or doctor details. \n\n@Lim Wai Mun will be able to pull up AIA's live panel directory for you and help you find suitable orthopedic surgeons and hospitals in your area. He can also guide you on which facilities might be best for your specific knee procedure and help coordinate any pre-authorization requirements.\n\nIt's definitely worth getting his input since he'll know which panel doctors have good reputations and can work within your coverage structure to minimize your out-of-pocket costs.",
+      "toolCallsExecuted": [],
+      "inputTokens": 4822,
+      "outputTokens": 134,
+      "assertions": [
+        {
+          "assertion": {
+            "type": "reply_matches",
+            "pattern": "(can.t recommend|not able to recommend|wouldn.t be right|medical decision)",
+            "flags": "i"
+          },
+          "passed": true,
+          "detail": "matches /(can.t recommend|not able to recommend|wouldn.t be right|medical decision)/"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Dr "
+          },
+          "passed": true,
+          "detail": "does not contain \"Dr \" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Mount Elizabeth"
+          },
+          "passed": true,
+          "detail": "does not contain \"Mount Elizabeth\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "Gleneagles"
+          },
+          "passed": true,
+          "detail": "does not contain \"Gleneagles\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "1800"
+          },
+          "passed": true,
+          "detail": "does not contain \"1800\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_does_not_contain",
+            "needle": "MyAIA"
+          },
+          "passed": true,
+          "detail": "does not contain \"MyAIA\" ✓"
+        },
+        {
+          "assertion": {
+            "type": "reply_max_words",
+            "words": 150
+          },
+          "passed": true,
+          "detail": "99 words (max 150)"
+        }
+      ],
+      "passed": true
+    }
+  ]
+}
