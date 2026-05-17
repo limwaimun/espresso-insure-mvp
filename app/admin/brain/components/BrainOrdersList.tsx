@@ -183,6 +183,7 @@ export default function BrainOrdersList({ orders }: { orders: WorkOrder[] }) {
         <StatCard label="Terminology blocks (7d)" value={blockStats} accent={blockStats > 0 ? '#854F0B' : undefined} title="Work orders containing 'IFA' — blocked from auto-approval" />
         <StatCard label="Blocked titles" value={doNotProposeCount} accent={doNotProposeCount > 10 ? '#A32D2D' : doNotProposeCount > 5 ? '#854F0B' : undefined} title="Unique rejected or repeatedly-failed titles Brain cannot re-propose without approval" />
         <StatCard label="Stale running (>2h)" value={staleRunningCount} accent={staleRunningCount > 0 ? '#A32D2D' : undefined} title="Orders dispatched more than 2 hours ago with no completion — likely stuck" />
+        <StatCard label="Pending approval (>1h)" value={stalePendingCount} accent={stalePendingCount > 0 ? '#854F0B' : undefined} title="Proposed orders waiting more than 1 hour for approval or dispatch" />
       </div>
 
       {/* Workstream breakdown */}
