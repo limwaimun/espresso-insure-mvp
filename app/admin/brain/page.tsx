@@ -33,6 +33,8 @@ export interface WorkOrder {
 }
 
 export default async function BrainAdminPage() {
+  // getAdminUser is now wrapped in React cache() — this call dedupes with the
+  // identical call in app/admin/layout.tsx so we pay one auth roundtrip, not two.
   const user = await getAdminUser()
   if (!user) redirect('/dashboard')
 
@@ -40,37 +42,51 @@ export default async function BrainAdminPage() {
   const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
   const supabase = createClient(url, key)
 
-  const { data, error } = await supabase
-    .from('work_orders')
-    .select('id, title, intent, rationale, files_to_change, risk_level, category, workstream, spec, status, created_at, dispatched_at, completed_at, verified_at, auto_approved, verification_result, reverted_at')
-    .order('created_at', { ascending: false })
-    .limit(200)
+  // PERF: run the three independent query chains in parallel via Promise.all.
+  // Previously these ran sequentially, accounting for most of the ~4.2s RSC fetch
+  // time observed in DevTools. With parallel execution the total time is roughly
+  // the slowest single query rather than the sum of all three.
+  //
+  //   1. work_orders: standalone read
+  //   2. directive chain: expire_stale_directives RPC must run BEFORE the
+  //      brain_directives SELECT (so the SELECT doesn't return rows that should
+  //      already be expired), so we keep the RPC->SELECT order internally — but
+  //      the whole chain still runs in parallel with (1) and (3).
+  //   3. system_flags: standalone read, wrapped in try/catch in case the
+  //      migration hasn't run yet (defaults to null → kill switch defaults to enabled).
+  const [ordersResult, active, brainFlag] = await Promise.all([
+    supabase
+      .from('work_orders')
+      .select('id, title, intent, rationale, files_to_change, risk_level, category, workstream, spec, status, created_at, dispatched_at, completed_at, verified_at, auto_approved, verification_result, reverted_at')
+      .order('created_at', { ascending: false })
+      .limit(200),
+    (async (): Promise<ActiveDirective | null> => {
+      try { await supabase.rpc('expire_stale_directives') } catch {}
+      const { data } = await supabase
+        .from('brain_directives')
+        .select('id, title, description, workstream, expires_at, created_at, status')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      return (data ?? null) as ActiveDirective | null
+    })(),
+    (async (): Promise<BrainFlag | null> => {
+      try {
+        const { data } = await supabase
+          .from('system_flags')
+          .select('enabled, last_toggled_by, last_toggled_at, last_toggle_reason')
+          .eq('key', 'brain_tick')
+          .maybeSingle()
+        return (data ?? null) as BrainFlag | null
+      } catch {
+        return null
+      }
+    })(),
+  ])
 
+  const { data, error } = ordersResult
   const orders: WorkOrder[] = (data ?? []) as WorkOrder[]
-
-  // Try to expire stale directives, then read the active one.
-  try { await supabase.rpc('expire_stale_directives') } catch {}
-  const { data: activeDir } = await supabase
-    .from('brain_directives')
-    .select('id, title, description, workstream, expires_at, created_at, status')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const active: ActiveDirective | null = (activeDir ?? null) as ActiveDirective | null
-
-  // B-killswitch: read current brain_tick flag for the kill-switch panel.
-  // Best-effort: if the table doesn't exist yet (migration not run), render
-  // with a null flag and the component will default to the enabled state.
-  let brainFlag: BrainFlag | null = null
-  try {
-    const { data: flagRow } = await supabase
-      .from('system_flags')
-      .select('enabled, last_toggled_by, last_toggled_at, last_toggle_reason')
-      .eq('key', 'brain_tick')
-      .maybeSingle()
-    brainFlag = (flagRow ?? null) as BrainFlag | null
-  } catch {}
 
   return (
     <div style={{ minHeight: '100vh', background: '#F7F4F0', padding: '32px 40px' }}>
