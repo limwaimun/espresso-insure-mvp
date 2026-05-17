@@ -260,6 +260,28 @@ function containsMarketingPathChange(order: any): { blocked: boolean; matchedPat
   return { blocked: false };
 }
 
+// B-pe-21: normalize titles to a stem for dedupe in the do_not_propose list.
+// Brain was evading dedupe with cosmetic variants:
+//   "Add 'Maya' nav item to DashboardSidebar"
+//   "Add 'Maya' nav item to DashboardSidebar (single patch op)"
+//   "Add 'Maya' nav item to DashboardSidebar (single targeted patch)"
+// All three stem to the same string after this normalization, so they collapse
+// to one entry in do_not_propose with count=3.
+//
+// Conservative on purpose: strips parenthetical suffixes, normalizes smart
+// quotes, lowercases, collapses whitespace. Does NOT do semantic similarity —
+// genuinely different work like "Add Maya nav link" vs "Add Maya nav item"
+// (link/item) will still be different stems. That's fine — escalate to
+// embedding-based similarity only if this conservative pass leaves real leak.
+function titleStem(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)/g, "")             // strip parentheticals
+    .replace(/[\u2018\u2019\u201C\u201D]/g, "'") // smart quotes → straight
+    .replace(/\s+/g, " ")                       // collapse whitespace
+    .trim();
+}
+
 type ActiveDirective = { title: string; description: string | null; workstream: string; expires_at: string };
 
 function buildSystemPrompt(
@@ -304,7 +326,7 @@ This is a soft steer. Prefer proposing work consistent with this directive acros
 Next.js (Vercel), Supabase, Stripe, Resend, Anthropic.
 
 # How to think
-0. Read do_not_propose. If any item there matches what you're about to propose (same title or close paraphrase), STOP — pick different work, or ask Wayne a question instead of re-proposing.
+0. Read do_not_propose. If any item there matches what you're about to propose (same stem or close paraphrase), STOP — pick different work, or ask Wayne a question instead of re-proposing. Note: parenthetical variants like "(single patch op)" collapse to the same stem, so renaming will NOT evade this list.
 1. Read system_state. Notice what's actually happening — errors, traffic, urgent flags.
 2. Read recent_orders. What did we already try? What's pending?
 3. Read recent_answered_questions to honor your past clarifications from Wayne.
@@ -469,21 +491,26 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // B-pe-19 (Brain): assemble the do_not_propose list from two signals.
-    //   Signal A: work_orders status=failed OR (status=proposed + stale 3d, no approval)
+    // B-pe-19 (Brain) + B-pe-21: assemble the do_not_propose list from two signals.
+    //   Signal A: work_orders status IN (failed, done) OR (status=proposed + stale 3d, no approval)
+    //     - status=done was added in B-pe-21 because Brain was re-proposing already-shipped work
+    //       (e.g. "wire logAgentInvocation into harbour" was completed 5 times)
     //   Signal B: execution_log auto_approve_blocked_terminology + auto_approve_blocked_marketing_path entries
-    // Both deduped by title (case-insensitive), capped at 30 entries.
+    // Both deduped by TITLE STEM (B-pe-21) — case-insensitive AND parenthetical-stripped —
+    // so cosmetic variants like "X" / "X (write_file)" / "X (single patch op)" all collapse
+    // to one entry. Capped at 30 entries.
     const threeDaysAgo = new Date(Date.now() - 3 * 86400 * 1000).toISOString();
     const { data: rejectedOrders } = await supabase
       .from("work_orders")
       .select("title, status, created_at")
       .or(
         "status.eq.failed," +
+        "status.eq.done," +
         `and(status.eq.proposed,approved_by.is.null,created_at.lt.${threeDaysAgo})`
       )
       .gte("created_at", fourteenDaysAgo)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
 
     const { data: blockedByFilter } = await supabase
       .from("execution_log")
@@ -493,16 +520,27 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(30);
 
-    // Dedupe by title (case-insensitive). Most recent occurrence wins.
+    // Dedupe by title STEM (B-pe-21). Most recent occurrence wins for the displayed title.
+    // Count tracks how many times this stem appeared — useful signal for Brain to see
+    // "this stem has been proposed 7 times, definitely don't try again".
     const doNotProposeMap = new Map<string, { title: string; reason: string; count: number; last_seen: string }>();
     for (const r of (rejectedOrders ?? [])) {
       const t = (r.title ?? "").trim();
       if (!t) continue;
-      const key = t.toLowerCase();
-      const reason = r.status === "failed" ? "previously failed" : "silently rejected (3+ days no approval)";
+      const key = titleStem(t);
+      if (!key) continue;
+      let reason: string;
+      if (r.status === "failed") reason = "previously failed";
+      else if (r.status === "done") reason = "already shipped successfully";
+      else reason = "silently rejected (3+ days no approval)";
       const existing = doNotProposeMap.get(key);
       if (existing) {
         existing.count += 1;
+        // If new entry is more recent, take its title as the canonical display
+        if (r.created_at > existing.last_seen) {
+          existing.title = t;
+          existing.last_seen = r.created_at;
+        }
       } else {
         doNotProposeMap.set(key, { title: t, reason, count: 1, last_seen: r.created_at });
       }
@@ -513,11 +551,16 @@ export async function POST(req: NextRequest) {
         const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
         const t = (parsed?.title ?? "").trim();
         if (!t) continue;
-        const key = t.toLowerCase();
+        const key = titleStem(t);
+        if (!key) continue;
         const reason = `blocked by auto-approve filter (${parsed?.matched_pattern ?? parsed?.matched_path ?? "policy"})`;
         const existing = doNotProposeMap.get(key);
         if (existing) {
           existing.count += 1;
+          if (entry.created_at > existing.last_seen) {
+            existing.title = t;
+            existing.last_seen = entry.created_at;
+          }
         } else {
           doNotProposeMap.set(key, { title: t, reason, count: 1, last_seen: entry.created_at });
         }
@@ -534,11 +577,21 @@ export async function POST(req: NextRequest) {
     const userMessage = [
       `# Active workstream this tick: ${activeWorkstream} (tick #${tick_count})`,
       "",
-      "# do_not_propose (titles to NEVER re-propose — recently rejected or filter-blocked)",
+      "# do_not_propose (work to NEVER propose again — already shipped, failed, blocked, or stale)",
       "",
-      "Brain has previously proposed each of these titles and they were rejected or blocked.",
-      "Do NOT propose the same title or any meaningful paraphrase. Pick different work.",
-      "If you believe a rejected item is now worth re-attempting, ASK Wayne first via a question",
+      "Brain has previously proposed each stem here. They may have:",
+      "  - already SHIPPED (reason='already shipped successfully') — DO NOT re-propose duplicate work",
+      "  - FAILED (reason='previously failed') — same approach won't work, propose something else if needed",
+      "  - been BLOCKED by auto-approve filters (terminology, marketing-path)",
+      "  - sat in 'proposed' for 3+ days without approval (Wayne implicitly rejected them)",
+      "",
+      "Titles below are STEM-NORMALIZED — parenthetical variants like '(single patch op)',",
+      "'(write_file)', '(targeted patch)' collapse to one entry. The `count` field shows how",
+      "many times this stem has appeared. Renaming a title with new parentheticals or different",
+      "phrasing will NOT evade this list — it's keyed on the stem, not the surface text.",
+      "",
+      "Do NOT propose anything matching these stems. Pick different work.",
+      "If you believe an entry is now worth re-attempting, ASK Wayne first via a question",
       "rather than re-proposing autonomously.",
       "",
       "```json",
@@ -818,6 +871,7 @@ export async function POST(req: NextRequest) {
         notified: notifiedCount,
         tool_calls: toolCallCount,
         tool_log: toolCallLog,
+        do_not_propose_size: doNotPropose.length,
       }),
     });
 
