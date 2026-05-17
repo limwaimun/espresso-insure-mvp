@@ -1,21 +1,18 @@
 /**
- * Brief — factual policy-lookup agent.
- * ─────────────────────────────────────
- * Single-purpose agent that answers FACTUAL questions about a client's
- * existing policies by reading policies.parsed_summary (Layer A of the
- * policy parsing pipeline).
+ * Brief — factual policy-lookup agent. v2 (with anti-hallucination guardrails)
+ * ───────────────────────────────────────────────────────────────────────────
+ * Reads policies.parsed_summary (Layer A of the policy parsing pipeline) and
+ * answers FACTUAL questions. Not a recommendation engine. Not market analysis.
  *
- * Not the same as Compass — Compass does MARKET comparison ("which insurer
- * has the best cancer cover at this price point"), Brief does POLICY
- * lookup ("what does THIS client's existing policy say about cancer").
- *
- * Future-grow path (not in this version):
- *   - Read policy_sections (Layer B) for specific clauses by page
- *   - RAG-retrieve from policy_doc_chunks (Layer C) for arbitrary text lookups
- *
- * Called via Relay (intent: policy_lookup). Dual-auth like Compass — accepts
- * session OR x-relay-key. Always re-queries with userId scope, never trusts
- * pre-loaded data from upstream callers.
+ * Hardening added in v2 (after observing Maya quote AIA hotline + MyAIA app
+ * from training data on 2026-05-17):
+ *   - System prompt is much more emphatic about citing fields and refusing
+ *     to fill any gap from general knowledge.
+ *   - policy_facts_used is now REQUIRED in output, not optional. If the LLM
+ *     can't cite specific fields, the answer is suspect.
+ *   - Explicit forbidden categories: phone numbers, URLs, app names, hospital
+ *     names, doctor names, panel lists, claim filing procedure (unless in
+ *     parsed_summary), regulatory citations beyond what's in the data.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -61,25 +58,24 @@ interface ClientRow {
 }
 
 interface BriefRequestBody {
-  faId?: string         // accepted for backward-compat; ignored — we use auth.userId
-  clientId?: string     // load all policies for this client
-  policyId?: string     // OR load just this specific policy
-  query: string         // the question to answer
+  faId?: string
+  clientId?: string
+  policyId?: string
+  query: string
 }
 
 interface BriefAnalysis {
   answer: string
-  policy_facts_used?: string[]
-  confidence?: 'definite' | 'implied' | 'unknown'
-  caveats?: string | null
-  needs_other_agent?: string | null
+  policy_facts_used: string[]  // REQUIRED — must cite specific fields used
+  confidence: 'definite' | 'implied' | 'unknown'
+  caveats: string | null
+  needs_other_agent: string | null
 }
 
 export async function POST(request: NextRequest) {
   const start = Date.now()
 
   try {
-    // ── Auth (accept session OR relay-internal) ─────────────────────────────
     const auth = await authenticateAgentRequest(request)
     if (!auth.ok) {
       await logAgentInvocation({
@@ -94,7 +90,6 @@ export async function POST(request: NextRequest) {
     }
     const userId = auth.userId
 
-    // ── Rate limit ───────────────────────────────────────────────────────────
     const rl = checkRateLimit(userId, 'brief')
     if (!rl.allowed) {
       await logAgentInvocation({
@@ -108,7 +103,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 })
     }
 
-    // ── Parse body ───────────────────────────────────────────────────────────
     const body = (await request.json()) as BriefRequestBody
     const { faId: _unused, clientId, policyId, query } = body
 
@@ -123,9 +117,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Need either clientId or policyId' }, { status: 400 })
     }
 
-    // ── Load policies, scoped to verified userId ────────────────────────────
-    // SECURITY: ignore any pre-loaded data; re-query with ownership check.
-    // Same defense pattern as Compass.
     let policies: PolicyRow[] = []
 
     if (policyId) {
@@ -161,14 +152,14 @@ export async function POST(request: NextRequest) {
         mayaSummary: 'No policies on record for this client.',
         analysis: {
           answer: 'No policies on record for this client.',
+          policy_facts_used: [],
           confidence: 'definite' as const,
           caveats: null,
           needs_other_agent: null,
-        },
+        } satisfies BriefAnalysis,
       })
     }
 
-    // ── Load client for context (optional, only if clientId given) ──────────
     let clientData: ClientRow | null = null
     if (clientId) {
       const { data } = await supabase
@@ -180,32 +171,65 @@ export async function POST(request: NextRequest) {
       clientData = data as ClientRow | null
     }
 
-    // ── Detect how much parse data we actually have ─────────────────────────
     const parsedCount = policies.filter(p => p.parsed_summary != null).length
     const unparsedCount = policies.length - parsedCount
 
-    // ── Build the briefing block for the LLM ────────────────────────────────
     const policyBriefs = policies.map(p => formatPolicyBrief(p)).join('\n\n---\n\n')
 
-    // ── System prompt ────────────────────────────────────────────────────────
-    const systemPrompt = `You are Brief, a Singapore insurance policy expert. Your single job is to answer factual questions about a CLIENT'S OWN EXISTING POLICIES by reading the structured policy data provided to you.
+    // ── System prompt (anti-hallucination hardened) ─────────────────────────
+    const systemPrompt = `You are Brief, a Singapore insurance policy expert. Your ONLY job is to answer factual questions about a CLIENT'S OWN EXISTING POLICIES using ONLY the structured policy data provided below.
 
-You are NOT a recommendation engine. You are NOT a market comparison engine. You report what the policies say, with citations and confidence.
+YOU ARE NOT a recommendation engine. YOU ARE NOT a market comparison engine. YOU REPORT WHAT THE POLICY DATA SAYS, with field-level citations.
 
-RULES:
-1. NEVER make up numbers, conditions, dates, or coverage details that are not present in the policy data. If something isn't in the data, say so.
-2. Always include a confidence level:
-   - "definite": the data clearly shows this
-   - "implied": reasonable inference from the data (e.g. an IS plan covers hospitalization even if not stated literally)
-   - "unknown": the data doesn't address this question
-3. Currency is SGD unless explicitly stated otherwise.
-4. This is FACTUAL REPORTING. Do not give advice, do not recommend changes, do not warn about gaps (Compass does that). Just answer the question.
-5. If the question asks about something this data can't answer (e.g. specific hospital networks, claim filing procedure, comparing to other insurers), say so and suggest which other agent could help:
-   - For claim filing → Atlas
-   - For comparing to other insurers / coverage gaps → Compass
-   - For premium estimates on new coverage → Sage
-6. Be concise. The answer goes into a WhatsApp conversation, so 1-4 sentences usually. Use specific numbers where possible.
-7. If the extraction_confidence on a policy is "low" or "medium", mention that caveat in your answer.`
+═══════════════════════════════════════════
+CRITICAL: SOURCING RULES (read twice)
+═══════════════════════════════════════════
+
+Every fact you state MUST come from the policy data block below. ZERO exceptions.
+
+You MAY NOT supply from your own knowledge:
+  ❌ Insurer hotline numbers, customer service phone numbers, any phone number
+  ❌ Mobile app names (e.g. "MyAIA app", "GE Wellness app") — these may not exist or have been renamed
+  ❌ Website URLs (e.g. "aia.com.sg") — these may have changed
+  ❌ Hospital names (panel hospitals, recommended hospitals, ANY hospital)
+  ❌ Doctor or specialist names
+  ❌ Specific claim filing steps unless explicitly stated in the policy data
+  ❌ Reimbursement timeframes (e.g. "7-14 days") unless explicitly stated in the policy data
+  ❌ Insurer process details (LOG letters, cashless admission, etc.) unless explicitly stated in the policy data
+  ❌ Premium market rates, market comparisons, or "average" figures
+  ❌ MAS regulations beyond the general IS/MediShield framework (and only if the data references them)
+
+If a question asks for any of the above, your answer must be a polite "I don't have that detail in the policy data" with a needs_other_agent suggestion.
+
+What you CAN do:
+  ✅ Quote specific values from parsed_summary fields (premium, deductible, co-insurance, sum_assured, exclusions, etc.)
+  ✅ Quote text from notes_on_money / notes_on_dates / notes_on_coverage exactly as written
+  ✅ Make REASONABLE structural inferences (e.g. "IS plan means it works alongside MediShield Life" — this is structurally true of all IS plans)
+  ✅ Refer to rider effects when they're stated in riders_attached[].effect_summary
+  ✅ Cite policy_number and plan_name to be specific
+
+═══════════════════════════════════════════
+OUTPUT RULES
+═══════════════════════════════════════════
+
+1. policy_facts_used: REQUIRED. List each specific field you cited (e.g. "annual_deductible: 3500", "riders_attached[0].effect_summary"). If you can't cite specific fields, your answer is suspect — return confidence "unknown".
+
+2. confidence:
+   - "definite": value comes literally from a parsed_summary field
+   - "implied": reasonable inference from structural facts (e.g. IS plan = MediShield integration)
+   - "unknown": data doesn't address the question
+
+3. needs_other_agent: name the agent who CAN answer the unanswerable part:
+   - Claim filing procedure → "Atlas"
+   - Market comparison → "Compass"
+   - Premium estimates on new coverage → "Sage"
+   - Panel hospitals/doctors → "I don't have a panel agent — recommend FA pulls the live list from the insurer"
+
+4. Be concise. The answer is going into a WhatsApp message. 1-4 sentences typically.
+
+5. Currency is SGD unless explicitly stated.
+
+6. If extraction_confidence on the policy is "low" or "medium", mention that in caveats.`
 
     // ── User prompt ──────────────────────────────────────────────────────────
     const clientHeader = clientData
@@ -225,13 +249,13 @@ ${policyBriefs}${parseStatusNote}
 QUESTION (asked by Maya on behalf of the client or FA):
 ${query}
 
-Answer the question using ONLY the policy data above. Respond as JSON:
+Answer using ONLY the policy data above. Cite specific field names in policy_facts_used. Respond as JSON:
 {
-  "answer": "the substantive answer in natural language, 1-4 sentences",
-  "policy_facts_used": ["each specific fact you cited, with the value"],
+  "answer": "your answer in natural language, 1-4 sentences",
+  "policy_facts_used": ["specific field references — e.g. 'annual_deductible: 3500', 'riders_attached[0].name', 'notes_on_coverage'"],
   "confidence": "definite" | "implied" | "unknown",
   "caveats": "any caveats Maya should know, or null",
-  "needs_other_agent": "name of another agent who could answer the unanswered part, or null"
+  "needs_other_agent": "name of agent or null"
 }`
 
     const response = await anthropic.messages.create({
@@ -246,15 +270,28 @@ Answer the question using ONLY the policy data above. Respond as JSON:
     let analysis: BriefAnalysis
     try {
       const clean = rawText.replace(/```json|```/g, '').trim()
-      analysis = JSON.parse(clean) as BriefAnalysis
-      if (!analysis.answer) analysis.answer = rawText
+      const parsed = JSON.parse(clean)
+      analysis = {
+        answer: typeof parsed.answer === 'string' ? parsed.answer : rawText,
+        policy_facts_used: Array.isArray(parsed.policy_facts_used) ? parsed.policy_facts_used : [],
+        confidence: ['definite', 'implied', 'unknown'].includes(parsed.confidence) ? parsed.confidence : 'unknown',
+        caveats: typeof parsed.caveats === 'string' ? parsed.caveats : null,
+        needs_other_agent: typeof parsed.needs_other_agent === 'string' ? parsed.needs_other_agent : null,
+      }
     } catch {
       analysis = {
         answer: rawText,
+        policy_facts_used: [],
         confidence: 'unknown',
         caveats: 'Brief failed to produce structured output; raw text returned.',
         needs_other_agent: null,
       }
+    }
+
+    // Soft guard: if confidence is "definite" but no facts were cited, downgrade.
+    if (analysis.confidence === 'definite' && analysis.policy_facts_used.length === 0) {
+      analysis.confidence = 'unknown'
+      analysis.caveats = (analysis.caveats ? analysis.caveats + ' ' : '') + 'Auto-downgraded: claimed definite but cited no specific fields.'
     }
 
     const mayaSummary = analysis.answer
@@ -275,6 +312,7 @@ Answer the question using ONLY the policy data above. Respond as JSON:
         policyCount: policies.length,
         parsedCount,
         confidence: analysis.confidence,
+        factsCitedCount: analysis.policy_facts_used.length,
         needsOtherAgent: analysis.needs_other_agent || null,
       },
     })
@@ -302,19 +340,12 @@ Answer the question using ONLY the policy data above. Respond as JSON:
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * Render a policy row as a human-readable, LLM-digestible briefing block.
- * Uses parsed_summary if available; falls back to basic columns otherwise.
- */
 function formatPolicyBrief(p: PolicyRow): string {
   const lines: string[] = []
   lines.push(`Policy ID: ${p.id}`)
 
   const brief = p.parsed_summary
   if (!brief) {
-    // Unparsed — just the basic columns
     if (p.product_name) lines.push(`Product: ${p.product_name}`)
     if (p.type) lines.push(`Type: ${p.type}`)
     if (p.insurer) lines.push(`Insurer: ${p.insurer}`)
@@ -329,44 +360,41 @@ function formatPolicyBrief(p: PolicyRow): string {
     return lines.join('\n')
   }
 
-  // Parsed — emit the structured brief
-  if (brief.plan_name) lines.push(`Plan name: ${brief.plan_name}`)
-  if (brief.product_family) lines.push(`Product family: ${brief.product_family}`)
-  if (brief.plan_tier) lines.push(`Plan tier: ${brief.plan_tier}`)
-  lines.push(`Insurer: ${brief.insurer_name || p.insurer || 'unknown'}`)
-  lines.push(`Regulatory type: ${brief.regulatory_type}`)
-  lines.push(`Status: ${brief.policy_status}`)
-  if (brief.policy_number) lines.push(`Policy number: ${brief.policy_number}`)
+  if (brief.plan_name) lines.push(`plan_name: ${brief.plan_name}`)
+  if (brief.product_family) lines.push(`product_family: ${brief.product_family}`)
+  if (brief.plan_tier) lines.push(`plan_tier: ${brief.plan_tier}`)
+  lines.push(`insurer_name: ${brief.insurer_name || p.insurer || 'unknown'}`)
+  lines.push(`regulatory_type: ${brief.regulatory_type}`)
+  lines.push(`policy_status: ${brief.policy_status}`)
+  if (brief.policy_number) lines.push(`policy_number: ${brief.policy_number}`)
 
-  // Money
   const currency = brief.currency || 'SGD'
   if (brief.annual_premium != null) {
-    lines.push(`Annual premium: ${currency} ${brief.annual_premium} (${brief.premium_frequency})`)
+    lines.push(`annual_premium: ${currency} ${brief.annual_premium} (${brief.premium_frequency})`)
   }
-  if (brief.sum_assured != null) lines.push(`Sum assured: ${currency} ${brief.sum_assured}`)
+  if (brief.sum_assured != null) lines.push(`sum_assured: ${currency} ${brief.sum_assured}`)
   if (brief.annual_deductible != null) {
-    lines.push(`Annual deductible: ${currency} ${brief.annual_deductible}`)
+    lines.push(`annual_deductible: ${currency} ${brief.annual_deductible}`)
   }
   if (brief.co_insurance_percent != null) {
-    let coinsuranceLine = `Co-insurance: ${brief.co_insurance_percent}%`
+    let coinsuranceLine = `co_insurance_percent: ${brief.co_insurance_percent}%`
     if (brief.co_insurance_cap != null) {
-      coinsuranceLine += ` (cap ${currency} ${brief.co_insurance_cap})`
+      coinsuranceLine += ` (co_insurance_cap: ${currency} ${brief.co_insurance_cap})`
     }
     lines.push(coinsuranceLine)
   }
   if (brief.annual_claim_limit != null) {
-    lines.push(`Annual claim limit: ${currency} ${brief.annual_claim_limit}`)
+    lines.push(`annual_claim_limit: ${currency} ${brief.annual_claim_limit}`)
   }
   if (brief.lifetime_claim_limit != null) {
-    lines.push(`Lifetime claim limit: ${currency} ${brief.lifetime_claim_limit}`)
+    lines.push(`lifetime_claim_limit: ${currency} ${brief.lifetime_claim_limit}`)
   } else if (brief.notes_on_money?.toLowerCase().includes('unlimited')) {
-    lines.push(`Lifetime claim limit: unlimited (per policy notes)`)
+    lines.push(`lifetime_claim_limit: null (notes_on_money says "Unlimited")`)
   }
 
-  // Coverage
-  lines.push(`Death benefit: ${brief.death_benefit ? 'yes' : 'no'}`)
-  lines.push(`Terminal illness benefit: ${brief.terminal_illness_benefit ? 'yes' : 'no'}`)
-  lines.push(`TPD (total permanent disability) benefit: ${brief.tpd_benefit ? 'yes' : 'no'}`)
+  lines.push(`death_benefit: ${brief.death_benefit}`)
+  lines.push(`terminal_illness_benefit: ${brief.terminal_illness_benefit}`)
+  lines.push(`tpd_benefit: ${brief.tpd_benefit}`)
   if (brief.ci_coverage) {
     const stages: string[] = []
     if (brief.ci_coverage.early_stage) stages.push('early')
@@ -376,57 +404,53 @@ function formatPolicyBrief(p: PolicyRow): string {
     const condStr = brief.ci_coverage.total_conditions_covered
       ? ` (${brief.ci_coverage.total_conditions_covered} conditions)`
       : ''
-    lines.push(`Critical illness coverage: ${stagesStr}${condStr}`)
+    lines.push(`ci_coverage: ${stagesStr}${condStr}`)
   }
   if (brief.riders_attached && brief.riders_attached.length > 0) {
-    const riders = brief.riders_attached.map(r => r.name).join(', ')
-    lines.push(`Riders attached: ${riders}`)
+    lines.push(`riders_attached:`)
+    brief.riders_attached.forEach((r, i) => {
+      const premiumStr = r.annual_premium != null ? `, annual_premium: ${currency} ${r.annual_premium}` : ''
+      const effectStr = r.effect_summary ? `, effect_summary: "${r.effect_summary}"` : ''
+      lines.push(`  [${i}] name: ${r.name}${premiumStr}${effectStr}`)
+    })
   }
 
-  // Pre-existing
-  lines.push(`Pre-existing conditions: ${brief.pre_existing_excluded ? 'EXCLUDED' : 'not flagged as excluded'}`)
+  lines.push(`pre_existing_excluded: ${brief.pre_existing_excluded}`)
 
-  // Exclusions
   if (brief.notable_exclusions && brief.notable_exclusions.length > 0) {
-    lines.push(`Notable exclusions:`)
-    brief.notable_exclusions.forEach(e => lines.push(`  - ${e}`))
+    lines.push(`notable_exclusions:`)
+    brief.notable_exclusions.forEach((e, i) => lines.push(`  [${i}] ${e}`))
   }
 
-  // Dates
-  if (brief.cover_start_date) lines.push(`Cover start date: ${brief.cover_start_date}`)
-  if (brief.renewal_date) lines.push(`Renewal date: ${brief.renewal_date}`)
-  if (brief.maturity_date) lines.push(`Maturity date: ${brief.maturity_date}`)
+  if (brief.cover_start_date) lines.push(`cover_start_date: ${brief.cover_start_date}`)
+  if (brief.renewal_date) lines.push(`renewal_date: ${brief.renewal_date}`)
+  if (brief.maturity_date) lines.push(`maturity_date: ${brief.maturity_date}`)
   if (brief.premium_cessation_date) {
-    lines.push(`Premium cessation date: ${brief.premium_cessation_date}`)
+    lines.push(`premium_cessation_date: ${brief.premium_cessation_date}`)
   }
+  if (brief.issue_date) lines.push(`issue_date: ${brief.issue_date}`)
 
-  // Free-text caveats
-  if (brief.notes_on_money) lines.push(`Notes on money: ${brief.notes_on_money}`)
-  if (brief.notes_on_dates) lines.push(`Notes on dates: ${brief.notes_on_dates}`)
-  if (brief.notes_on_coverage) lines.push(`Notes on coverage: ${brief.notes_on_coverage}`)
+  if (brief.notes_on_money) lines.push(`notes_on_money: "${brief.notes_on_money}"`)
+  if (brief.notes_on_dates) lines.push(`notes_on_dates: "${brief.notes_on_dates}"`)
+  if (brief.notes_on_coverage) lines.push(`notes_on_coverage: "${brief.notes_on_coverage}"`)
 
-  // Beneficiaries (light touch — names + relationship)
   if (brief.beneficiaries && brief.beneficiaries.length > 0) {
-    const beneStrs = brief.beneficiaries.map(b => {
+    lines.push(`beneficiaries (nomination_type: ${brief.nomination_type}):`)
+    brief.beneficiaries.forEach((b, i) => {
       const parts = [b.name]
       if (b.relationship) parts.push(b.relationship)
       if (b.share_percent != null) parts.push(`${b.share_percent}%`)
-      return parts.join(' / ')
+      lines.push(`  [${i}] ${parts.join(' / ')}`)
     })
-    lines.push(`Beneficiaries (nomination: ${brief.nomination_type}): ${beneStrs.join('; ')}`)
   }
 
-  // FA flags
   if (brief.fa_review_flags && brief.fa_review_flags.length > 0) {
-    lines.push(`FA review flags: ${brief.fa_review_flags.join('; ')}`)
+    lines.push(`fa_review_flags: ${brief.fa_review_flags.join('; ')}`)
   }
 
-  // Confidence
-  if (brief.extraction_confidence !== 'high') {
-    lines.push(`⚠ Extraction confidence: ${brief.extraction_confidence}`)
-  }
+  lines.push(`extraction_confidence: ${brief.extraction_confidence}`)
   if (brief.fields_with_low_confidence && brief.fields_with_low_confidence.length > 0) {
-    lines.push(`⚠ Low-confidence fields: ${brief.fields_with_low_confidence.join(', ')}`)
+    lines.push(`fields_with_low_confidence: ${brief.fields_with_low_confidence.join(', ')}`)
   }
 
   return lines.join('\n')
