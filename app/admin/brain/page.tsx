@@ -4,7 +4,6 @@ import { getAdminUser } from '@/lib/admin'
 import BrainOrdersList from './components/BrainOrdersList'
 import DirectivePanel from './components/DirectivePanel'
 import BrainModelPanel from './components/BrainModelPanel'
-import AgentModelsPanel from './components/AgentModelsPanel'
 import AnthropicLimitBanner from './components/AnthropicLimitBanner'
 import BrainKillSwitch from './components/BrainKillSwitch'
 import type { ActiveDirective } from './components/DirectivePanel'
@@ -33,7 +32,7 @@ export interface WorkOrder {
 }
 
 export default async function BrainAdminPage() {
-  // getAdminUser is now wrapped in React cache() — this call dedupes with the
+  // getAdminUser is wrapped in React cache() — this call dedupes with the
   // identical call in app/admin/layout.tsx so we pay one auth roundtrip, not two.
   const user = await getAdminUser()
   if (!user) redirect('/dashboard')
@@ -43,10 +42,7 @@ export default async function BrainAdminPage() {
   const supabase = createClient(url, key)
 
   // PERF: run the three independent query chains in parallel via Promise.all.
-  // Previously these ran sequentially, accounting for most of the ~4.2s RSC fetch
-  // time observed in DevTools. With parallel execution the total time is roughly
-  // the slowest single query rather than the sum of all three.
-  //
+  // Previously sequential — see commit history for the 4.2s → 3.35s win.
   //   1. work_orders: standalone read
   //   2. directive chain: expire_stale_directives RPC must run BEFORE the
   //      brain_directives SELECT (so the SELECT doesn't return rows that should
@@ -112,7 +108,6 @@ export default async function BrainAdminPage() {
             <BrainKillSwitch initial={brainFlag} />
             <AnthropicLimitBanner />
             <BrainModelPanel />
-            <AgentModelsPanel />
             <DirectivePanel active={active} />
             <BrainOrdersList orders={orders} />
           </>

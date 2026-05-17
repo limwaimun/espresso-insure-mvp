@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import AgentModelsPanel from './components/AgentModelsPanel'
 
 const AGENTS = [
   { name: 'Maya', route: '/api/maya-playground', status: 'live', role: 'Client relationship & WhatsApp', version: 'v7', description: 'Handles client conversations, collects claim info, updates claim status via WhatsApp.' },
@@ -238,6 +239,9 @@ export default function AdminAgentsPage() {
           </>
         )}
       </div>
+
+      {/* ── Agent models (moved from /admin/brain) ── */}
+      <AgentModelsPanel />
 
       {/* ── Agent fleet list ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
