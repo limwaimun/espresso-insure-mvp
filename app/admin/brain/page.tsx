@@ -6,7 +6,9 @@ import DirectivePanel from './components/DirectivePanel'
 import BrainModelPanel from './components/BrainModelPanel'
 import AgentModelsPanel from './components/AgentModelsPanel'
 import AnthropicLimitBanner from './components/AnthropicLimitBanner'
+import BrainKillSwitch from './components/BrainKillSwitch'
 import type { ActiveDirective } from './components/DirectivePanel'
+import type { BrainFlag } from './components/BrainKillSwitch'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,6 +59,19 @@ export default async function BrainAdminPage() {
     .maybeSingle()
   const active: ActiveDirective | null = (activeDir ?? null) as ActiveDirective | null
 
+  // B-killswitch: read current brain_tick flag for the kill-switch panel.
+  // Best-effort: if the table doesn't exist yet (migration not run), render
+  // with a null flag and the component will default to the enabled state.
+  let brainFlag: BrainFlag | null = null
+  try {
+    const { data: flagRow } = await supabase
+      .from('system_flags')
+      .select('enabled, last_toggled_by, last_toggled_at, last_toggle_reason')
+      .eq('key', 'brain_tick')
+      .maybeSingle()
+    brainFlag = (flagRow ?? null) as BrainFlag | null
+  } catch {}
+
   return (
     <div style={{ minHeight: '100vh', background: '#F7F4F0', padding: '32px 40px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -78,6 +93,7 @@ export default async function BrainAdminPage() {
           </div>
         ) : (
           <>
+            <BrainKillSwitch initial={brainFlag} />
             <AnthropicLimitBanner />
             <BrainModelPanel />
             <AgentModelsPanel />

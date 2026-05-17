@@ -405,6 +405,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // B-killswitch: bail early if Brain has been paused by admin toggle.
+  // Fail-open: if system_flags is unreadable (missing migration, transient DB error),
+  // proceed with the tick. Better to run when we shouldn't than to silently never run.
+  try {
+    const { data: brainFlag } = await supabase
+      .from("system_flags")
+      .select("enabled, last_toggled_by, last_toggled_at, last_toggle_reason")
+      .eq("key", "brain_tick")
+      .maybeSingle();
+
+    if (brainFlag && brainFlag.enabled === false) {
+      await supabase.from("execution_log").insert({
+        action: "tick_skipped_brain_paused",
+        success: true,
+        raw_output: JSON.stringify({
+          paused_by: brainFlag.last_toggled_by,
+          paused_at: brainFlag.last_toggled_at,
+          reason: brainFlag.last_toggle_reason,
+        }),
+      });
+      return NextResponse.json({ ok: true, skipped: true, reason: "brain_paused" });
+    }
+  } catch (err: any) {
+    console.warn("brain_tick: system_flags check failed, proceeding:", err?.message ?? err);
+  }
+
   // B74: read Brain model from brain_settings (cached 5s, falls back to default).
   const brainModel = await getCurrentBrainModel();
   const startedAt = Date.now();
