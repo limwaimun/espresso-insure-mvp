@@ -8,9 +8,11 @@
 //   - The eval harness inject a mock dispatcher (no DB, scripted responses)
 //   - Future WhatsApp webhook inject the same real dispatcher as playground
 //
-// Chunk 1a (current): Maya has one tool, update_claim. Same as existing playground.
-// Chunk 1b (next deploy): refactor playground to call into this lib.
-// Chunk 2 (next session): add call_relay tool + modify Relay to accept x-relay-key.
+// Current tools:
+//   - update_claim: directly mutate alerts.status/priority for a known claim
+//   - call_relay: invoke Relay to route a question to a specialist agent and
+//     get a substantive answer back. This is Maya's connection to the rest of
+//     the agent fleet (Brief, Compass, Lens, Sage, Atlas, Scout, Harbour).
 
 import type Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -43,7 +45,32 @@ export const UPDATE_CLAIM_TOOL: Anthropic.Tool = {
   },
 }
 
-export const MAYA_TOOLS: Anthropic.Tool[] = [UPDATE_CLAIM_TOOL]
+export const CALL_RELAY_TOOL: Anthropic.Tool = {
+  name: 'call_relay',
+  description: `Route a question to the right specialist agent and receive a substantive, factual answer. Use this for ANY question that needs specific facts about: a client's existing policies, coverage details, deductibles, co-insurance, exclusions, sum assured, claim limits, premiums, coverage gaps, market comparisons, claim filing procedure, portfolio analytics, or investment holdings.
+
+This is your connection to the rest of the platform. ALWAYS try this BEFORE deflecting to the FA — you have access to parsed policy data and specialist analysis via this tool.
+
+Reformulate the client's casual question into a clear, specific query before calling. Example: client says "what about my knee?" → query: "What does the client's health policy cover for knee surgery, including deductibles, co-insurance, and panel hospital requirements?"
+
+The tool returns a JSON object with: ok (whether the call succeeded), routed_to (which specialist answered), intent (what was classified), answer (the substantive response in natural language). Read 'answer' carefully and synthesize it into warm, conversational language for the client — DO NOT just paste the JSON.`,
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      query: {
+        type: 'string',
+        description: 'A specific, well-formed question for the specialist. Reformulate the client\'s natural question into something explicit and self-contained. Include the client\'s name and any relevant context the specialist will need.',
+      },
+      client_id: {
+        type: 'string',
+        description: 'The current client\'s UUID (use the value provided in the CLIENT PROFILE section of your system context).',
+      },
+    },
+    required: ['query', 'client_id'],
+  },
+}
+
+export const MAYA_TOOLS: Anthropic.Tool[] = [UPDATE_CLAIM_TOOL, CALL_RELAY_TOOL]
 
 // ── Tool input types ────────────────────────────────────────────────────────
 
@@ -51,6 +78,11 @@ export interface UpdateClaimInput {
   claim_id: string
   status?: 'open' | 'in_progress' | 'resolved'
   priority?: 'low' | 'medium' | 'high'
+}
+
+export interface CallRelayInput {
+  query: string
+  client_id: string
 }
 
 // ── Dispatcher contract ─────────────────────────────────────────────────────
@@ -65,19 +97,23 @@ export interface UpdateClaimInput {
  */
 export type ToolDispatcher = (toolName: string, input: unknown) => Promise<string>
 
-// ── Real dispatcher factory (Supabase-backed) ───────────────────────────────
+// ── Real dispatcher factory (Supabase-backed + Relay HTTP-backed) ───────────
 
 export interface MayaDispatcherContext {
   supabase: SupabaseClient
-  faId: string                    // verified userId — used to scope DB writes
-  claimLookup: Record<string, OpenClaim>  // for friendly "claim title" in result strings
+  faId: string                    // verified userId — used for DB scoping AND as x-relay-user-id
+  claimLookup: Record<string, OpenClaim>  // for friendly "claim title" in update_claim result strings
 }
 
 /**
- * Build a dispatcher that executes Maya's tools against real Supabase.
- * The playground route (and future webhook) uses this.
+ * Build a dispatcher that executes Maya's tools against real systems:
+ *   - update_claim → Supabase
+ *   - call_relay → POST to /api/relay with internal auth header
+ *
+ * The playground route uses this. The future WhatsApp webhook uses this.
  */
 export function createMayaToolDispatcher(ctx: MayaDispatcherContext): ToolDispatcher {
+  // ── update_claim impl ─────────────────────────────────────────────────────
   const dispatchUpdateClaim = async (input: UpdateClaimInput): Promise<string> => {
     if (!input.claim_id) return 'Error: missing claim_id'
 
@@ -93,7 +129,6 @@ export function createMayaToolDispatcher(ctx: MayaDispatcherContext): ToolDispat
     }
 
     // Scoped to verified userId — prevents claim updates on other FAs' data.
-    // Same pattern as the original playground route.
     const { error } = await ctx.supabase
       .from('alerts')
       .update(patch)
@@ -110,9 +145,109 @@ export function createMayaToolDispatcher(ctx: MayaDispatcherContext): ToolDispat
     return `Successfully updated claim "${claim?.title ?? input.claim_id}": ${summary}`
   }
 
+  // ── call_relay impl ───────────────────────────────────────────────────────
+  // Maya invokes Relay over HTTP with internal-auth credentials. Relay handles
+  // intent classification and dispatch to the appropriate specialist agent
+  // (Brief, Compass, Lens, etc.), then returns the specialist's answer.
+  //
+  // We normalize Relay's response: extract the specialist's natural-language
+  // answer if present, fall back to the full result otherwise. This keeps Maya
+  // focused on the answer instead of parsing each specialist's bespoke shape.
+  const dispatchCallRelay = async (input: CallRelayInput): Promise<string> => {
+    if (!input.query || typeof input.query !== 'string') {
+      return 'Error: missing or invalid query'
+    }
+    if (!input.client_id || typeof input.client_id !== 'string') {
+      return 'Error: missing or invalid client_id'
+    }
+
+    const key = process.env.RELAY_INTERNAL_KEY
+    if (!key) {
+      return 'Error: RELAY_INTERNAL_KEY not configured on this server'
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://espresso.insure'
+
+    try {
+      const res = await fetch(`${baseUrl}/api/relay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-relay-key': key,
+          'x-relay-user-id': ctx.faId,
+        },
+        body: JSON.stringify({
+          message: input.query,
+          clientId: input.client_id,
+        }),
+      })
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '(no body)')
+        return `Relay returned ${res.status}: ${errText.slice(0, 500)}`
+      }
+
+      const data = await res.json() as {
+        intent?: string
+        summary?: string
+        agent?: string
+        result?: {
+          mayaSummary?: string
+          analysis?: { answer?: string; confidence?: string; caveats?: string | null; needs_other_agent?: string | null }
+          [k: string]: unknown
+        }
+        message?: string  // present when intent is 'unknown'
+      }
+
+      // Unknown intent — Relay couldn't classify. Pass back the clarification ask.
+      if (data.intent === 'unknown' && data.message) {
+        return JSON.stringify({
+          ok: false,
+          reason: 'intent_unknown',
+          message: data.message,
+        })
+      }
+
+      // Standard path — extract the natural-language answer if available.
+      const answer = data.result?.mayaSummary || data.result?.analysis?.answer || null
+      const analysisMeta = data.result?.analysis
+        ? {
+            confidence: data.result.analysis.confidence,
+            caveats: data.result.analysis.caveats,
+            needs_other_agent: data.result.analysis.needs_other_agent,
+          }
+        : undefined
+
+      if (answer) {
+        return JSON.stringify({
+          ok: true,
+          routed_to: data.agent,
+          intent: data.intent,
+          answer,
+          ...(analysisMeta ? { meta: analysisMeta } : {}),
+        })
+      }
+
+      // Specialist didn't produce a clean mayaSummary — return the full result
+      // for Maya to interpret. Less ideal but keeps her unblocked.
+      return JSON.stringify({
+        ok: true,
+        routed_to: data.agent,
+        intent: data.intent,
+        full_result: data.result,
+      })
+    } catch (err) {
+      return `Relay call failed: ${err instanceof Error ? err.message : String(err)}`
+    }
+  }
+
+  // ── Dispatch ──────────────────────────────────────────────────────────────
   return async function dispatch(toolName, input) {
     if (toolName === 'update_claim') {
       return dispatchUpdateClaim(input as UpdateClaimInput)
+    }
+    if (toolName === 'call_relay') {
+      return dispatchCallRelay(input as CallRelayInput)
     }
     return `Error: unknown tool "${toolName}"`
   }
@@ -130,8 +265,11 @@ export function createMayaToolDispatcher(ctx: MayaDispatcherContext): ToolDispat
  *     update_claim: 'Successfully updated claim "Cancer Diagnosis": status = resolved',
  *     call_relay: (input) => {
  *       const query = (input as { query?: string }).query ?? ''
- *       if (/cancer|cover/i.test(query)) return JSON.stringify({ routed_to: 'compass', ... })
- *       return JSON.stringify({ routed_to: 'unknown' })
+ *       if (/cancer|cover/i.test(query)) return JSON.stringify({
+ *         ok: true, routed_to: 'brief', intent: 'policy_lookup',
+ *         answer: 'AIA HealthShield covers cancer treatment up to $200K...',
+ *       })
+ *       return JSON.stringify({ ok: false, reason: 'intent_unknown' })
  *     },
  *   })
  */

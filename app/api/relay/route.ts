@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
-import { verifySession } from '@/lib/auth-middleware'
+import { authenticateAgentRequest } from '@/lib/agent-auth'
 import { logAgentInvocation } from '@/lib/agent-log'
 import { checkRateLimit } from '@/lib/agent-rate-limit'
 import { resolveAgentModel } from '@/lib/agent-model'
@@ -24,12 +24,14 @@ type Intent =
   | 'coverage_gap'
   | 'investment_research'    // Scout: research a fund or ETF
   | 'portfolio_review'       // Harbour: review client investment holdings
+  | 'policy_lookup'          // Brief: factual questions about an EXISTING client policy
   | 'unknown'
 
 interface RelayRequest {
   message: string          // Natural language request
-  faId?: string           // Accepted for backward-compat but ignored (use session)
+  faId?: string           // Accepted for backward-compat but ignored (use auth)
   clientId?: string        // Optional context
+  policyId?: string        // Optional — present when caller wants a specific policy
   context?: Record<string, unknown>  // Any additional context
 }
 
@@ -46,21 +48,28 @@ async function classifyIntent(message: string, hasClientContext: boolean): Promi
     max_tokens: 300,
     messages: [{
       role: 'user',
-      content: `Classify this request from a financial advisor into exactly ONE intent category.
+      content: `Classify this request from a financial advisor (or Maya acting on a client's behalf) into exactly ONE intent category.
 
 Request: "${message}"
 
 Categories:
-- product_research: looking up a specific insurance product, insurer info, or product PDF
-- premium_estimate: estimating how much a policy would cost for a client
-- policy_comparison: comparing multiple policies or insurers side by side
+- product_research: looking up a specific insurance product, insurer info, or product PDF (for products NOT yet on the client's books)
+- premium_estimate: estimating how much a NEW policy would cost for a client
+- policy_comparison: comparing multiple insurers' products side by side (market shopping)
+- policy_lookup: questions about the FACTUAL CONTENTS of a client's EXISTING policy — what it covers, deductible, co-insurance, exclusions, sum assured, claim limit, what the policy specifically says about a procedure or condition. NOT market comparison.
 - claim_prefill: helping with a claims form, starting a claim, claim paperwork
 - portfolio_report: overview of the FA's entire client portfolio or business metrics
 - renewal_pipeline: upcoming policy renewals, renewal dates, expiring policies
-- coverage_gap: what coverage a client is missing, what they should add
-- investment_research: researching a fund, ETF, or investment-linked product
+- coverage_gap: what coverage a client is MISSING and should ADD
+- investment_research: researching a fund, ETF, or investment-linked product (not yet owned)
 - portfolio_review: reviewing a client's investment holdings or overall investment portfolio
 - unknown: doesn't fit any category
+
+Key distinctions:
+- "what does my policy cover for X?" → policy_lookup (read existing policy)
+- "what's the best X policy on the market?" → policy_comparison (shop new)
+- "what's missing from my coverage?" → coverage_gap (gap analysis)
+- "what is my deductible / co-insurance / claim limit?" → policy_lookup
 
 Also extract any key parameters (insurer, product_type, coverage_type, form_type).
 
@@ -88,21 +97,23 @@ Respond in JSON only:
 export async function POST(request: NextRequest) {
   const start = Date.now()
   let userId: string | undefined
+  let authSource: 'session' | 'relay' | null = null
   try {
-    // ── Auth ──────────────────────────────────────────────────────────────
-    const { userId: verifiedId, error: authError } = await verifySession(request)
-    if (authError || !verifiedId) {
+    // ── Auth (dual-auth: session for FA dashboard, x-relay-key for Maya) ──
+    const auth = await authenticateAgentRequest(request)
+    if (!auth.ok) {
       await logAgentInvocation({
         agent: 'relay',
         userId: null,
-        source: 'session',
+        source: null,
         outcome: 'unauthorized',
-        statusCode: 401,
+        statusCode: auth.status,
         latencyMs: Date.now() - start,
       })
-      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
-    userId = verifiedId
+    userId = auth.userId
+    authSource = auth.source
 
     // ── Rate limit ────────────────────────────────────────────────────────────
     const rl = checkRateLimit(userId, 'relay')
@@ -110,7 +121,7 @@ export async function POST(request: NextRequest) {
       await logAgentInvocation({
         agent: 'relay',
         userId,
-        source: 'session',
+        source: authSource,
         outcome: 'rate_limited',
         statusCode: 429,
         latencyMs: Date.now() - start,
@@ -119,12 +130,11 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Parse body ────────────────────────────────────────────────────────
-    const { message, faId: _unused, clientId } = await request.json() as RelayRequest
+    const { message, faId: _unused, clientId, policyId } = await request.json() as RelayRequest
 
     if (_unused && _unused !== userId) {
-      console.warn(`[relay] ignored mismatched faId from body: body=${_unused} session=${userId}`)
+      console.warn(`[relay] ignored mismatched faId from body: body=${_unused} verified=${userId}`)
     }
-    // cast for narrowing — verifySession guarantees userId is set after the auth check
     const resolvedUserId = userId as string
 
     if (!message) {
@@ -199,6 +209,19 @@ export async function POST(request: NextRequest) {
         }
         break
 
+      case 'policy_lookup':
+        route = {
+          intent,
+          agentUrl: `${baseUrl}/api/brief`,
+          agentPayload: {
+            clientId,
+            policyId,
+            query: message,
+          },
+          summary: 'Routing to Brief for factual policy lookup',
+        }
+        break
+
       case 'claim_prefill':
         route = {
           intent,
@@ -256,7 +279,7 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({
           intent: 'unknown',
-          message: 'I\'m not sure which agent can help with that. Could you clarify whether you\'re looking to research a product, get a premium estimate, compare policies, help with a claim, or get a portfolio report?',
+          message: 'I\'m not sure which agent can help with that. Could you clarify whether you\'re looking to research a product, get a premium estimate, compare policies, look up what an existing policy covers, help with a claim, or get a portfolio report?',
         })
     }
 
@@ -284,12 +307,12 @@ export async function POST(request: NextRequest) {
     await logAgentInvocation({
       agent: 'relay',
       userId: resolvedUserId,
-      source: 'session',
+      source: authSource,
       outcome: agentRes.ok ? 'ok' : 'error',
       statusCode: agentRes.status,
       latencyMs: Date.now() - start,
       model: resolveAgentModel('relay'),
-      metadata: { intent: route.intent, subAgent: route.agentUrl.split('/api/')[1], hasClientId: !!clientId },
+      metadata: { intent: route.intent, subAgent: route.agentUrl.split('/api/')[1], hasClientId: !!clientId, hasPolicyId: !!policyId },
     })
     return NextResponse.json({
       intent: route.intent,
@@ -303,7 +326,7 @@ export async function POST(request: NextRequest) {
     await logAgentInvocation({
       agent: 'relay',
       userId,
-      source: 'session',
+      source: authSource,
       outcome: 'error',
       statusCode: 500,
       latencyMs: Date.now() - start,
