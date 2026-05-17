@@ -31,6 +31,7 @@ export default function AdminAccountsPage() {
   const [fas, setFas] = useState<FAProfile[]>([])
   const [clientCounts, setClientCounts] = useState<Record<string, number>>({})
   const [lastLoginMap, setLastLoginMap] = useState<Record<string, string | null>>({})
+  const [staleRunningCount, setStaleRunningCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function AdminAccountsPage() {
         if (data.profiles) setFas(data.profiles)
         if (data.clientCounts) setClientCounts(data.clientCounts)
         if (data.lastLoginMap) setLastLoginMap(data.lastLoginMap)
+        if (data.stats?.staleRunningCount != null) setStaleRunningCount(data.stats.staleRunningCount)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -64,6 +66,16 @@ export default function AdminAccountsPage() {
       <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#6B6460', margin: '0 0 28px' }}>
         {fas.length} registered financial advisors
       </p>
+
+      {!loading && staleRunningCount > 0 && (
+        <div style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.35)', borderRadius: 10, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 16 }}>⚠️</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#854F0B', fontWeight: 500 }}>
+            {staleRunningCount} work order{staleRunningCount > 1 ? 's' : ''} stuck in &quot;running&quot; for &gt;2h —{' '}
+          </span>
+          <a href="/admin/brain" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#BA7517', textDecoration: 'underline' }}>check Brain Loop</a>
+        </div>
+      )}
 
       <div style={{ background: '#FFFFFF', border: '1px solid #E8E2DA', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

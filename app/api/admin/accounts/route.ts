@@ -98,6 +98,15 @@ export async function GET(request: NextRequest) {
     .eq('status', 'proposed')
   const pendingProposedTotal = allProposed?.length ?? 0
 
+  // Count work orders stuck in 'running' for > 2 hours (stale)
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+  const { data: staleRunning } = await serviceSupabase
+    .from('work_orders')
+    .select('id')
+    .eq('status', 'running')
+    .lt('dispatched_at', twoHoursAgo)
+  const staleRunningCount = staleRunning?.length ?? 0
+
   // Count work orders with failed verification in last 24h
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data: recentVerified } = await serviceSupabase
@@ -119,6 +128,7 @@ export async function GET(request: NextRequest) {
       activeFAs7d,
       pendingProposed: pendingProposedTotal,
       failedVerifications24h,
+      staleRunningCount,
     },
     workstreamStats,
   })
